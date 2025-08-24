@@ -10,7 +10,7 @@ mongoose.connect("mongodb+srv://isuruadikari2001:12345@pawpal.zwmke35.mongodb.ne
 
 .then(() =>console.log("Connected to MongoDB"))
 .then(() => {
-    app.listen(5000);
+    app.listen(5001);
 })
 
 .catch((err) => console.log((err)))

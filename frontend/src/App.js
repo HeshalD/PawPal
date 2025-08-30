@@ -7,11 +7,10 @@ function App() {
 
   return (
     <div >
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-      </Routes>
+      <h1>Hi Bozz</h1>
     </div>
   );
 }
 
 export default App;
+  

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import './adoptionDetails.css';
 
 function AdoptionDetails() {
@@ -6,12 +7,15 @@ function AdoptionDetails() {
     selectedPets: [],
     fullName: '',
     email: '',
+    age: '',
     phone: '',
     address: '',
     salary: '',
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
   // Sample pet list (later can be loaded from DB)
   const pets = [
@@ -50,6 +54,9 @@ function AdoptionDetails() {
     if (!formData.email) tempErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email))
       tempErrors.email = 'Invalid email format';
+    if (!formData.age) tempErrors.age = 'Age is required';
+    else if (parseInt(formData.age) < 18)
+      tempErrors.age = 'Age must be at least 18';
     if (!formData.phone) tempErrors.phone = 'Phone is required';
     if (!formData.address) tempErrors.address = 'Home Address is required';
     if (!formData.salary) tempErrors.salary = 'Salary is required';
@@ -60,25 +67,62 @@ function AdoptionDetails() {
   };
 
   // Handle form submit
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      alert(
-        `Adoption request submitted!\nAdopter: ${formData.fullName}\nPets: ${formData.selectedPets.join(
-          ', '
-        )}`
-      );
-      setFormData({
-        selectedPets: [],
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        salary: '',
-      });
-      setErrors({});
-    } else {
-      alert('Please fix the errors before submitting.');
+    
+    if (!validate()) {
+      setSubmitMessage('Please fix the errors before submitting.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      // Prepare data for API call
+      const apiData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        age: parseInt(formData.age) || 0, // Convert to number
+        phone: formData.phone,
+        address: formData.address,
+        salary: parseInt(formData.salary) || 0, // Convert to number
+        selectedPets: formData.selectedPets
+      };
+
+      // Send data to backend
+      const response = await axios.post('http://localhost:5001/adoptions/add', apiData);
+      
+      if (response.status === 201) {
+        setSubmitMessage('✅ Adoption request submitted successfully!');
+        
+        // Reset form
+        setFormData({
+          selectedPets: [],
+          fullName: '',
+          email: '',
+          age: '',
+          phone: '',
+          address: '',
+          salary: '',
+        });
+        setErrors({});
+      }
+    } catch (error) {
+      console.error('Error submitting adoption request:', error);
+      
+      if (error.response) {
+        // Server responded with error status
+        setSubmitMessage(`❌ Error: ${error.response.data.message || 'Failed to submit adoption request'}`);
+      } else if (error.request) {
+        // Request was made but no response received
+        setSubmitMessage('❌ Error: Unable to connect to server. Please check if backend is running.');
+      } else {
+        // Something else happened
+        setSubmitMessage('❌ Error: Something went wrong. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -129,6 +173,19 @@ function AdoptionDetails() {
           <div className="error">{errors.email}</div>
         </div>
 
+        {/* Age */}
+        <div className="form-group">
+          <label>Age:</label>
+          <input
+            type="number"
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+            min="18"
+          />
+          <div className="error">{errors.age}</div>
+        </div>
+
         {/* Phone */}
         <div className="form-group">
           <label>Phone Number:</label>
@@ -164,9 +221,20 @@ function AdoptionDetails() {
           <div className="error">{errors.salary}</div>
         </div>
 
-        <button type="submit" className="submit-btn">
-          Submit Adoption Request
+        <button 
+          type="submit" 
+          className="submit-btn"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Adoption Request'}
         </button>
+        
+        {/* Submit Message */}
+        {submitMessage && (
+          <div className={`submit-message ${submitMessage.includes('✅') ? 'success' : 'error'}`}>
+            {submitMessage}
+          </div>
+        )}
       </form>
     </div>
   );

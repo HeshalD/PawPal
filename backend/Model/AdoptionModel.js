@@ -2,16 +2,32 @@ const mongoose = require ("mongoose");
 const Schema = mongoose.Schema;
 
 const adoptionSchema = new Schema({
-    name:{
+    fullName:{
         type:String,//dataType
         required:true,//validate
     },
-    gmail:{
+    email:{
         type:String,//dataType
         required:true,//validate
     },
     age:{
         type:Number,//dataType
+        required:true,//validate
+    },
+    phone:{
+        type:String,//dataType
+        required:true,//validate
+    },
+    address:{
+        type:String,//dataType
+        required:true,//validate
+    },
+    salary:{
+        type:Number,//dataType
+        required:true,//validate
+    },
+    selectedPets:{
+        type:[String],//array of strings
         required:true,//validate
     }
 });

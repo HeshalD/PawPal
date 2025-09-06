@@ -21,10 +21,10 @@ const getAllAdoptions = async(req, res, next) =>{
 
 //Data Insert
 const addAdoptions = async (req, res, next) => {
-    const { name, gmail, age } = req.body;
+    const { fullName, email, age, phone, address, salary, selectedPets } = req.body;
 
     try {
-        const adoption = new Adoption({ name, gmail, age });
+        const adoption = new Adoption({ fullName, email, age, phone, address, salary, selectedPets });
         await adoption.save();
         return res.status(201).json({ adoption });
     } catch (err) {
@@ -57,13 +57,13 @@ const getById = async (req, res, next) => {
 //Update adoption details
 const UpdateAdoptions = async (req, res, next) => {
     const id = req.params.id;
-    const{name,gmail,age} = req.body;
+    const{fullName,email,age,phone,address,salary,selectedPets} = req.body;
 
     let adoptions;
 
     try{
         adoptions = await Adoption.findByIdAndUpdate(id,
-        {name: name, gmail: gmail, age: age})
+        {fullName: fullName, email: email, age: age, phone: phone, address: address, salary: salary, selectedPets: selectedPets})
         adoptions = await adoptions.save();
     }catch(err) {
         console.log(err);

@@ -21,24 +21,16 @@ const getAllAdoptions = async(req, res, next) =>{
 
 //Data Insert
 const addAdoptions = async (req, res, next) => {
+    const { name, gmail, age } = req.body;
 
-    const{name,gmail,age} = req.body;
-
-    let adoptions;
-
-    try{
-        adoptions = new Adoption({name,gmail,age});
-        await adoptions.save();
-    }catch (err) {
-        console.log(err);
+    try {
+        const adoption = new Adoption({ name, gmail, age });
+        await adoption.save();
+        return res.status(201).json({ adoption });
+    } catch (err) {
+        console.error(err);
+        return res.status(400).json({ message: "Unable to add Adoptor", error: err.message });
     }
-
-    //not insert adoptors
-    if(!adoptions){
-        return res.status(404).json({message:"Unable to add Adoptor"}); 
-    }
-    return res.status(200).json({ adoptions });
-
 }
 
 

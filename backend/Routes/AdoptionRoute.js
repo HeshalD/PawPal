@@ -3,10 +3,10 @@ const router = express.Router();
 //Insert Model
 const Adoption = require("../Model/AdoptionModel");
 //Insert User Conroller
-const AdoptionController = require("../Controlers/AdoptionController");
+const AdoptionController = require("../Controllers/AdoptionController");
 
 router.get("/",AdoptionController.getAllAdoptions);
-router.post("/",AdoptionController.addAdoptions);
+router.post("/add",AdoptionController.addAdoptions);
 router.get("/:id",AdoptionController.getById);
 router.put("/:id",AdoptionController.UpdateAdoptions);
 router.delete("/:id",AdoptionController.DeleteAdoptions);

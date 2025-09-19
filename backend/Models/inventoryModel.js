@@ -18,6 +18,21 @@ const InventorySchema = new Schema({
     type: String,
     required: true,
   },
+  Quantity: {
+    type: Number,
+    required: true,
+    min: 0,
+    default: 0,
+  },
+  Price: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  image: {
+    type: String,
+    required: false
+  },
 });
 
 module.exports = mongoose.model("Inventory", InventorySchema);

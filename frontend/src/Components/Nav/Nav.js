@@ -28,6 +28,12 @@ function Nav() {
             Adoption Details Display
           </Link>
         </li>
+
+        <li className="nav-ll">
+          <Link to="/fosterDisplay" className="home-a">
+            Foster Details Display
+          </Link>
+        </li>
       </ul>
     </div>
   );

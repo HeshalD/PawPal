@@ -1,4 +1,33 @@
 const Adoption = require("../Model/AdoptionModel");
+const multer = require('multer');
+const path = require('path');
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/') // Make sure this directory exists
+    },
+    filename: function (req, file, cb) {
+        // Generate unique filename
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'salary-sheet-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+        // Only allow PDF files
+        if (file.mimetype === 'application/pdf') {
+            cb(null, true);
+        } else {
+            cb(new Error('Only PDF files are allowed'), false);
+        }
+    }
+});
 
 // Data Display
 const getAllAdoptions = async(req, res, next) =>{
@@ -21,10 +50,33 @@ const getAllAdoptions = async(req, res, next) =>{
 
 //Data Insert
 const addAdoptions = async (req, res, next) => {
-    const { fullName, email, age, phone, address, salary, selectedPets } = req.body;
-
     try {
-        const adoption = new Adoption({ fullName, email, age, phone, address, salary, selectedPets });
+        const { fullName, email, age, phone, address, salary, selectedPets } = req.body;
+        
+        // Parse selectedPets if it's a JSON string
+        let parsedSelectedPets = selectedPets;
+        if (typeof selectedPets === 'string') {
+            parsedSelectedPets = JSON.parse(selectedPets);
+        }
+
+        // Get the uploaded file path
+        const salarySheetPath = req.file ? req.file.path : null;
+        
+        if (!salarySheetPath) {
+            return res.status(400).json({ message: "Salary sheet PDF is required" });
+        }
+
+        const adoption = new Adoption({ 
+            fullName, 
+            email, 
+            age: parseInt(age), 
+            phone, 
+            address, 
+            salary: parseInt(salary), 
+            selectedPets: parsedSelectedPets,
+            salarySheet: salarySheetPath
+        });
+        
         await adoption.save();
         return res.status(201).json({ adoption });
     } catch (err) {
@@ -103,3 +155,4 @@ exports.addAdoptions = addAdoptions;
 exports.getById = getById;
 exports.UpdateAdoptions = UpdateAdoptions;
 exports.DeleteAdoptions = DeleteAdoptions;
+exports.upload = upload;

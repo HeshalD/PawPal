@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AdoptionRoute = require("./Routes/AdoptionRoute")
+const fosterRoutes = require("./Routes/FosterRoutes"); // Add this line
 const cors = require("cors");
 
 const app = express();
@@ -10,7 +11,11 @@ const app = express();
 app.use(express.json()); 
 app.use(cors());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 app.use("/adoptions",AdoptionRoute);
+app.use("/fosters", fosterRoutes); // Foster routes usage
 
 //Database Connection
 mongoose.connect("mongodb+srv://isuruadikari2001:12345@pawpal.zwmke35.mongodb.net/")

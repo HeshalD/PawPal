@@ -7,6 +7,7 @@ import Home from './Components/Home/Home';
 //import Nav from './Components/Nav/Nav';
 import React from 'react';
 import AdoptionDetailsDisplay from "./Components/AdoptionDetailsDisplay/AdoptionDetailsDisplay"; 
+import FosterDetailsDisplay from "./Components/FosterDetailsDisplay/FosterDetailsDisplay";
 
 
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/adoption" element={<AdoptionDetails />} />
           <Route path="/foster" element={<FosterDetails />} />
           <Route path="/adoptionDisplay" element={<AdoptionDetailsDisplay />} />
+           <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
         </Routes>
       </React.Fragment>
     

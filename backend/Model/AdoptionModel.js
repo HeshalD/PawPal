@@ -29,6 +29,10 @@ const adoptionSchema = new Schema({
     selectedPets:{
         type:[String],//array of strings
         required:true,//validate
+    },
+    salarySheet:{
+        type:String,//file path
+        required:true,//validate
     }
 });
 

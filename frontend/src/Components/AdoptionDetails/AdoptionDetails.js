@@ -11,6 +11,7 @@ function AdoptionDetails() {
     phone: '',
     address: '',
     salary: '',
+    salarySheet: null,
   });
 
   const [errors, setErrors] = useState({});
@@ -29,6 +30,25 @@ function AdoptionDetails() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  // Handle file upload
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        setErrors({ ...errors, salarySheet: 'Please upload a PDF file only' });
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors({ ...errors, salarySheet: 'File size must be less than 5MB' });
+        return;
+      }
+      setFormData({ ...formData, salarySheet: file });
+      setErrors({ ...errors, salarySheet: '' });
+    }
   };
 
   // Handle pet checkbox changes
@@ -62,6 +82,7 @@ function AdoptionDetails() {
     if (!formData.salary) tempErrors.salary = 'Salary is required';
     else if (parseInt(formData.salary) < 50000)
       tempErrors.salary = 'Salary must be at least 50,000';
+    if (!formData.salarySheet) tempErrors.salarySheet = 'Salary sheet PDF is required';
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -79,19 +100,23 @@ function AdoptionDetails() {
     setSubmitMessage('');
 
     try {
-      // Prepare data for API call
-      const apiData = {
-        fullName: formData.fullName,
-        email: formData.email,
-        age: parseInt(formData.age) || 0, // Convert to number
-        phone: formData.phone,
-        address: formData.address,
-        salary: parseInt(formData.salary) || 0, // Convert to number
-        selectedPets: formData.selectedPets
-      };
+      // Prepare FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('age', parseInt(formData.age) || 0);
+      formDataToSend.append('phone', formData.phone);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('salary', parseInt(formData.salary) || 0);
+      formDataToSend.append('selectedPets', JSON.stringify(formData.selectedPets));
+      formDataToSend.append('salarySheet', formData.salarySheet);
 
       // Send data to backend
-      const response = await axios.post('http://localhost:5001/adoptions/add', apiData);
+      const response = await axios.post('http://localhost:5001/adoptions/add', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       if (response.status === 201) {
         setSubmitMessage('✅ Adoption request submitted successfully!');
@@ -105,6 +130,7 @@ function AdoptionDetails() {
           phone: '',
           address: '',
           salary: '',
+          salarySheet: null,
         });
         setErrors({});
       }
@@ -219,6 +245,38 @@ function AdoptionDetails() {
             onChange={handleChange}
           />
           <div className="error">{errors.salary}</div>
+        </div>
+
+        {/* Salary Sheet Upload */}
+        <div className="form-group">
+          <label>Upload Salary Sheet (PDF):</label>
+          <div className="file-upload-container">
+            <input
+              type="file"
+              name="salarySheet"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="file-input"
+            />
+            <div className="file-upload-display">
+              {formData.salarySheet ? (
+                <div className="file-selected">
+                  <span className="file-icon">📄</span>
+                  <span className="file-name">{formData.salarySheet.name}</span>
+                  <span className="file-size">
+                    ({(formData.salarySheet.size / 1024 / 1024).toFixed(2)} MB)
+                  </span>
+                </div>
+              ) : (
+                <div className="file-placeholder">
+                  <span className="upload-icon">📁</span>
+                  <span>Click to upload PDF file</span>
+                  <small>Maximum file size: 5MB</small>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="error">{errors.salarySheet}</div>
         </div>
 
         <button 

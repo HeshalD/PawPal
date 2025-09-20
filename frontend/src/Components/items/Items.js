@@ -44,15 +44,15 @@ const handleExportPdf = () => {
   }
 
   const doc = new jsPDF({ orientation: "landscape" });
-  const columns = ["ID", "Name", "Category", "Description", "Unit", "Price", "Image URL"];
+  const columns = ["ID", "Name", "Image", "Price", "Stock", "Unit", "Category"];
   const rows = items.map((it) => [
-    it._id,
-    it.Item_Name,
-    it.Category,
-    it.Description,
-    it.Unit_of_Measure,
+    it._id || "-",
+    it.Item_Name || "-",
+    it.image ? `http://localhost:5000${it.image}` : "No Image",
     it.Price !== undefined ? `$${parseFloat(it.Price).toFixed(2)}` : "-",
-    it.image ? `http://localhost:5000${it.image}` : "-"
+    it.Quantity !== undefined ? it.Quantity.toString() : "0",
+    it.Unit_of_Measure || "-",
+    it.Category || "-"
   ]);
 
   doc.setFontSize(16);
@@ -63,9 +63,13 @@ const handleExportPdf = () => {
     body: rows,
     startY: 22,
     styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [76, 181, 174] },
+    headStyles: { fillColor: [102, 56, 230] },
     alternateRowStyles: { fillColor: [245, 245, 245] },
     theme: "striped",
+    columnStyles: {
+      2: { cellWidth: 30 }, // Image column
+      0: { cellWidth: 20 }, // ID column
+    }
   });
 
   const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
@@ -156,20 +160,20 @@ const paginatedItems = useMemo(() => {
                 <option value="category-desc">Category (Z→A)</option>
               </select>
             </div>
-            <button onClick={handleExportPdf} className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm">Export</button>
-            <button onClick={() => navigate('/items/new')} className="bg-[#4F9EF8] hover:bg-[#3a87e6] text-white font-semibold px-4 py-2 rounded-md shadow-sm">+ Add New Product</button>
+            <button onClick={handleExportPdf} className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE]">Export</button>
+            <button onClick={() => navigate('/items/new')} className="bg-[#6638E6] hover:bg-[#E6738F] text-white font-semibold px-4 py-2 rounded-md shadow-sm">+ Add New Product</button>
           </div>
         </div>
 
         <div className="overflow-x-auto bg-white shadow-lg rounded-lg border border-[#E6F4F3]">
-          <div className="bg-[#4CB5AE] text-white px-6 py-3 rounded-t-lg">
+          <div className="bg-[#6638E6] text-white px-6 py-3 rounded-t-lg">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Items List</span>
               <span className="text-white/80 text-sm">Showing {paginatedItems.length} of {filteredItems.length}</span>
             </div>
           </div>
           <table className="table-auto w-full">
-            <thead className="bg-[#FFE29A]/60">
+            <thead className="bg-[#E69AAE]/60">
               <tr>
                 <th className="py-3 px-6 text-left text-[#333333] font-semibold">Product Name</th>
                 <th className="py-3 px-6 text-left text-[#333333] font-semibold">Product ID</th>
@@ -196,7 +200,7 @@ const paginatedItems = useMemo(() => {
               {Array.from({ length: totalPages }).slice(0, 5).map((_, idx) => {
                 const page = idx + 1;
                 return (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`w-8 h-8 rounded-md text-sm border ${page === currentPageClamped ? 'bg-[#4CB5AE] text-white border-[#4CB5AE]' : 'bg-white text-[#333333] border-[#E6F4F3] hover:bg-[#F5F5F5]'}`}>{page}</button>
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`w-8 h-8 rounded-md text-sm border ${page === currentPageClamped ? 'bg-[#6638E6] text-white border-[#6638E6]' : 'bg-white text-[#333333] border-[#E6F4F3] hover:bg-[#E69AAE]'}`}>{page}</button>
                 );
               })}
               <button disabled={currentPageClamped === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={`px-3 py-1.5 rounded-md text-sm border ${currentPageClamped === totalPages ? 'text-[#9aa7a6] border-[#E6F4F3] bg-[#f8fafb]' : 'text-[#333333] border-[#E6F4F3] bg-white hover:bg-[#F5F5F5]'}`}>Next</button>

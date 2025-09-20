@@ -65,7 +65,7 @@ function ItemEdit() {
     <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
       <div className="w-full max-w-3xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="bg-white shadow-lg rounded-lg border border-[#E6F4F3] overflow-hidden">
-          <div className="bg-[#4CB5AE] text-white px-6 py-4">
+          <div className="bg-[#6638E6] text-white px-6 py-4">
             <h1 className="text-2xl font-semibold">Update Item</h1>
             <p className="text-white/80 text-sm">ID: {id}</p>
           </div>
@@ -85,7 +85,7 @@ function ItemEdit() {
                     name="Item_Name"
                     value={form.Item_Name}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7EC8E3]"
+                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6638E6]"
                     placeholder="Enter item name"
                     required
                   />
@@ -97,7 +97,7 @@ function ItemEdit() {
                     name="Category"
                     value={form.Category}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7EC8E3]"
+                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6638E6]"
                     placeholder="Enter category"
                     required
                   />
@@ -108,7 +108,7 @@ function ItemEdit() {
                     name="Description"
                     value={form.Description}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7EC8E3]"
+                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6638E6]"
                     placeholder="Describe the item"
                     rows={4}
                   />
@@ -120,7 +120,7 @@ function ItemEdit() {
                     name="Unit_of_Measure"
                     value={form.Unit_of_Measure}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7EC8E3]"
+                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6638E6]"
                     placeholder="e.g., kg, pcs"
                     required
                   />
@@ -132,7 +132,7 @@ function ItemEdit() {
                     name="Quantity"
                     value={form.Quantity}
                     onChange={handleChange}
-                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7EC8E3]"
+                    className="w-full rounded-md border border-[#E6F4F3] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6638E6]"
                     placeholder="Enter stock quantity"
                     min="0"
                     step="1"
@@ -144,14 +144,14 @@ function ItemEdit() {
                   <button
                     type="button"
                     onClick={() => navigate('/items')}
-                    className="bg-white text-[#333333] border border-[#E6F4F3] hover:bg-[#F5F5F5] px-4 py-2 rounded-md"
+                    className="bg-white text-[#333333] border border-[#E6F4F3] hover:bg-[#E69AAE] px-4 py-2 rounded-md"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="bg-[#FFA45B] hover:bg-[#ff9237] text-[#333333] font-semibold px-5 py-2 rounded-md shadow-sm disabled:opacity-60"
+                    className="bg-[#6638E6] hover:bg-[#E6738F] text-white font-semibold px-5 py-2 rounded-md shadow-sm disabled:opacity-60"
                   >
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>

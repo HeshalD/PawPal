@@ -7,6 +7,7 @@ import { Routes, Route } from 'react-router-dom';
 import Items from './Components/items/Items';
 import ItemEdit from './Components/items/ItemEdit';
 import ItemCreate from './Components/items/ItemCreate';
+import Shop from './Components/shop/Shop';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/items" element={<Items/>}/>
           <Route path="/items/new" element={<ItemCreate/>}/>
           <Route path="/items/:id/edit" element={<ItemEdit/>}/>
+          <Route path="/shop" element={<Shop/>}/>
         </Routes>
       </div>
   );

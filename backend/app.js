@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
+const donationRoutes = require("./Routes/DonationRoute");
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use("/sponsors", sponsorRoutes);
+app.use("/donations", donationRoutes);
 
 // Auto-expire job: move active sponsors to past when endDate has passed
 const startExpiryJob = () => {

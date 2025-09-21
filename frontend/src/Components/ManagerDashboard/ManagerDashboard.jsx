@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { SponsorsAPI, toImageUrl } from '../../services/api';
 
@@ -596,4 +597,3 @@ export default function ManagerDashboard() {
     </div>
   );
 }
-

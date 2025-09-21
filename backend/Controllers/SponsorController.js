@@ -10,7 +10,6 @@ const refreshExpiredStatuses = async () => {
   );
 };
 
-// Convert an absolute disk path inside `uploads` to a web path served by express.static
 const toWebPath = (absolutePath) => {
   if (!absolutePath) return null;
   const uploadsRoot = path.join(__dirname, "..", "uploads");
@@ -19,7 +18,6 @@ const toWebPath = (absolutePath) => {
   return "/" + webSafe;
 };
 
-// Convert a web path (e.g. "/sponsor_ads/123-file.png") back to an absolute disk path
 const toDiskPath = (webPath) => {
   if (!webPath) return null;
   const uploadsRoot = path.join(__dirname, "..", "uploads");
@@ -28,19 +26,34 @@ const toDiskPath = (webPath) => {
 };
 
 const validateSponsorPayload = (body) => {
+  console.log('Validating payload:', body);
+  
   const required = ["sponsorName", "email", "phone", "durationMonths", "sponsorAmount"];
   for (const key of required) {
-    if (!body[key]) return `${key} is required`;
+    if (!body[key] && body[key] !== 0) {
+      console.log(`Validation failed: ${key} is missing`);
+      return `${key} is required`;
+    }
   }
   
-  const allowedDurations = [3, 6, 9, 12, 0.001]; // 0.001 months = ~1 minute for testing
-  if (!allowedDurations.includes(Number(body.durationMonths))) {
+  const allowedDurations = [3, 6, 9, 12, 0.001];
+  const duration = Number(body.durationMonths);
+  if (!allowedDurations.includes(duration)) {
+    console.log('Validation failed: Invalid duration', duration);
     return "durationMonths must be one of 3, 6, 9, 12, or 0.001 (for testing)";
   }
   
   // Validate sponsor amount
   const amount = Number(body.sponsorAmount);
+  console.log('Sponsor amount validation:', {
+    original: body.sponsorAmount,
+    converted: amount,
+    isNaN: isNaN(amount),
+    lessThan50k: amount < 50000
+  });
+  
   if (isNaN(amount) || amount < 50000) {
+    console.log('Validation failed: Invalid sponsor amount');
     return "sponsorAmount must be a number and at least 50,000";
   }
   
@@ -49,32 +62,54 @@ const validateSponsorPayload = (body) => {
 
 const createSponsor = async (req, res, next) => {
   try {
-    console.log('Creating sponsor with data:', req.body); // Debug log
+    console.log('=== CREATE SPONSOR REQUEST ===');
+    console.log('Request body:', req.body);
+    console.log('Request file:', req.file);
+    
+    // Log each field individually
+    Object.keys(req.body).forEach(key => {
+      console.log(`${key}: "${req.body[key]}" (type: ${typeof req.body[key]})`);
+    });
     
     const validationError = validateSponsorPayload(req.body);
     if (validationError) {
+      console.log('Validation error:', validationError);
       return res.status(400).json({ message: validationError });
     }
 
     const adPath = req.file ? toWebPath(req.file.path) : null;
 
-    const sponsor = new Sponsor({
-      sponsorName: req.body.sponsorName,
-      companyName: req.body.companyName || null,
-      email: req.body.email,
-      phone: req.body.phone,
-      address: req.body.address || null,
+    // Convert values explicitly
+    const sponsorData = {
+      sponsorName: String(req.body.sponsorName).trim(),
+      companyName: req.body.companyName ? String(req.body.companyName).trim() : null,
+      email: String(req.body.email).toLowerCase().trim(),
+      phone: String(req.body.phone).trim(),
+      address: req.body.address ? String(req.body.address).trim() : null,
       durationMonths: Number(req.body.durationMonths),
-      sponsorAmount: Number(req.body.sponsorAmount), // Ensure it's a number
+      sponsorAmount: Number(req.body.sponsorAmount),
       adImagePath: adPath,
-    });
+    };
+    
+    console.log('Sponsor data to save:', sponsorData);
 
-    await sponsor.save();
-    console.log('Sponsor saved:', sponsor); // Debug log
-    return res.status(201).json({ sponsor });
+    const sponsor = new Sponsor(sponsorData);
+    const savedSponsor = await sponsor.save();
+    
+    console.log('Sponsor saved successfully:', {
+      id: savedSponsor._id,
+      sponsorName: savedSponsor.sponsorName,
+      sponsorAmount: savedSponsor.sponsorAmount,
+      durationMonths: savedSponsor.durationMonths
+    });
+    
+    return res.status(201).json({ sponsor: savedSponsor });
   } catch (err) {
-    console.log('Create sponsor error:', err);
-    return res.status(500).json({ message: "Server error" });
+    console.error('Create sponsor error:', err);
+    return res.status(500).json({ 
+      message: "Server error",
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -82,6 +117,15 @@ const getAllSponsors = async (req, res, next) => {
   try {
     await refreshExpiredStatuses();
     const sponsors = await Sponsor.find().sort({ createdAt: -1 });
+    
+    // Log sponsor amounts for debugging
+    console.log('All sponsors amounts:', sponsors.map(s => ({
+      id: s._id,
+      name: s.sponsorName,
+      amount: s.sponsorAmount,
+      amountType: typeof s.sponsorAmount
+    })));
+    
     return res.status(200).json({ sponsors: sponsors || [] });
   } catch (err) {
     console.log(err);
@@ -96,6 +140,13 @@ const getSponsorById = async (req, res, next) => {
     if (!sponsor) {
       return res.status(404).json({ message: "Sponsor not found" });
     }
+    
+    console.log('Found sponsor:', {
+      id: sponsor._id,
+      amount: sponsor.sponsorAmount,
+      amountType: typeof sponsor.sponsorAmount
+    });
+    
     return res.status(200).json({ sponsor });
   } catch (err) {
     console.log(err);
@@ -151,7 +202,6 @@ const deleteSponsor = async (req, res, next) => {
 
     await Sponsor.findByIdAndDelete(id);
 
-    // attempt to remove image if exists
     if (sponsor.adImagePath) {
       try {
         const diskPath = toDiskPath(sponsor.adImagePath);
@@ -176,12 +226,12 @@ const approveSponsor = async (req, res, next) => {
     if (sponsor.status !== "pending") {
       return res.status(400).json({ message: "Only pending sponsors can be approved" });
     }
+    
     const startDate = new Date();
     const endDate = new Date(startDate);
     
-    // Special case for testing: 0.001 months = 1 minute
     if (sponsor.durationMonths === 0.001) {
-      endDate.setTime(startDate.getTime() + 60 * 1000); // Add 60 seconds
+      endDate.setTime(startDate.getTime() + 60 * 1000);
     } else {
       endDate.setMonth(endDate.getMonth() + Number(sponsor.durationMonths));
     }
@@ -254,7 +304,15 @@ const getManagerPending = async (req, res, next) => {
   try {
     await refreshExpiredStatuses();
     const sponsors = await Sponsor.find({ status: "pending" }).sort({ createdAt: -1 });
-    console.log('Pending sponsors:', sponsors); // Debug log
+    
+    console.log('=== MANAGER PENDING SPONSORS ===');
+    sponsors.forEach(sponsor => {
+      console.log(`ID: ${sponsor._id}`);
+      console.log(`Name: ${sponsor.sponsorName}`);
+      console.log(`Amount: ${sponsor.sponsorAmount} (type: ${typeof sponsor.sponsorAmount})`);
+      console.log('---');
+    });
+    
     return res.status(200).json({ sponsors: sponsors || [] });
   } catch (err) {
     console.log(err);
@@ -303,11 +361,11 @@ const getHomepageActiveAds = async (req, res, next) => {
   }
 };
 
-// Get sponsors with filtering
+// Get sponsors with date filtering
 const getSponsorsWithFilter = async (req, res, next) => {
   try {
     await refreshExpiredStatuses();
-    const { period, search, status } = req.query;
+    const { period, search } = req.query;
     
     let dateFilter = {};
     if (period && period !== 'all') {
@@ -345,12 +403,7 @@ const getSponsorsWithFilter = async (req, res, next) => {
       };
     }
     
-    let statusFilter = {};
-    if (status && status !== 'all') {
-      statusFilter = { status };
-    }
-    
-    const sponsors = await Sponsor.find({ ...dateFilter, ...searchFilter, ...statusFilter }).sort({ createdAt: -1 });
+    const sponsors = await Sponsor.find({ ...dateFilter, ...searchFilter }).sort({ createdAt: -1 });
     return res.status(200).json({ sponsors: sponsors || [] });
   } catch (err) {
     console.log(err);
@@ -362,6 +415,7 @@ const getSponsorsWithFilter = async (req, res, next) => {
 const getSponsorSummary = async (req, res, next) => {
   try {
     await refreshExpiredStatuses();
+    
     const totalSponsors = await Sponsor.countDocuments();
     const pendingCount = await Sponsor.countDocuments({ status: 'pending' });
     const activeCount = await Sponsor.countDocuments({ status: 'active' });
@@ -372,13 +426,13 @@ const getSponsorSummary = async (req, res, next) => {
       { $group: { _id: null, total: { $sum: '$sponsorAmount' } } }
     ]);
     
-    const activeAmount = await Sponsor.aggregate([
-      { $match: { status: 'active' } },
+    const pendingAmount = await Sponsor.aggregate([
+      { $match: { status: 'pending' } },
       { $group: { _id: null, total: { $sum: '$sponsorAmount' } } }
     ]);
     
-    const pastAmount = await Sponsor.aggregate([
-      { $match: { status: 'past' } },
+    const activeAmount = await Sponsor.aggregate([
+      { $match: { status: 'active' } },
       { $group: { _id: null, total: { $sum: '$sponsorAmount' } } }
     ]);
     
@@ -390,8 +444,8 @@ const getSponsorSummary = async (req, res, next) => {
         activeCount,
         pastCount,
         rejectedCount,
-        activeAmount: activeAmount[0]?.total || 0,
-        pastAmount: pastAmount[0]?.total || 0
+        pendingAmount: pendingAmount[0]?.total || 0,
+        activeAmount: activeAmount[0]?.total || 0
       }
     });
   } catch (err) {

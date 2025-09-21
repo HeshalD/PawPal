@@ -10,7 +10,7 @@ import SponsorForm from './Components/SponsorForm/SponsorForm';
 function App() {
 
   return (
-    <div >
+    <div>
       <Routes>
         <Route path="/" element={<DonorForm />} />
         <Route path="/donations" element={<DonationManagement />} />

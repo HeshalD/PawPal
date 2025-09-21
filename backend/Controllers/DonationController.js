@@ -222,6 +222,97 @@ const getCompletedDonations = async (req, res, next) => {
   }
 }
 
+// Get donations with date filtering
+const getDonationsWithFilter = async (req, res, next) => {
+  try {
+    const { period, search, status } = req.query;
+    
+    let dateFilter = {};
+    if (period && period !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (period) {
+        case 'daily':
+          filterDate.setDate(now.getDate() - 1);
+          break;
+        case 'weekly':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'monthly':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'yearly':
+          filterDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          break;
+      }
+      
+      dateFilter = { createdAt: { $gte: filterDate } };
+    }
+    
+    let searchFilter = {};
+    if (search) {
+      searchFilter = {
+        $or: [
+          { fullname: { $regex: search, $options: 'i' } },
+          { Email: { $regex: search, $options: 'i' } },
+          { ContributionType: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+    
+    let statusFilter = {};
+    if (status && status !== 'all') {
+      statusFilter = { status };
+    }
+    
+    const donations = await Donation.find({ ...dateFilter, ...searchFilter, ...statusFilter }).sort({ createdAt: -1 });
+    return res.status(200).json({ donations: donations || [] });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get donation summary statistics
+const getDonationSummary = async (req, res, next) => {
+  try {
+    const totalDonations = await Donation.countDocuments();
+    const pendingCount = await Donation.countDocuments({ status: 'pending' });
+    const completedCount = await Donation.countDocuments({ status: 'completed' });
+    
+    const totalAmount = await Donation.aggregate([
+      { $group: { _id: null, total: { $sum: '$Amount' } } }
+    ]);
+    
+    const pendingAmount = await Donation.aggregate([
+      { $match: { status: 'pending' } },
+      { $group: { _id: null, total: { $sum: '$Amount' } } }
+    ]);
+    
+    const completedAmount = await Donation.aggregate([
+      { $match: { status: 'completed' } },
+      { $group: { _id: null, total: { $sum: '$Amount' } } }
+    ]);
+    
+    return res.status(200).json({
+      summary: {
+        totalDonations,
+        totalAmount: totalAmount[0]?.total || 0,
+        pendingCount,
+        completedCount,
+        pendingAmount: pendingAmount[0]?.total || 0,
+        completedAmount: completedAmount[0]?.total || 0
+      }
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 // නිවැරදි export කිරීම
 module.exports = { 
   getAllDonations, 
@@ -234,5 +325,7 @@ module.exports = {
   markAsCompleted,
   getDonationsByStatus,
   getPendingDonations,
-  getCompletedDonations
+  getCompletedDonations,
+  getDonationsWithFilter,
+  getDonationSummary
 };

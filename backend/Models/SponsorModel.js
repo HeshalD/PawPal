@@ -34,6 +34,11 @@ const sponsorSchema = new Schema({
     enum: [3, 6, 9, 12, 0.001],
     required: true,
   },
+  sponsorAmount: {
+    type: Number,
+    required: true,
+    min: 50000,
+  },
   adImagePath: {
     type: String,
     default: null,

@@ -36,6 +36,32 @@ export const SponsorsAPI = {
   managerActive: () => apiClient.get('/sponsors/manager/active'),
   managerPast: () => apiClient.get('/sponsors/manager/past'),
   homepageActiveAds: () => apiClient.get('/sponsors/homepage/active-ads'),
+  // New filtering and summary endpoints
+  getFiltered: (params) => apiClient.get('/sponsors/filter/data', { params }),
+  getSummary: () => apiClient.get('/sponsors/summary/stats'),
+};
+
+export const DonationsAPI = {
+  getAll: () => apiClient.get('/donations'),
+  create: (data) => apiClient.post('/donations', data),
+  add: (data) => apiClient.post('/donations/add', data),
+  getById: (id) => apiClient.get(`/donations/${id}`),
+  update: (id, data) => apiClient.put(`/donations/${id}`, data),
+  delete: (id) => apiClient.delete(`/donations/${id}`),
+  uploadSlip: (id, file) => {
+    const fd = new FormData();
+    fd.append('slip', file);
+    return apiClient.post(`/donations/${id}/upload-slip`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  markCompleted: (id) => apiClient.put(`/donations/${id}/complete`),
+  getByStatus: (status) => apiClient.get(`/donations/status/${status}`),
+  getPending: () => apiClient.get('/donations/manager/pending'),
+  getCompleted: () => apiClient.get('/donations/manager/completed'),
+  // New filtering and summary endpoints
+  getFiltered: (params) => apiClient.get('/donations/filter/data', { params }),
+  getSummary: () => apiClient.get('/donations/summary/stats'),
 };
 
 

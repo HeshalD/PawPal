@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './DonorForm.css';
+import { DonationsAPI } from '../../services/api';
 
 const DonorForm = () => {
   const [formData, setFormData] = useState({
@@ -50,14 +50,14 @@ const DonorForm = () => {
 
     // NIC validation
     if (!formData.NIC.trim()) {
-      newErrors.NIC = 'NIC number is required';
-    } else if (!/^[0-9]{9}[VvXx]$/.test(formData.NIC.trim())) {
+      newErrors.NIC = 'NIC is required';
+    } else if (!/^[0-9]{9}[vVxX]?$/.test(formData.NIC.trim())) {
       newErrors.NIC = 'Please enter a valid NIC number (e.g., 123456789V)';
     }
 
     // Email validation
     if (!formData.Email.trim()) {
-      newErrors.Email = 'Email address is required';
+      newErrors.Email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.Email.trim())) {
       newErrors.Email = 'Please enter a valid email address';
     }
@@ -66,357 +66,517 @@ const DonorForm = () => {
     if (!formData.Address.trim()) {
       newErrors.Address = 'Address is required';
     } else if (formData.Address.trim().length < 10) {
-      newErrors.Address = 'Address must be at least 10 characters long';
+      newErrors.Address = 'Address must be at least 10 characters';
     }
 
     // Contribution type validation
     if (!formData.ContributionType) {
-      newErrors.ContributionType = 'Please select a contribution type';
+      newErrors.ContributionType = 'Contribution type is required';
     }
 
     // Amount validation
     if (!formData.Amount) {
       newErrors.Amount = 'Amount is required';
-    } else if (isNaN(formData.Amount) || parseFloat(formData.Amount) <= 0) {
+    } else if (isNaN(formData.Amount) || Number(formData.Amount) <= 0) {
       newErrors.Amount = 'Amount must be a positive number';
-    } else if (parseFloat(formData.Amount) < 100) {
-      newErrors.Amount = 'Minimum donation amount is 100 LKR';
     }
 
     // Payment method validation
     if (!formData.PaymentMethod) {
-      newErrors.PaymentMethod = 'Please select a payment method';
+      newErrors.PaymentMethod = 'Payment method is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       [name]: value
-    });
-
+    }));
+    
     // Clear error when user starts typing
     if (errors[name]) {
-      setErrors({
-        ...errors,
+      setErrors(prev => ({
+        ...prev,
         [name]: ''
-      });
+      }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate form before submission
     if (!validateForm()) {
-      setIsSubmitting(false);
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const response = await fetch('http://localhost:5000/donations/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setDonationId(result.donation._id);
-        setSubmitted(true);
-      } else {
-        const errorData = await response.json();
-        alert(`Error submitting donation: ${errorData.message || 'Please try again.'}`);
-      }
+      const response = await DonationsAPI.add(formData);
+      setDonationId(response.data.donation._id);
+      setSubmitted(true);
+      setShowSlipForm(true);
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error submitting donation. Please check your internet connection and try again.');
+      console.error('Error submitting donation:', error);
+      alert('Error submitting donation. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleSlipUpload = async (e) => {
-    if (!donationId) return;
-
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-    if (!allowedTypes.includes(file.type)) {
-      alert('Please upload only JPG, PNG, or PDF files.');
+    e.preventDefault();
+    const file = e.target.slip.files[0];
+    
+    if (!file) {
+      alert('Please select a file');
       return;
     }
-
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB.');
-      return;
-    }
-
-    const uploadData = new FormData();
-    uploadData.append('slip', file);
 
     try {
-      const response = await fetch(`http://localhost:5000/donations/${donationId}/upload-slip`, {
-        method: 'POST',
-        body: uploadData,
-      });
-
-      if (response.ok) {
-        alert('Payment slip uploaded successfully! Your donation is now pending approval.');
-        setShowSlipForm(false);
-      } else {
-        alert('Error uploading slip. Please try again.');
-      }
+      await DonationsAPI.uploadSlip(donationId, file);
+      alert('Payment slip uploaded successfully!');
+      setShowSlipForm(false);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error uploading slip:', error);
       alert('Error uploading slip. Please try again.');
     }
   };
 
-  const handleNext = () => {
-    setShowSlipForm(true);
+  const resetForm = () => {
+    setFormData({
+      fullname: '',
+      age: '',
+      phone: '',
+      NIC: '',
+      Email: '',
+      Address: '',
+      ContributionType: '',
+      Amount: '',
+      Currency: 'LKR',
+      PaymentMethod: '',
+      donationFrequency: 'one-time'
+    });
+    setSubmitted(false);
+    setDonationId(null);
+    setErrors({});
+    setShowSlipForm(false);
   };
 
   if (submitted && !showSlipForm) {
     return (
-      <div className="donor-form-container">
-        <div className="success-message">
-          <div className="success-icon">✓</div>
-          <h2>Your form is successfully submitted!</h2>
-          <p>Thank you for your generous donation to our pet care organization.</p>
-          <p>To complete your donation, please make the payment and upload your payment slip.</p>
-          <button onClick={handleNext} className="next-btn">
-            Complete Payment & Upload Slip
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 font-gilroyBold">
+            Donation Submitted Successfully!
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Thank you for your generous contribution to PawPal. Your donation ID is: <span className="font-semibold text-purple-600">{donationId}</span>
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => setShowSlipForm(true)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              📄 Upload Payment Slip
+            </button>
+            <button
+              onClick={resetForm}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200"
+            >
+              Make Another Donation
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (submitted && showSlipForm) {
+  if (showSlipForm) {
     return (
-      <div className="donor-form-container">
-        <div className="slip-upload-section">
-          <h2>Upload Payment Slip</h2>
-          <p>Please upload your payment slip to complete the donation process:</p>
-          <div className="file-upload-area">
-            <input
-              type="file"
-              accept="image/*,.pdf"
-              onChange={handleSlipUpload}
-              className="slip-upload"
-              id="slip-upload"
-            />
-            <label htmlFor="slip-upload" className="file-upload-label">
-              <span className="upload-icon">📁</span>
-              <span>Choose File (JPG, PNG, PDF)</span>
-              <small>Max file size: 5MB</small>
-            </label>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-4">📄</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 font-gilroyBold">
+              Upload Payment Slip
+            </h2>
+            <p className="text-gray-600">
+              Please upload a clear photo of your payment slip for verification.
+            </p>
           </div>
-          <p className="note">Once you upload the slip, your donation will be marked as pending for approval.</p>
+          
+          <form onSubmit={handleSlipUpload} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Payment Slip *
+              </label>
+              <input
+                type="file"
+                name="slip"
+                accept="image/*"
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                Upload Slip
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowSlipForm(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200"
+              >
+                Skip
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="donor-form-container">
-      <h2>Pet Care Donation Form</h2>
-      <form onSubmit={handleSubmit} className="donor-form">
-        <div className="form-group">
-          <label htmlFor="fullname">Full Name *</label>
-          <input
-            type="text"
-            id="fullname"
-            name="fullname"
-            value={formData.fullname}
-            onChange={handleChange}
-            className={errors.fullname ? 'error' : ''}
-            required
-          />
-          {errors.fullname && <span className="error-message">{errors.fullname}</span>}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 font-gilroyBold mb-4">
+            💝 Make a Donation
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Help us provide better care for pets. Your donation makes a real difference in the lives of animals.
+          </p>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="age">Age *</label>
-          <input
-            type="number"
-            id="age"
-            name="age"
-            value={formData.age}
-            onChange={handleChange}
-            className={errors.age ? 'error' : ''}
-            required
-            min="1"
-            max="120"
-          />
-          {errors.age && <span className="error-message">{errors.age}</span>}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Benefits Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6 font-gilroyBold">
+                🌟 Why Donate?
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">✓</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Direct Impact</h4>
+                    <p className="text-sm text-gray-600">Your donation goes directly to pet care</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">✓</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Tax Deductible</h4>
+                    <p className="text-sm text-gray-600">Eligible for tax deductions</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">✓</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Transparent</h4>
+                    <p className="text-sm text-gray-600">Track how your donation is used</p>
+                  </div>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm">✓</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Flexible</h4>
+                    <p className="text-sm text-gray-600">One-time or recurring donations</p>
+                  </div>
+                </div>
+              </div>
 
-        <div className="form-group">
-          <label htmlFor="phone">Phone Number *</label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className={errors.phone ? 'error' : ''}
-            required
-            placeholder="+94XXXXXXXXX"
-          />
-          {errors.phone && <span className="error-message">{errors.phone}</span>}
-        </div>
+              <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">💡 Donation Impact</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rs. 1,000</span>
+                    <span className="font-medium text-purple-600">Feeds 1 pet for 1 week</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rs. 5,000</span>
+                    <span className="font-medium text-purple-600">Covers medical checkup</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Rs. 10,000</span>
+                    <span className="font-medium text-purple-600">Emergency treatment</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="NIC">NIC Number *</label>
-          <input
-            type="text"
-            id="NIC"
-            name="NIC"
-            value={formData.NIC}
-            onChange={handleChange}
-            className={errors.NIC ? 'error' : ''}
-            required
-            placeholder="123456789V"
-          />
-          {errors.NIC && <span className="error-message">{errors.NIC}</span>}
-        </div>
+          {/* Form Section */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-lg p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Personal Information */}
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 font-gilroyBold">
+                    👤 Personal Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="fullname"
+                        value={formData.fullname}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.fullname ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your full name"
+                      />
+                      {errors.fullname && <p className="mt-1 text-sm text-red-600">{errors.fullname}</p>}
+                    </div>
 
-        <div className="form-group">
-          <label htmlFor="Email">Email Address *</label>
-          <input
-            type="email"
-            id="Email"
-            name="Email"
-            value={formData.Email}
-            onChange={handleChange}
-            className={errors.Email ? 'error' : ''}
-            required
-          />
-          {errors.Email && <span className="error-message">{errors.Email}</span>}
-        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Age *
+                      </label>
+                      <input
+                        type="number"
+                        name="age"
+                        value={formData.age}
+                        onChange={handleInputChange}
+                        min="1"
+                        max="120"
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.age ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your age"
+                      />
+                      {errors.age && <p className="mt-1 text-sm text-red-600">{errors.age}</p>}
+                    </div>
+                  </div>
+                </div>
 
-        <div className="form-group">
-          <label htmlFor="Address">Address *</label>
-          <textarea
-            id="Address"
-            name="Address"
-            value={formData.Address}
-            onChange={handleChange}
-            className={errors.Address ? 'error' : ''}
-            required
-            rows="3"
-          />
-          {errors.Address && <span className="error-message">{errors.Address}</span>}
-        </div>
+                {/* Contact Information */}
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 font-gilroyBold">
+                    📞 Contact Information
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.phone ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="+94771234567 or 0771234567"
+                      />
+                      {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                    </div>
 
-        <div className="form-group">
-          <label htmlFor="ContributionType">Contribution Type *</label>
-          <select
-            id="ContributionType"
-            name="ContributionType"
-            value={formData.ContributionType}
-            onChange={handleChange}
-            className={errors.ContributionType ? 'error' : ''}
-            required
-          >
-            <option value="">Select contribution type</option>
-            <option value="Medical Care">Medical Care</option>
-            <option value="Food & Supplies">Food & Supplies</option>
-            <option value="Shelter">Shelter</option>
-            <option value="General Donation">General Donation</option>
-            <option value="Emergency Fund">Emergency Fund</option>
-          </select>
-          {errors.ContributionType && <span className="error-message">{errors.ContributionType}</span>}
-        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        name="Email"
+                        value={formData.Email}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.Email ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="Enter your email address"
+                      />
+                      {errors.Email && <p className="mt-1 text-sm text-red-600">{errors.Email}</p>}
+                    </div>
+                  </div>
 
-        <div className="form-group">
-          <label htmlFor="donationFrequency">Donation Frequency *</label>
-          <select
-            id="donationFrequency"
-            name="donationFrequency"
-            value={formData.donationFrequency}
-            onChange={handleChange}
-            required
-          >
-            <option value="one-time">One-time</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-        </div>
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      NIC Number *
+                    </label>
+                    <input
+                      type="text"
+                      name="NIC"
+                      value={formData.NIC}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                        errors.NIC ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="123456789V"
+                    />
+                    {errors.NIC && <p className="mt-1 text-sm text-red-600">{errors.NIC}</p>}
+                  </div>
 
-        <div className="form-group">
-          <label htmlFor="Amount">Amount *</label>
-          <input
-            type="number"
-            id="Amount"
-            name="Amount"
-            value={formData.Amount}
-            onChange={handleChange}
-            className={errors.Amount ? 'error' : ''}
-            required
-            min="1"
-            step="0.01"
-          />
-          {errors.Amount && <span className="error-message">{errors.Amount}</span>}
-        </div>
+                  <div className="mt-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address *
+                    </label>
+                    <textarea
+                      name="Address"
+                      value={formData.Address}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                        errors.Address ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your complete address"
+                    />
+                    {errors.Address && <p className="mt-1 text-sm text-red-600">{errors.Address}</p>}
+                  </div>
+                </div>
 
-        <div className="form-group">
-          <label htmlFor="Currency">Currency *</label>
-          <select
-            id="Currency"
-            name="Currency"
-            value={formData.Currency}
-            onChange={handleChange}
-            required
-          >
-            <option value="LKR">LKR (Sri Lankan Rupees)</option>
-            <option value="USD">USD (US Dollars)</option>
-            <option value="EUR">EUR (Euros)</option>
-          </select>
-        </div>
+                {/* Donation Details */}
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 font-gilroyBold">
+                    💎 Donation Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Contribution Type *
+                      </label>
+                      <select
+                        name="ContributionType"
+                        value={formData.ContributionType}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.ContributionType ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select contribution type</option>
+                        <option value="Medical Care">Medical Care</option>
+                        <option value="Food & Supplies">Food & Supplies</option>
+                        <option value="Shelter">Shelter</option>
+                        <option value="Emergency Fund">Emergency Fund</option>
+                        <option value="General Support">General Support</option>
+                      </select>
+                      {errors.ContributionType && <p className="mt-1 text-sm text-red-600">{errors.ContributionType}</p>}
+                    </div>
 
-        <div className="form-group">
-          <label htmlFor="PaymentMethod">Payment Method *</label>
-          <select
-            id="PaymentMethod"
-            name="PaymentMethod"
-            value={formData.PaymentMethod}
-            onChange={handleChange}
-            className={errors.PaymentMethod ? 'error' : ''}
-            required
-          >
-            <option value="">Select payment method</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Credit Card">Credit Card</option>
-            <option value="Debit Card">Debit Card</option>
-            <option value="Online Payment">Online Payment</option>
-            <option value="Cash">Cash</option>
-            <option value="Check">Check</option>
-          </select>
-          {errors.PaymentMethod && <span className="error-message">{errors.PaymentMethod}</span>}
-        </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Donation Frequency *
+                      </label>
+                      <select
+                        name="donationFrequency"
+                        value={formData.donationFrequency}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                      >
+                        <option value="one-time">One-time</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="weekly">Weekly</option>
+                      </select>
+                    </div>
+                  </div>
 
-        <button type="submit" disabled={isSubmitting} className="submit-btn">
-          {isSubmitting ? 'Submitting...' : 'Submit Donation'}
-        </button>
-      </form>
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Amount *
+                      </label>
+                      <input
+                        type="number"
+                        name="Amount"
+                        value={formData.Amount}
+                        onChange={handleInputChange}
+                        min="100"
+                        step="100"
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.Amount ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder="1000"
+                      />
+                      {errors.Amount && <p className="mt-1 text-sm text-red-600">{errors.Amount}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Currency
+                      </label>
+                      <select
+                        name="Currency"
+                        value={formData.Currency}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                      >
+                        <option value="LKR">LKR (Sri Lankan Rupee)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                        <option value="EUR">EUR (Euro)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Payment Method *
+                      </label>
+                      <select
+                        name="PaymentMethod"
+                        value={formData.PaymentMethod}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                          errors.PaymentMethod ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select payment method</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="Mobile Payment">Mobile Payment</option>
+                        <option value="Cash">Cash</option>
+                      </select>
+                      {errors.PaymentMethod && <p className="mt-1 text-sm text-red-600">{errors.PaymentMethod}</p>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-6">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                  >
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Submitting...</span>
+                      </div>
+                    ) : (
+                      '💝 Make Donation'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 export default DonorForm;
-

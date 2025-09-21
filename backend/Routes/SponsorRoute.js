@@ -39,6 +39,10 @@ router.get("/manager/active", SponsorController.getManagerActive);
 router.get("/manager/past", SponsorController.getManagerPast);
 router.get("/homepage/active-ads", SponsorController.getHomepageActiveAds);
 
+// New filtering and summary routes
+router.get("/filter/data", SponsorController.getSponsorsWithFilter);
+router.get("/summary/stats", SponsorController.getSponsorSummary);
+
 module.exports = router;
 
 

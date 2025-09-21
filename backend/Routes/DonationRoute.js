@@ -32,7 +32,7 @@ router.get("/status/:status", DonationController.getDonationsByStatus);
 router.get("/manager/pending", DonationController.getPendingDonations);
 router.get("/manager/completed", DonationController.getCompletedDonations);
 
-// New filtering and summary routes
+// Filtering and summary routes
 router.get("/filter/data", DonationController.getDonationsWithFilter);
 router.get("/summary/stats", DonationController.getDonationSummary);
 

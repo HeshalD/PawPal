@@ -10,7 +10,6 @@ import AdoptionDetailsDisplay from "./Components/AdoptionDetailsDisplay/Adoption
 import FosterDetailsDisplay from "./Components/FosterDetailsDisplay/FosterDetailsDisplay";
 
 
-
 function App() {
 
   return (
@@ -25,6 +24,7 @@ function App() {
           <Route path="/foster" element={<FosterDetails />} />
           <Route path="/adoptionDisplay" element={<AdoptionDetailsDisplay />} />
            <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
+           
         </Routes>
       </React.Fragment>
     

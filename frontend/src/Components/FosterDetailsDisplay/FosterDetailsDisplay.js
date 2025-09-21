@@ -1,24 +1,78 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import { useReactToPrint } from "react-to-print";
+import { 
+  Search, 
+  Edit3, 
+  Trash2, 
+  MessageCircle, 
+  Save, 
+  X, 
+  FileText, 
+  Users, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Calendar,
+  Heart,
+  PawPrint,
+  Home,
+  Clock,
+  Award,
+  StickyNote
+} from "lucide-react";
 
 const URL = "http://localhost:5001/fosters";
 
 export default function FosterDetailsDisplay() {
   const [fosters, setFosters] = useState([]);
+  const [filteredFosters, setFilteredFosters] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ✅ Print setup
+  const ComponentsRef = useRef();
+  const handlePrint = useReactToPrint({
+    content: () => ComponentsRef.current,
+    documentTitle: "Foster_Details",
+    onAfterPrint: () => alert("Foster details printed successfully!"),
+  });
 
   const fetchFosters = () => {
+    setIsLoading(true);
     axios
       .get(URL)
-      .then((res) => setFosters(res.data.fosters || []))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        setFosters(res.data.fosters || []);
+        setFilteredFosters(res.data.fosters || []);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
     fetchFosters();
   }, []);
+
+  // Search functionality
+  useEffect(() => {
+    if (search.trim() === "") {
+      setFilteredFosters(fosters);
+    } else {
+      const filtered = fosters.filter(
+        (f) =>
+          f.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+          f.animalName?.toLowerCase().includes(search.toLowerCase()) ||
+          f.animalType?.toLowerCase().includes(search.toLowerCase())
+      );
+      setFilteredFosters(filtered);
+    }
+  }, [search, fosters]);
 
   const startEdit = (item) => {
     setEditingId(item._id);
@@ -58,194 +112,346 @@ export default function FosterDetailsDisplay() {
     }
   };
 
-  // filter fosters based on search
-  const filteredFosters = fosters.filter(
-    (f) =>
-      f.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-      f.animalName?.toLowerCase().includes(search.toLowerCase()) ||
-      f.animalType?.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleWhatsApp = (item) => {
+    const phone = (item.contact || "").replace(/\D/g, "");
+    const formattedPhone = phone.startsWith("0") ? "94" + phone.slice(1) : phone;
+    const message = `Hello ${item.fullName}, regarding your foster request for ${item.animalName}. 🐾`;
+    const whatsappURL = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappURL, "_blank");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-center">Loading foster requests...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 py-10">
-      <div className="max-w-5xl mx-auto p-6">
-        <h2 className="text-4xl font-extrabold mb-8 text-center text-gray-800 drop-shadow-lg">
-          🐾 Foster Requests
-        </h2>
-
-        {/* Search bar */}
-        <div className="flex justify-center mb-8">
-          <input
-            type="text"
-            placeholder="Search by name or animal..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full md:w-1/2 p-3 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-          />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                <Heart className="text-green-600" size={32} />
+                Foster Care Management
+              </h1>
+              <p className="text-gray-600">Manage and view pet foster care applications</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handlePrint}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                <FileText size={20} />
+                Print All Records
+              </button>
+            </div>
+          </div>
         </div>
 
-        {!filteredFosters || filteredFosters.length === 0 ? (
-          <p className="text-center text-gray-500">No foster requests found.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredFosters.map((item) => (
-              <div
-                key={item._id || item.id}
-                className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100 hover:shadow-2xl transition duration-300 relative"
-              >
-                {editingId === (item._id || item.id) ? (
-                  <div className="space-y-3">
-                    <input
-                      name="fullName"
-                      value={editData.fullName || ""}
-                      onChange={onEditChange}
-                      placeholder="Full Name"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                      name="address"
-                      value={editData.address || ""}
-                      onChange={onEditChange}
-                      placeholder="Address"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                      name="contact"
-                      value={editData.contact || ""}
-                      onChange={onEditChange}
-                      placeholder="Contact Number"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                      name="email"
-                      value={editData.email || ""}
-                      onChange={onEditChange}
-                      placeholder="Email"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                      name="animalName"
-                      value={editData.animalName || ""}
-                      onChange={onEditChange}
-                      placeholder="Animal Name"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <input
-                      name="animalType"
-                      value={editData.animalType || ""}
-                      onChange={onEditChange}
-                      placeholder="Animal Type"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <div className="flex gap-3">
-                      <input
-                        type="date"
-                        name="fosterFrom"
-                        value={editData.fosterFrom || ""}
-                        onChange={onEditChange}
-                        className="w-1/2 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                      />
-                      <input
-                        type="date"
-                        name="fosterTo"
-                        value={editData.fosterTo || ""}
-                        onChange={onEditChange}
-                        className="w-1/2 p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                      />
-                    </div>
-                    <select
-                      name="experience"
-                      value={editData.experience || "No"}
-                      onChange={onEditChange}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    >
-                      <option value="No">No</option>
-                      <option value="Yes">Yes</option>
-                    </select>
-                    <input
-                      name="homeEnvironment"
-                      value={editData.homeEnvironment || ""}
-                      onChange={onEditChange}
-                      placeholder="Home Environment"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                    />
-                    <textarea
-                      name="notes"
-                      value={editData.notes || ""}
-                      onChange={onEditChange}
-                      placeholder="Additional Notes"
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-400"
-                      rows="2"
-                    />
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => saveEdit(item._id || item.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white py-2 px-5 rounded-lg shadow transition"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        className="bg-gray-500 hover:bg-gray-600 text-white py-2 px-5 rounded-lg shadow transition"
-                      >
-                        Cancel
-                      </button>
+        {/* Search and Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          {/* Search */}
+          <div className="lg:col-span-3">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search by name, animal name, or animal type..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm"
+              />
+            </div>
+          </div>
+          
+          {/* Stats Card */}
+          <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="text-3xl font-bold">{filteredFosters.length}</div>
+            <div className="text-green-100">Foster Requests</div>
+          </div>
+        </div>
+
+        {/* Foster Cards Grid */}
+        <div ref={ComponentsRef}>
+          {filteredFosters.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+              <PawPrint className="mx-auto text-gray-400 mb-4" size={64} />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Foster Requests Found</h3>
+              <p className="text-gray-500">
+                {search ? "Try adjusting your search terms" : "No foster applications available"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredFosters.map((item) => (
+                <div
+                  key={item._id || item.id}
+                  className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
+                >
+                  {/* Card Header */}
+                  <div className="bg-gradient-to-r from-green-600 to-teal-600 p-6 text-white">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                          <PawPrint size={20} />
+                          {item.fullName}
+                        </h3>
+                        <p className="text-green-100">Foster Application</p>
+                      </div>
+                      <div className="flex gap-2">
+                        {editingId !== (item._id || item.id) && (
+                          <>
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button
+                              onClick={() => deleteItem(item._id || item.id)}
+                              className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <h3 className="text-xl font-bold mb-3 text-gray-800">
-                      {item.fullName}
-                    </h3>
-                    <div className="space-y-2">
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Address:</span> {item.address}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Contact:</span> {item.contact}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Email:</span> {item.email}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Animal Name/ID:</span> {item.animalName}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Animal Type:</span> {item.animalType}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Foster Duration:</span> {item.fosterFrom} → {item.fosterTo}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Experience:</span> {item.experience}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Home Environment:</span> {item.homeEnvironment}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-semibold">Notes:</span> {item.notes}
-                      </p>
-                    </div>
-                    <div className="flex gap-3 mt-5">
-                      <button
-                        onClick={() => startEdit(item)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-5 rounded-lg shadow transition"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item._id || item.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white py-2 px-5 rounded-lg shadow transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+
+                  {/* Card Content */}
+                  <div className="p-6">
+                    {editingId === (item._id || item.id) ? (
+                      /* Edit Form */
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          <input
+                            name="fullName"
+                            value={editData.fullName || ""}
+                            onChange={onEditChange}
+                            placeholder="Full Name"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <textarea
+                            name="address"
+                            value={editData.address || ""}
+                            onChange={onEditChange}
+                            placeholder="Address"
+                            rows={2}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 resize-none"
+                          />
+                          <input
+                            name="contact"
+                            value={editData.contact || ""}
+                            onChange={onEditChange}
+                            placeholder="Contact Number"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <input
+                            name="email"
+                            type="email"
+                            value={editData.email || ""}
+                            onChange={onEditChange}
+                            placeholder="Email"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <input
+                            name="animalName"
+                            value={editData.animalName || ""}
+                            onChange={onEditChange}
+                            placeholder="Animal Name/ID"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <input
+                            name="animalType"
+                            value={editData.animalType || ""}
+                            onChange={onEditChange}
+                            placeholder="Animal Type"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Foster From</label>
+                              <input
+                                type="date"
+                                name="fosterFrom"
+                                value={editData.fosterFrom || ""}
+                                onChange={onEditChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">Foster To</label>
+                              <input
+                                type="date"
+                                name="fosterTo"
+                                value={editData.fosterTo || ""}
+                                onChange={onEditChange}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                              />
+                            </div>
+                          </div>
+                          <select
+                            name="experience"
+                            value={editData.experience || "No"}
+                            onChange={onEditChange}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          >
+                            <option value="No">No Experience</option>
+                            <option value="Yes">Has Experience</option>
+                          </select>
+                          <input
+                            name="homeEnvironment"
+                            value={editData.homeEnvironment || ""}
+                            onChange={onEditChange}
+                            placeholder="Home Environment"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                          />
+                          <textarea
+                            name="notes"
+                            value={editData.notes || ""}
+                            onChange={onEditChange}
+                            placeholder="Additional Notes"
+                            rows={2}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 resize-none"
+                          />
+                        </div>
+                        <div className="flex gap-3 pt-4">
+                          <button
+                            onClick={() => saveEdit(item._id || item.id)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
+                          >
+                            <Save size={16} />
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
+                          >
+                            <X size={16} />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Display Mode */
+                      <div className="space-y-4">
+                        {/* Personal Information */}
+                        <div className="space-y-3">
+                          <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <MapPin className="text-green-600 mt-1 flex-shrink-0" size={18} />
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-800 break-words">{item.address}</div>
+                              <div className="text-sm text-gray-600">Address</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                              <Phone className="text-green-600 flex-shrink-0" size={18} />
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-800 break-all">{item.contact}</div>
+                                <div className="text-sm text-gray-600">Contact</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                              <Mail className="text-green-600 flex-shrink-0" size={18} />
+                              <div className="min-w-0">
+                                <div className="font-medium text-gray-800 break-all text-sm">{item.email}</div>
+                                <div className="text-sm text-gray-600">Email</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Animal Information */}
+                        <div className="bg-blue-50 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <PawPrint className="text-blue-600" size={18} />
+                            Animal Information
+                          </h4>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <span className="font-medium text-gray-700">Name/ID:</span>
+                              <div className="text-gray-600">{item.animalName}</div>
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Type:</span>
+                              <div className="text-gray-600">{item.animalType}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Foster Period */}
+                        <div className="bg-orange-50 rounded-lg p-4">
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <Calendar className="text-orange-600" size={18} />
+                            Foster Period
+                          </h4>
+                          <div className="flex items-center gap-3 text-sm">
+                            <Clock className="text-orange-600" size={16} />
+                            <span className="text-gray-600">
+                              {item.fosterFrom} → {item.fosterTo}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Experience and Environment */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-purple-50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Award className="text-purple-600" size={16} />
+                              <span className="font-medium text-gray-700 text-sm">Experience</span>
+                            </div>
+                            <div className={`text-sm font-medium ${item.experience === 'Yes' ? 'text-green-600' : 'text-gray-600'}`}>
+                              {item.experience}
+                            </div>
+                          </div>
+                          <div className="bg-teal-50 rounded-lg p-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Home className="text-teal-600" size={16} />
+                              <span className="font-medium text-gray-700 text-sm">Home</span>
+                            </div>
+                            <div className="text-sm text-gray-600 break-words">{item.homeEnvironment}</div>
+                          </div>
+                        </div>
+
+                        {/* Notes */}
+                        {item.notes && (
+                          <div className="bg-yellow-50 rounded-lg p-4">
+                            <div className="flex items-start gap-2 mb-2">
+                              <StickyNote className="text-yellow-600 mt-0.5" size={16} />
+                              <span className="font-medium text-gray-700 text-sm">Additional Notes</span>
+                            </div>
+                            <p className="text-sm text-gray-600 break-words">{item.notes}</p>
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 pt-4">
+                          <button
+                            onClick={() => handleWhatsApp(item)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 flex-1"
+                          >
+                            <MessageCircle size={16} />
+                            WhatsApp
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

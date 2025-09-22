@@ -68,4 +68,3 @@ const sponsorSchema = new Schema({
 
 module.exports = mongoose.model("Sponsor", sponsorSchema);
 
-

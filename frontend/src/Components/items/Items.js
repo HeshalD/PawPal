@@ -4,6 +4,7 @@ import Item from "../item/Item";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import BulkOrderModal from "../order/BulkOrderModal";
 
 const URL = "http://localhost:5000/items";
 const ORDERS_URL = "http://localhost:5000/orders";
@@ -20,6 +21,7 @@ function Items() {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortMode, setSortMode] = useState("none"); // none | category-asc | category-desc
+  const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -142,6 +144,18 @@ const paginatedItems = useMemo(() => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-[#333333]">Product</h1>
           <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowBulkOrderModal(true)} 
+              className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white font-semibold px-4 py-2 rounded-md shadow-sm"
+            >
+              Place Order
+            </button>
+            <button 
+              onClick={() => navigate('/orders')} 
+              className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE]"
+            >
+              View Orders
+            </button>
             <div className="hidden sm:flex items-center gap-2 bg-white border border-[#E6F4F3] rounded-full px-3 py-2 shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#9aa7a6]" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l3.387 3.387a1 1 0 01-1.414 1.414l-3.387-3.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd"/></svg>
               <input onChange={(e) => setSearchQuery(e.target.value)} value={searchQuery} type="text" placeholder="Search" className="outline-none text-sm text-[#333333] placeholder-[#9aa7a6]" />
@@ -191,7 +205,7 @@ const paginatedItems = useMemo(() => {
             </thead>
             <tbody className="divide-y divide-[#E6F4F3]">
               {paginatedItems && paginatedItems.map((item, i) => (
-                <Item key={`${item._id}-${i}`} item={item} onDelete={handleDelete} onOrder={handleOrder} />
+                <Item key={`${item._id}-${i}`} item={item} onDelete={handleDelete} />
               ))}
             </tbody>
           </table>
@@ -212,6 +226,13 @@ const paginatedItems = useMemo(() => {
           </div>
         </div>
       </div>
+      
+      <BulkOrderModal
+        items={items}
+        isOpen={showBulkOrderModal}
+        onClose={() => setShowBulkOrderModal(false)}
+        onOrder={handleOrder}
+      />
     </div>
   );
 }

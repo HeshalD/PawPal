@@ -1,11 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import OrderModal from "../order/OrderModal";
 
-function Item({ item, onDelete, onOrder }) {
+function Item({ item, onDelete }) {
   const { _id, Item_Name, Category, Description, Unit_of_Measure, Quantity, Price, image } = item;
   const navigate = useNavigate();
-  const [showOrderModal, setShowOrderModal] = useState(false);
 
   const status = useMemo(() => {
     // Simple derived status for demo: alternate by price / category
@@ -18,20 +16,6 @@ function Item({ item, onDelete, onOrder }) {
     const ok = window.confirm("Are you sure you want to delete this item?");
     if (!ok) return;
     onDelete && onDelete(_id);
-  };
-
-  const handleOrderClick = () => {
-    setShowOrderModal(true);
-  };
-
-  const handleOrderSubmit = async (orderData) => {
-    try {
-      await onOrder(orderData);
-      setShowOrderModal(false);
-    } catch (error) {
-      console.error("Order submission failed:", error);
-      throw error;
-    }
   };
 
   return (
@@ -62,24 +46,11 @@ function Item({ item, onDelete, onOrder }) {
         </td>
         <td className="py-3 px-6 align-middle">
           <div className="inline-flex gap-2">
-            <button 
-              onClick={handleOrderClick} 
-              className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors"
-              disabled={Quantity === 0}
-            >
-              Order
-            </button>
             <button onClick={() => navigate(`/items/${_id}/edit`)} className="bg-[#4CB5AE] hover:bg-[#3aa39c] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors">Edit</button>
             <button onClick={handleDeleteClick} className="bg-white border border-[#fee2e2] text-[#b91c1c] hover:bg-[#fff5f5] text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm">Delete</button>
           </div>
         </td>
       </tr>
-      <OrderModal
-        item={item}
-        isOpen={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
-        onOrder={handleOrderSubmit}
-      />
     </>
   );
 }

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 // Note: This is the URL for your actual implementation
-// const API_URL = 'http://localhost:5001/adoptions/add';
+const API_URL = 'http://localhost:5001/adoptions/add';
 
 function AdoptionDetails() {
   const [formData, setFormData] = useState({
@@ -103,7 +104,7 @@ function AdoptionDetails() {
     // Demo simulation - Replace with actual axios implementation
     try {
       // In your actual implementation, use:
-      /*
+      
       const formDataToSend = new FormData();
       formDataToSend.append('fullName', formData.fullName);
       formDataToSend.append('email', formData.email);
@@ -119,7 +120,7 @@ function AdoptionDetails() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      */
+      
       
       // Demo simulation
       setTimeout(() => {

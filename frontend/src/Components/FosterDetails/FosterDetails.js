@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import axios from 'axios';
 
 // Note: This is the URL for your actual implementation
-// const URL = "http://localhost:5001/fosters";
+ const URL = "http://localhost:5001/fosters";
 
 export default function FosterDetails() {
   const [formData, setFormData] = useState({
@@ -36,7 +37,7 @@ export default function FosterDetails() {
     
     // Simulate API call for demo purposes
     // In your actual implementation, use:
-    /*
+    
     try {
       const res = await axios.post(URL, formData);
       if (res && res.data && res.data.foster) {
@@ -61,7 +62,7 @@ export default function FosterDetails() {
     } finally {
       setIsLoading(false);
     }
-    */
+  
     
     // Demo simulation
     setTimeout(() => {

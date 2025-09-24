@@ -63,4 +63,3 @@ export const DonationsAPI = {
   getFiltered: (params) => apiClient.get('/donations/filter/data', { params }),
   getSummary: () => apiClient.get('/donations/summary/stats'),
 };
-

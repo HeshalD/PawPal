@@ -8,6 +8,8 @@ import Items from './Components/items/Items';
 import ItemEdit from './Components/items/ItemEdit';
 import ItemCreate from './Components/items/ItemCreate';
 import Shop from './Components/shop/Shop';
+import DonationForm from './Components/donation/DonationForm';
+import Orders from './Components/order/Orders';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
           <Route path="/items/new" element={<ItemCreate/>}/>
           <Route path="/items/:id/edit" element={<ItemEdit/>}/>
           <Route path="/shop" element={<Shop/>}/>
+          <Route path="/donation" element={<DonationForm/>}/>
+          <Route path="/orders" element={<Orders/>}/>
         </Routes>
       </div>
   );

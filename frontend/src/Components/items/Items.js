@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 const URL = "http://localhost:5000/items";
+const ORDERS_URL = "http://localhost:5000/orders";
 
 const fetchHandler = async () => {
   return await axios.get(URL).then((res) => res.data);
@@ -32,6 +33,17 @@ function Items() {
     } catch (e) {
       console.error("Failed to delete", e);
       // Optionally surface UI feedback here
+    }
+  };
+
+  const handleOrder = async (orderData) => {
+    try {
+      await axios.post(ORDERS_URL, orderData);
+      alert("Order placed successfully!");
+    } catch (error) {
+      console.error("Failed to place order:", error);
+      alert("Failed to place order. Please try again.");
+      throw error;
     }
   };
 
@@ -134,14 +146,6 @@ const paginatedItems = useMemo(() => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#9aa7a6]" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M12.9 14.32a8 8 0 111.414-1.414l3.387 3.387a1 1 0 01-1.414 1.414l-3.387-3.387zM14 8a6 6 0 11-12 0 6 6 0 0112 0z" clipRule="evenodd"/></svg>
               <input onChange={(e) => setSearchQuery(e.target.value)} value={searchQuery} type="text" placeholder="Search" className="outline-none text-sm text-[#333333] placeholder-[#9aa7a6]" />
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-[#64706f]">Showing</label>
-              <select value={pageSize} onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setCurrentPage(1); }} className="bg-white border border-[#E6F4F3] rounded-md px-2 py-2 text-sm text-[#333333]">
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
-            </div>
             <div className="inline-flex items-center gap-2 bg-white border border-[#E6F4F3] rounded-md px-2 py-2 shadow-sm">
               <span className="text-sm text-[#64706f]">Filter</span>
               <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }} className="bg-transparent text-sm text-[#333333] outline-none">
@@ -161,12 +165,12 @@ const paginatedItems = useMemo(() => {
               </select>
             </div>
             <button onClick={handleExportPdf} className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE]">Export</button>
-            <button onClick={() => navigate('/items/new')} className="bg-[#6638E6] hover:bg-[#E6738F] text-white font-semibold px-4 py-2 rounded-md shadow-sm">+ Add New Product</button>
+            <button onClick={() => navigate('/items/new')} className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white font-semibold px-4 py-2 rounded-md shadow-sm">+ Add New Product</button>
           </div>
         </div>
 
         <div className="overflow-x-auto bg-white shadow-lg rounded-lg border border-[#E6F4F3]">
-          <div className="bg-[#6638E6] text-white px-6 py-3 rounded-t-lg">
+          <div className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] text-white px-6 py-3 rounded-t-lg">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Items List</span>
               <span className="text-white/80 text-sm">Showing {paginatedItems.length} of {filteredItems.length}</span>
@@ -187,7 +191,7 @@ const paginatedItems = useMemo(() => {
             </thead>
             <tbody className="divide-y divide-[#E6F4F3]">
               {paginatedItems && paginatedItems.map((item, i) => (
-                <Item key={`${item._id}-${i}`} item={item} onDelete={handleDelete} />
+                <Item key={`${item._id}-${i}`} item={item} onDelete={handleDelete} onOrder={handleOrder} />
               ))}
             </tbody>
           </table>
@@ -200,7 +204,7 @@ const paginatedItems = useMemo(() => {
               {Array.from({ length: totalPages }).slice(0, 5).map((_, idx) => {
                 const page = idx + 1;
                 return (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`w-8 h-8 rounded-md text-sm border ${page === currentPageClamped ? 'bg-[#6638E6] text-white border-[#6638E6]' : 'bg-white text-[#333333] border-[#E6F4F3] hover:bg-[#E69AAE]'}`}>{page}</button>
+                  <button key={page} onClick={() => setCurrentPage(page)} className={`w-8 h-8 rounded-md text-sm border ${page === currentPageClamped ? 'bg-gradient-to-r from-[#6638E6] to-[#E6738F] text-white border-[#6638E6]' : 'bg-white text-[#333333] border-[#E6F4F3] hover:bg-[#E69AAE]'}`}>{page}</button>
                 );
               })}
               <button disabled={currentPageClamped === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className={`px-3 py-1.5 rounded-md text-sm border ${currentPageClamped === totalPages ? 'text-[#9aa7a6] border-[#E6F4F3] bg-[#f8fafb]' : 'text-[#333333] border-[#E6F4F3] bg-white hover:bg-[#F5F5F5]'}`}>Next</button>

@@ -56,7 +56,7 @@ function ItemCreate() {
     <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
       <div className="w-full max-w-3xl px-4 sm:px-6 lg:px-8 mx-auto">
         <div className="bg-white shadow-lg rounded-lg border border-[#E6F4F3] overflow-hidden">
-          <div className="bg-[#6638E6] text-white px-6 py-4">
+          <div className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] text-white px-6 py-4">
             <h1 className="text-2xl font-semibold">Add New Item</h1>
             <p className="text-white/80 text-sm">Fill in the details</p>
           </div>
@@ -199,7 +199,7 @@ function ItemCreate() {
               <button
                 type="submit"
                 disabled={saving}
-                className="bg-[#6638E6] hover:bg-[#E6738F] text-white font-semibold px-5 py-2 rounded-md shadow-sm disabled:opacity-60"
+                className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white font-semibold px-5 py-2 rounded-md shadow-sm disabled:opacity-60"
               >
                 {saving ? "Creating..." : "Create Item"}
               </button>

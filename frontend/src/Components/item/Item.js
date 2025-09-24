@@ -1,9 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import OrderModal from "../order/OrderModal";
 
-function Item({ item, onDelete }) {
+function Item({ item, onDelete, onOrder }) {
   const { _id, Item_Name, Category, Description, Unit_of_Measure, Quantity, Price, image } = item;
   const navigate = useNavigate();
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   const status = useMemo(() => {
     // Simple derived status for demo: alternate by price / category
@@ -18,38 +20,67 @@ function Item({ item, onDelete }) {
     onDelete && onDelete(_id);
   };
 
+  const handleOrderClick = () => {
+    setShowOrderModal(true);
+  };
+
+  const handleOrderSubmit = async (orderData) => {
+    try {
+      await onOrder(orderData);
+      setShowOrderModal(false);
+    } catch (error) {
+      console.error("Order submission failed:", error);
+      throw error;
+    }
+  };
+
   return (
-    <tr className="odd:bg-white even:bg-[#F5F5F5] hover:bg-[#EAF7F6] transition-colors">
-      <td className="py-3 px-6 align-middle">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md overflow-hidden bg-[#f1f5f9] flex items-center justify-center">
-            {image ? (
-              <img src={`http://localhost:5000${image}`} alt="item" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xs text-[#94a3b8]">N/A</span>
-            )}
+    <>
+      <tr className="odd:bg-white even:bg-[#F5F5F5] hover:bg-[#EAF7F6] transition-colors">
+        <td className="py-3 px-6 align-middle">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md overflow-hidden bg-[#f1f5f9] flex items-center justify-center">
+              {image ? (
+                <img src={`http://localhost:5000${image}`} alt="item" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs text-[#94a3b8]">N/A</span>
+              )}
+            </div>
+            <div>
+              <div className="text-[#0f172a] font-medium leading-tight">{Item_Name}</div>
+              <div className="text-xs text-[#64748b]">{Description}</div>
+            </div>
           </div>
-          <div>
-            <div className="text-[#0f172a] font-medium leading-tight">{Item_Name}</div>
-            <div className="text-xs text-[#64748b]">{Description}</div>
+        </td>
+        <td className="py-3 px-6 align-middle whitespace-nowrap text-[#333333]">#{_id?.slice(-6)}</td>
+        <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Price !== undefined ? `$${parseFloat(Price).toFixed(2)}` : '-'}</td>
+        <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Quantity ?? 0}</td>
+        <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Unit_of_Measure}</td>
+        <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Category}</td>
+        <td className="py-3 px-6 align-middle">
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}`}>{status.label}</span>
+        </td>
+        <td className="py-3 px-6 align-middle">
+          <div className="inline-flex gap-2">
+            <button 
+              onClick={handleOrderClick} 
+              className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors"
+              disabled={Quantity === 0}
+            >
+              Order
+            </button>
+            <button onClick={() => navigate(`/items/${_id}/edit`)} className="bg-[#4CB5AE] hover:bg-[#3aa39c] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors">Edit</button>
+            <button onClick={handleDeleteClick} className="bg-white border border-[#fee2e2] text-[#b91c1c] hover:bg-[#fff5f5] text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm">Delete</button>
           </div>
-        </div>
-      </td>
-      <td className="py-3 px-6 align-middle whitespace-nowrap text-[#333333]">#{_id?.slice(-6)}</td>
-      <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Price !== undefined ? `$${parseFloat(Price).toFixed(2)}` : '-'}</td>
-      <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Quantity ?? 0}</td>
-      <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Unit_of_Measure}</td>
-      <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Category}</td>
-      <td className="py-3 px-6 align-middle">
-        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}`}>{status.label}</span>
-      </td>
-      <td className="py-3 px-6 align-middle">
-        <div className="inline-flex gap-2">
-          <button onClick={() => navigate(`/items/${_id}/edit`)} className="bg-[#4CB5AE] hover:bg-[#3aa39c] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors">Edit</button>
-          <button onClick={handleDeleteClick} className="bg-white border border-[#fee2e2] text-[#b91c1c] hover:bg-[#fff5f5] text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm">Delete</button>
-        </div>
-      </td>
-    </tr>
+        </td>
+      </tr>
+      <OrderModal
+        item={item}
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        onOrder={handleOrderSubmit}
+      />
+    </>
   );
 }
 

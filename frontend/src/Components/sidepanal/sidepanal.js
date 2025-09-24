@@ -46,12 +46,6 @@ function Sidepanal() {
           Inventory
         </Link>
         <Link
-          to="/orders"
-          className="block px-3 py-2 rounded-md hover:bg-[#E69AAE] transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-[#E69AAE] focus:ring-offset-2 focus:ring-offset-[#6638E6]"
-        >
-          Orders
-        </Link>
-        <Link
           to="/shop"
           className="block px-3 py-2 rounded-md hover:bg-[#E69AAE] transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-[#E69AAE] focus:ring-offset-2 focus:ring-offset-[#6638E6]"
         >

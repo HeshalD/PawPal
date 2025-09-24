@@ -261,3 +261,4 @@ function BulkOrderModal({ items, isOpen, onClose, onOrder }) {
 }
 
 export default BulkOrderModal;
+

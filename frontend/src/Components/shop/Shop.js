@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
+import OrderModal from "../order/OrderModal";
 
 const URL = "http://localhost:5000/items";
+const ORDERS_URL = "http://localhost:5000/orders";
 
 const fetchHandler = async () => {
   return await axios.get(URL).then((res) => res.data);
@@ -13,6 +15,8 @@ function Shop() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortBy, setSortBy] = useState("name"); // name, price-asc, price-desc, category
   const [loading, setLoading] = useState(true);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   useEffect(() => {
     const loadItems = async () => {
@@ -75,6 +79,11 @@ function Shop() {
     return { text: "In Stock", color: "text-green-600 bg-green-50" };
   };
 
+  const handleOrder = async (orderData) => {
+    await axios.post(ORDERS_URL, orderData);
+    alert("Order placed successfully!");
+  };
+
   if (loading) {
     return (
       <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
@@ -99,8 +108,16 @@ function Shop() {
             <h1 className="text-4xl font-bold text-[#333333] mb-2">Pet Shop</h1>
             <p className="text-[#64706f]">Discover amazing products for your furry friends</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-[#64706f]">Showing {filteredAndSortedItems.length} products</p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-[#64706f] hidden sm:block">Showing {filteredAndSortedItems.length} products</p>
+            <button
+              disabled={!selectedItem || selectedItem?.Quantity === 0}
+              onClick={() => setShowOrderModal(true)}
+              className={`font-medium px-4 py-2 rounded-md shadow-sm transition-colors ${!selectedItem || selectedItem?.Quantity === 0 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white'}`}
+              title={!selectedItem ? 'Select a product to enable checkout' : ''}
+            >
+              Checkout
+            </button>
           </div>
         </div>
 
@@ -166,7 +183,7 @@ function Shop() {
             {filteredAndSortedItems.map((item) => {
               const stockStatus = getStockStatus(item.Quantity);
               return (
-                <div key={item._id} className="bg-white rounded-lg shadow-sm border border-[#E6F4F3] overflow-hidden hover:shadow-md transition-shadow duration-200">
+                <div key={item._id} className="bg-white rounded-lg shadow-sm border border-[#E6F4F3] overflow-hidden hover:shadow-md transition-shadow duration-200" onClick={() => setSelectedItem(item)}>
                   {/* Product Image */}
                   <div className="aspect-square bg-gray-100 relative overflow-hidden">
                     {item.image ? (
@@ -223,10 +240,18 @@ function Shop() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm text-[#64706f]">
+                    <div className="flex items-center justify-between text-sm text-[#64706f] mb-4">
                       <span>Stock: {item.Quantity || 0}</span>
                       <span>ID: {item._id?.slice(-6) || 'N/A'}</span>
                     </div>
+
+                    <button
+                      disabled={item.Quantity === 0}
+                      onClick={() => { setSelectedItem(item); setShowOrderModal(true); }}
+                      className={`w-full text-center font-semibold px-4 py-2 rounded-md shadow-sm transition-colors ${item.Quantity === 0 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white'}`}
+                    >
+                      {item.Quantity === 0 ? 'Out of Stock' : 'Order'}
+                    </button>
                   </div>
                 </div>
               );
@@ -234,6 +259,13 @@ function Shop() {
           </div>
         )}
       </div>
+
+      <OrderModal
+        item={selectedItem}
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        onOrder={handleOrder}
+      />
     </div>
   );
 }

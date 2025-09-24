@@ -4,7 +4,7 @@ import Item from "../item/Item";
 import { useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import BulkOrderModal from "../order/BulkOrderModal";
+// Removed bulk order from inventory view
 
 const URL = "http://localhost:5000/items";
 const ORDERS_URL = "http://localhost:5000/orders";
@@ -21,7 +21,7 @@ function Items() {
   const [currentPage, setCurrentPage] = useState(1);
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [sortMode, setSortMode] = useState("none"); // none | category-asc | category-desc
-  const [showBulkOrderModal, setShowBulkOrderModal] = useState(false);
+  // Bulk order modal removed per requirement
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,16 +38,7 @@ function Items() {
     }
   };
 
-  const handleOrder = async (orderData) => {
-    try {
-      await axios.post(ORDERS_URL, orderData);
-      alert("Order placed successfully!");
-    } catch (error) {
-      console.error("Failed to place order:", error);
-      alert("Failed to place order. Please try again.");
-      throw error;
-    }
-  };
+  // Order placement from inventory removed
 
   /* legacy export + search kept for reference */
 
@@ -144,12 +135,7 @@ const paginatedItems = useMemo(() => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold text-[#333333]">Product</h1>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowBulkOrderModal(true)} 
-              className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white font-semibold px-4 py-2 rounded-md shadow-sm"
-            >
-              Place Order
-            </button>
+            {/* Order button removed from inventory per requirement */}
             <button 
               onClick={() => navigate('/orders')} 
               className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE]"
@@ -227,12 +213,7 @@ const paginatedItems = useMemo(() => {
         </div>
       </div>
       
-      <BulkOrderModal
-        items={items}
-        isOpen={showBulkOrderModal}
-        onClose={() => setShowBulkOrderModal(false)}
-        onOrder={handleOrder}
-      />
+      {/* BulkOrderModal removed */}
     </div>
   );
 }

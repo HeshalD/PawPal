@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useReactToPrint } from "react-to-print";
-import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar } from "lucide-react";
+import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
 const URL = "http://localhost:5001/adoptions";
 
@@ -17,6 +17,8 @@ function AdoptionDetailsDisplay() {
   const [editData, setEditData] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [updatingStatus, setUpdatingStatus] = useState(null);
 
   // ✅ Print setup
   const ComponentsRef = useRef();
@@ -34,21 +36,49 @@ function AdoptionDetailsDisplay() {
     });
   }, []);
 
-  // Search functionality
+  // Status utility functions
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+      case 'completed': return 'bg-blue-100 text-blue-800 border-blue-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending': return <Clock size={16} />;
+      case 'approved': return <CheckCircle size={16} />;
+      case 'rejected': return <XCircle size={16} />;
+      case 'completed': return <AlertCircle size={16} />;
+      default: return <Clock size={16} />;
+    }
+  };
+
+  // Search and filter functionality
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredAdoptions(adoption);
-    } else {
-      const filtered = adoption.filter(item =>
+    let filtered = adoption;
+
+    // Apply search filter
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter(item =>
         item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.selectedPets.some(pet => 
           pet.toLowerCase().includes(searchTerm.toLowerCase())
         )
       );
-      setFilteredAdoptions(filtered);
     }
-  }, [searchTerm, adoption]);
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(item => item.status === statusFilter);
+    }
+
+    setFilteredAdoptions(filtered);
+  }, [searchTerm, adoption, statusFilter]);
 
   const startEdit = (item) => {
     setEditingId(item._id);
@@ -132,6 +162,51 @@ function AdoptionDetailsDisplay() {
     if (item) startEdit(item);
   };
 
+  // Update adoption status
+  const updateStatus = async (id, newStatus, adminNotes = '') => {
+    setUpdatingStatus(id);
+    try {
+      const response = await axios.put(`${URL}/status/${id}`, {
+        status: newStatus,
+        adminNotes: adminNotes
+      });
+      
+      // Update local state
+      setAdoption(prev => 
+        prev.map(item => 
+          item._id === id ? { ...item, status: newStatus, adminNotes: adminNotes, updatedAt: new Date() } : item
+        )
+      );
+      
+      alert(`Application status updated to ${newStatus.toUpperCase()} successfully!`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update status. Please try again.');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
+  // Quick status update handlers
+  const handleApprove = (id) => {
+    if (window.confirm('Are you sure you want to approve this adoption application?')) {
+      updateStatus(id, 'approved', 'Application approved by admin');
+    }
+  };
+
+  const handleReject = (id) => {
+    const reason = prompt('Please enter the reason for rejection:');
+    if (reason !== null) {
+      updateStatus(id, 'rejected', reason || 'Application rejected by admin');
+    }
+  };
+
+  const handleComplete = (id) => {
+    if (window.confirm('Mark this adoption as completed? This means the pet has been successfully adopted.')) {
+      updateStatus(id, 'completed', 'Adoption process completed successfully');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -168,8 +243,8 @@ function AdoptionDetailsDisplay() {
           </div>
         </div>
 
-        {/* Search and Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        {/* Search, Filter and Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-8">
           {/* Search */}
           <div className="lg:col-span-3">
             <div className="relative">
@@ -183,11 +258,66 @@ function AdoptionDetailsDisplay() {
               />
             </div>
           </div>
+
+          {/* Status Filter */}
+          <div className="lg:col-span-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 shadow-sm"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
           
           {/* Stats Card */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white shadow-lg">
             <div className="text-3xl font-bold">{filteredAdoptions.length}</div>
-            <div className="text-indigo-100">Total Applications</div>
+            <div className="text-indigo-100">Applications</div>
+          </div>
+        </div>
+
+        {/* Status Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-yellow-200">
+            <div className="flex items-center gap-2 text-yellow-600 mb-2">
+              <Clock size={20} />
+              <span className="font-semibold">Pending</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-800">
+              {adoption.filter(item => item.status === 'pending').length}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
+            <div className="flex items-center gap-2 text-green-600 mb-2">
+              <CheckCircle size={20} />
+              <span className="font-semibold">Approved</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-800">
+              {adoption.filter(item => item.status === 'approved').length}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-200">
+            <div className="flex items-center gap-2 text-red-600 mb-2">
+              <XCircle size={20} />
+              <span className="font-semibold">Rejected</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-800">
+              {adoption.filter(item => item.status === 'rejected').length}
+            </div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
+            <div className="flex items-center gap-2 text-blue-600 mb-2">
+              <AlertCircle size={20} />
+              <span className="font-semibold">Completed</span>
+            </div>
+            <div className="text-2xl font-bold text-gray-800">
+              {adoption.filter(item => item.status === 'completed').length}
+            </div>
           </div>
         </div>
 
@@ -209,26 +339,76 @@ function AdoptionDetailsDisplay() {
               >
                 {/* Card Header */}
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold">Application #{index + 1}</h3>
-                      <p className="text-indigo-100">Submitted by {item.fullName}</p>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-bold">Application #{index + 1}</h3>
+                        <p className="text-indigo-100">Submitted by {item.fullName}</p>
+                        <p className="text-indigo-200 text-sm">
+                          {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'Date not available'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {/* Status Badge */}
+                        <div className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-2 ${getStatusColor(item.status || 'pending')}`}>
+                          {getStatusIcon(item.status || 'pending')}
+                          {(item.status || 'pending').toUpperCase()}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2">
                       {editingId !== item._id && (
-                        <button
-                          onClick={() => handleUpdate(item._id)}
-                          className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
-                        >
-                          <Edit3 size={16} />
-                          Edit
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleUpdate(item._id)}
+                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
+                          >
+                            <Edit3 size={14} />
+                            Edit
+                          </button>
+                          
+                          {item.status !== 'approved' && (
+                            <button
+                              onClick={() => handleApprove(item._id)}
+                              disabled={updatingStatus === item._id}
+                              className="bg-green-500/20 hover:bg-green-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                            >
+                              <CheckCircle size={14} />
+                              {updatingStatus === item._id ? 'Updating...' : 'Approve'}
+                            </button>
+                          )}
+                          
+                          {item.status !== 'rejected' && (
+                            <button
+                              onClick={() => handleReject(item._id)}
+                              disabled={updatingStatus === item._id}
+                              className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                            >
+                              <XCircle size={14} />
+                              Reject
+                            </button>
+                          )}
+                          
+                          {item.status === 'approved' && (
+                            <button
+                              onClick={() => handleComplete(item._id)}
+                              disabled={updatingStatus === item._id}
+                              className="bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                            >
+                              <AlertCircle size={14} />
+                              Complete
+                            </button>
+                          )}
+                        </>
                       )}
+                      
                       <button
                         onClick={() => handleDelete(item._id)}
-                        className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
+                        className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                         Delete
                       </button>
                     </div>
@@ -393,7 +573,7 @@ function AdoptionDetailsDisplay() {
                             <DollarSign className="text-green-600" size={20} />
                             <div>
                               <div className="font-semibold text-gray-800">
-                                ${item.salary?.toLocaleString()}
+                                Rs {item.salary?.toLocaleString()}
                               </div>
                               <div className="text-sm text-gray-600">Monthly Salary</div>
                             </div>
@@ -450,6 +630,22 @@ function AdoptionDetailsDisplay() {
                           </div>
                         )}
                       </div>
+
+                      {/* Admin Notes Section */}
+                      {item.adminNotes && (
+                        <div className="bg-gray-50 rounded-lg p-6">
+                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                            <FileText className="text-gray-600" size={20} />
+                            Admin Notes
+                          </h4>
+                          <div className="text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
+                            {item.adminNotes}
+                          </div>
+                          <div className="text-sm text-gray-500 mt-2">
+                            Last updated: {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Not available'}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

@@ -13,7 +13,8 @@ const getAllFosters = async (req, res) => {
 // Add a foster request
 const addFoster = async (req, res) => {
   try {
-    const foster = new Foster(req.body);
+    const payload = { ...req.body, status: "pending" };
+    const foster = new Foster(payload);
     await foster.save();
     res.status(201).json({ foster });
   } catch (err) {
@@ -49,4 +50,30 @@ const deleteFoster = async (req, res) => {
   }
 };
 
-module.exports = { getAllFosters, addFoster, updateFoster, deleteFoster };
+// Update only status of a foster request
+const updateFosterStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowed = ["pending", "approved", "completed"];
+    const next = String(status || "").toLowerCase();
+    if (!allowed.includes(next)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+    const updated = await Foster.findByIdAndUpdate(
+      id,
+      { status: next },
+      { new: true, runValidators: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ message: "Foster request not found" });
+    }
+    res.status(200).json({ foster: updated });
+  } catch (err) {
+    res.status(400).json({ message: "Error updating foster status", error: err.message });
+  }
+};
+
+module.exports = { getAllFosters, addFoster, updateFoster, deleteFoster, updateFosterStatus };
+
+// Delete a foster request

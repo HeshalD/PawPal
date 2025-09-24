@@ -20,6 +20,8 @@ export default function FosterDetails() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [submission, setSubmission] = useState(null); // holds last submitted foster
+  const [isEditingSubmission, setIsEditingSubmission] = useState(false);
 
   // input change handle
   const handleChange = (e) => {
@@ -30,18 +32,17 @@ export default function FosterDetails() {
     });
   };
 
-  // form submit - Replace this with your actual axios implementation
+  // form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // Simulate API call for demo purposes
-    // In your actual implementation, use:
-    
+
     try {
       const res = await axios.post(URL, formData);
       if (res && res.data && res.data.foster) {
-        alert("Foster request submitted successfully!");
+        const created = res.data.foster;
+        setSubmission(created);
+        alert(`Foster request submitted successfully! Status: ${created.status?.toUpperCase() || 'PENDING'}`);
         setFormData({
           fullName: "",
           address: "",
@@ -62,26 +63,56 @@ export default function FosterDetails() {
     } finally {
       setIsLoading(false);
     }
-  
-    
-    // Demo simulation
-    setTimeout(() => {
-      alert("Foster request submitted successfully! (Demo Mode)");
-      setFormData({
-        fullName: "",
-        address: "",
-        contact: "",
-        email: "",
-        animalName: "",
-        animalType: "",
-        fosterFrom: "",
-        fosterTo: "",
-        experience: "No",
-        homeEnvironment: "",
-        notes: ""
-      });
+  };
+
+  // allow editing submitted request while pending
+  const beginEditSubmission = () => {
+    if (!submission) return;
+    setFormData({
+      fullName: submission.fullName || "",
+      address: submission.address || "",
+      contact: submission.contact || "",
+      email: submission.email || "",
+      animalName: submission.animalName || "",
+      animalType: submission.animalType || "",
+      fosterFrom: submission.fosterFrom || "",
+      fosterTo: submission.fosterTo || "",
+      experience: submission.experience || "No",
+      homeEnvironment: submission.homeEnvironment || "",
+      notes: submission.notes || "",
+    });
+    setIsEditingSubmission(true);
+  };
+
+  const saveSubmissionEdits = async () => {
+    if (!submission?._id) return;
+    setIsLoading(true);
+    try {
+      const res = await axios.put(`${URL}/${submission._id}`, formData);
+      if (res && res.data && res.data.foster) {
+        setSubmission(res.data.foster);
+        alert("Your submission was updated successfully.");
+        setIsEditingSubmission(false);
+        setFormData({
+          fullName: "",
+          address: "",
+          contact: "",
+          email: "",
+          animalName: "",
+          animalType: "",
+          fosterFrom: "",
+          fosterTo: "",
+          experience: "No",
+          homeEnvironment: "",
+          notes: ""
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update your submission. Please try again.");
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -369,6 +400,40 @@ export default function FosterDetails() {
           <div className="text-center mt-8 text-gray-600">
             <p className="text-sm">Thank you for your interest in fostering. We'll review your application and get back to you soon!</p>
           </div>
+
+          {/* Submission Status */}
+          {submission && (
+            <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">Submission Status</h3>
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                    style={{
+                      backgroundColor: submission.status === 'approved' ? '#dcfce7' : submission.status === 'completed' ? '#e0e7ff' : '#fef9c3',
+                      color: submission.status === 'approved' ? '#166534' : submission.status === 'completed' ? '#3730a3' : '#854d0e'
+                    }}
+                  >
+                    {submission.status ? submission.status.toUpperCase() : 'PENDING'}
+                  </div>
+                  <p className="mt-2 text-gray-600 text-sm">Reference ID: {submission._id}</p>
+                </div>
+                <div>
+                  {submission.status === 'pending' ? (
+                    !isEditingSubmission ? (
+                      <button onClick={beginEditSubmission} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Edit Submission</button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button onClick={saveSubmissionEdits} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-60">Save Changes</button>
+                        <button onClick={() => setIsEditingSubmission(false)} className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Cancel</button>
+                      </div>
+                    )
+                  ) : (
+                    <p className="text-sm text-gray-500">Editing disabled after approval/completion.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

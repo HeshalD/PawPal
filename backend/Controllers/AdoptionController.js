@@ -30,22 +30,20 @@ const upload = multer({
 });
 
 // Data Display
-const getAllAdoptions = async(req, res, next) =>{
-
-    let Adoptions;
-
-    try{
+const getAllAdoptions = async (req, res, next) => {
+    let adoptions;
+    try {
         adoptions = await Adoption.find();
-    }catch (err) {
+    } catch (err) {
         console.log(err);
+        return res.status(500).json({ message: "Error fetching adoptions", error: err.message });
     }
     // not found
-    if(!adoptions){
-        return res.status(404).json({message: "Adoptor not found"});
+    if (!adoptions) {
+        return res.status(404).json({ message: "Adoptor not found" });
     }
     //Display all adoptions
     return res.status(200).json({ adoptions });
-
 };
 
 //Data Insert
@@ -115,8 +113,7 @@ const UpdateAdoptions = async (req, res, next) => {
 
     try{
         adoptions = await Adoption.findByIdAndUpdate(id,
-        {fullName: fullName, email: email, age: age, phone: phone, address: address, salary: salary, selectedPets: selectedPets})
-        adoptions = await adoptions.save();
+        {fullName: fullName, email: email, age: age, phone: phone, address: address, salary: salary, selectedPets: selectedPets, updatedAt: Date.now()}, {new: true})
     }catch(err) {
         console.log(err);
     }
@@ -126,6 +123,57 @@ const UpdateAdoptions = async (req, res, next) => {
     }
     return res.status(200).json({ adoptions });
 
+};
+
+//Update adoption status (Admin only)
+const updateAdoptionStatus = async (req, res, next) => {
+    const id = req.params.id;
+    const { status, adminNotes } = req.body;
+
+    // Validate status
+    const validStatuses = ['pending', 'approved', 'rejected', 'completed'];
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({message: "Invalid status. Must be one of: pending, approved, rejected, completed"});
+    }
+
+    let adoption;
+
+    try{
+        adoption = await Adoption.findByIdAndUpdate(id,
+        {
+            status: status, 
+            adminNotes: adminNotes || '',
+            updatedAt: Date.now()
+        }, 
+        {new: true})
+    }catch(err) {
+        console.log(err);
+        return res.status(500).json({message: "Error updating status", error: err.message});
+    }
+    
+    if(!adoption){
+        return res.status(404).json({message:"Adoption record not found."}); 
+    }
+    return res.status(200).json({ adoption });
+};
+
+//Get adoption by email (for user to check their application status)
+const getAdoptionByEmail = async (req, res, next) => {
+    const email = req.params.email;
+
+    let adoptions;
+
+    try{
+        adoptions = await Adoption.find({email: email}).sort({submittedAt: -1});
+    }catch (err) {
+        console.log(err);
+        return res.status(500).json({message: "Error fetching adoptions", error: err.message});
+    }
+    
+    if(!adoptions || adoptions.length === 0){
+        return res.status(404).json({message:"No adoption applications found for this email."}); 
+    }
+    return res.status(200).json({ adoptions });
 };
 
 //Delete Adoption details
@@ -154,5 +202,7 @@ exports.getAllAdoptions = getAllAdoptions;
 exports.addAdoptions = addAdoptions;
 exports.getById = getById;
 exports.UpdateAdoptions = UpdateAdoptions;
+exports.updateAdoptionStatus = updateAdoptionStatus;
+exports.getAdoptionByEmail = getAdoptionByEmail;
 exports.DeleteAdoptions = DeleteAdoptions;
 exports.upload = upload;

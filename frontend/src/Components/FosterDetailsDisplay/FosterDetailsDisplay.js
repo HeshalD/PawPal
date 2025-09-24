@@ -31,6 +31,7 @@ export default function FosterDetailsDisplay() {
   const [editData, setEditData] = useState({});
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // ✅ Print setup
   const ComponentsRef = useRef();
@@ -59,20 +60,20 @@ export default function FosterDetailsDisplay() {
     fetchFosters();
   }, []);
 
-  // Search functionality
+  // Search + status filter functionality
   useEffect(() => {
-    if (search.trim() === "") {
-      setFilteredFosters(fosters);
-    } else {
-      const filtered = fosters.filter(
-        (f) =>
-          f.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-          f.animalName?.toLowerCase().includes(search.toLowerCase()) ||
-          f.animalType?.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredFosters(filtered);
-    }
-  }, [search, fosters]);
+    const base = fosters.filter((f) => {
+      const q = search.toLowerCase();
+      const matchesQuery =
+        !q ||
+        f.fullName?.toLowerCase().includes(q) ||
+        f.animalName?.toLowerCase().includes(q) ||
+        f.animalType?.toLowerCase().includes(q);
+      const matchesStatus = statusFilter === "all" || (f.status || "pending").toLowerCase() === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+    setFilteredFosters(base);
+  }, [search, fosters, statusFilter]);
 
   const startEdit = (item) => {
     setEditingId(item._id);
@@ -98,6 +99,16 @@ export default function FosterDetailsDisplay() {
     } catch (err) {
       console.error(err);
       alert("Failed to update. Please try again.");
+    }
+  };
+
+  const updateStatus = async (id, status) => {
+    try {
+      await axios.patch(`${URL}/${id}/status`, { status });
+      fetchFosters();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status. Please try again.");
     }
   };
 
@@ -156,8 +167,8 @@ export default function FosterDetailsDisplay() {
           </div>
         </div>
 
-        {/* Search and Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        {/* Search, Filter and Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
           {/* Search */}
           <div className="lg:col-span-3">
             <div className="relative">
@@ -170,6 +181,19 @@ export default function FosterDetailsDisplay() {
                 className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm"
               />
             </div>
+          </div>
+          {/* Status Filter */}
+          <div className="lg:col-span-1">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full py-4 px-4 bg-white rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="completed">Completed</option>
+            </select>
           </div>
           
           {/* Stats Card */}
@@ -207,6 +231,17 @@ export default function FosterDetailsDisplay() {
                         <p className="text-green-100">Foster Application</p>
                       </div>
                       <div className="flex gap-2">
+                        {/* Status badge */}
+                        <div
+                          className="px-3 py-1 rounded-full text-xs font-semibold mr-2"
+                          style={{
+                            backgroundColor: (item.status || 'pending') === 'approved' ? '#22c55e' : (item.status || 'pending') === 'completed' ? '#6366f1' : '#f59e0b',
+                            color: '#fff'
+                          }}
+                          title={`Status: ${(item.status || 'pending').toUpperCase()}`}
+                        >
+                          {(item.status || 'pending').toUpperCase()}
+                        </div>
                         {editingId !== (item._id || item.id) && (
                           <>
                             <button
@@ -443,6 +478,30 @@ export default function FosterDetailsDisplay() {
                             <MessageCircle size={16} />
                             WhatsApp
                           </button>
+                          {/* Status actions */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => updateStatus(item._id || item.id, 'pending')}
+                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm"
+                              title="Mark as Pending"
+                            >
+                              Pending
+                            </button>
+                            <button
+                              onClick={() => updateStatus(item._id || item.id, 'approved')}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm"
+                              title="Approve"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateStatus(item._id || item.id, 'completed')}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm"
+                              title="Mark as Completed"
+                            >
+                              Complete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

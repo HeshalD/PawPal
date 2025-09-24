@@ -33,6 +33,26 @@ const adoptionSchema = new Schema({
     salarySheet:{
         type:String,//file path
         required:true,//validate
+    },
+    status:{
+        type:String,//application status
+        enum:['pending', 'approved', 'rejected', 'completed'],//allowed values
+        default:'pending',//default status
+        required:true,//validate
+    },
+    submittedAt:{
+        type:Date,//submission date
+        default:Date.now,//current date
+        required:true,//validate
+    },
+    updatedAt:{
+        type:Date,//last update date
+        default:Date.now,//current date
+        required:true,//validate
+    },
+    adminNotes:{
+        type:String,//admin comments
+        default:'',//empty by default
     }
 });
 

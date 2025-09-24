@@ -7,8 +7,10 @@ const AdoptionController = require("../Controllers/AdoptionController");
 
 router.get("/",AdoptionController.getAllAdoptions);
 router.post("/add",AdoptionController.upload.single('salarySheet'),AdoptionController.addAdoptions);
+router.get("/email/:email",AdoptionController.getAdoptionByEmail);
 router.get("/:id",AdoptionController.getById);
 router.put("/:id",AdoptionController.UpdateAdoptions);
+router.put("/status/:id",AdoptionController.updateAdoptionStatus);
 router.delete("/:id",AdoptionController.DeleteAdoptions);
 
 //export

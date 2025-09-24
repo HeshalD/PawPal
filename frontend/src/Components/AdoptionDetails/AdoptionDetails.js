@@ -19,6 +19,7 @@ function AdoptionDetails() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [submittedAdoption, setSubmittedAdoption] = useState(null);
 
   // Sample pet list (later can be loaded from DB)
   const pets = [
@@ -101,10 +102,7 @@ function AdoptionDetails() {
     setIsSubmitting(true);
     setSubmitMessage('');
 
-    // Demo simulation - Replace with actual axios implementation
     try {
-      // In your actual implementation, use:
-      
       const formDataToSend = new FormData();
       formDataToSend.append('fullName', formData.fullName);
       formDataToSend.append('email', formData.email);
@@ -120,26 +118,23 @@ function AdoptionDetails() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      
-      
-      // Demo simulation
-      setTimeout(() => {
-        setSubmitMessage('✅ Adoption request submitted successfully!');
-        
-        // Reset form
-        setFormData({
-          selectedPets: [],
-          fullName: '',
-          email: '',
-          age: '',
-          phone: '',
-          address: '',
-          salary: '',
-          salarySheet: null,
-        });
-        setErrors({});
-        setIsSubmitting(false);
-      }, 2000);
+      // Success: show confirmation and status
+      const created = response?.data?.adoption;
+      setSubmittedAdoption(created || null);
+      setSubmitMessage('✅ Adoption request submitted successfully!');
+      // Reset form
+      setFormData({
+        selectedPets: [],
+        fullName: '',
+        email: '',
+        age: '',
+        phone: '',
+        address: '',
+        salary: '',
+        salarySheet: null,
+      });
+      setErrors({});
+      setIsSubmitting(false);
 
     } catch (error) {
       console.error('Error submitting adoption request:', error);
@@ -489,6 +484,40 @@ function AdoptionDetails() {
                     submitMessage.includes('✅') ? 'success-message' : 'error-message'
                   }`}>
                     {submitMessage}
+                  </div>
+                )}
+
+                {/* Post-submit status panel */}
+                {submittedAdoption && (
+                  <div className="mt-6 bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-green-800 mb-2">Application Submitted</h3>
+                    <div className="text-green-700 mb-4">Your application has been received. You can track the status below.</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="bg-white border border-green-100 rounded-lg p-3">
+                        <div className="text-gray-500">Reference ID</div>
+                        <div className="font-medium text-gray-800 break-all">{submittedAdoption._id}</div>
+                      </div>
+                      <div className="bg-white border border-green-100 rounded-lg p-3">
+                        <div className="text-gray-500">Current Status</div>
+                        <div className="font-medium text-gray-800">{(submittedAdoption.status || 'pending').toUpperCase()}</div>
+                      </div>
+                      <div className="bg-white border border-green-100 rounded-lg p-3">
+                        <div className="text-gray-500">Submitted At</div>
+                        <div className="font-medium text-gray-800">{submittedAdoption.submittedAt ? new Date(submittedAdoption.submittedAt).toLocaleString() : 'Just now'}</div>
+                      </div>
+                      <div className="bg-white border border-green-100 rounded-lg p-3">
+                        <div className="text-gray-500">Email</div>
+                        <div className="font-medium text-gray-800">{submittedAdoption.email}</div>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="text-gray-600 mb-2">Selected Pets</div>
+                      <div className="flex flex-wrap gap-2">
+                        {(submittedAdoption.selectedPets || []).map((p, i) => (
+                          <span key={i} className="px-3 py-1 bg-white border border-green-200 rounded-full text-gray-800 text-sm">{p}</span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

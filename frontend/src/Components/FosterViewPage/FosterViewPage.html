@@ -384,8 +384,17 @@
     </style>
 </head>
 <body>
+    <!-- React සහ ReactDOM CDN -->
+<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+<!-- Babel, JSX support එකට -->
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
     <!-- Navigation -->
     <nav>
+        <div id="react-nav"></div>
+
         
     </nav>
 
@@ -497,7 +506,7 @@
                 <h2>Foster Care Impact</h2>
                 <div class="stats-grid">
                     <div class="stat-item">
-                        <div class="stat-number">2,847</div>
+                        <div class="stat-number">20</div>
                         <div class="stat-label">Pets Fostered This Year</div>
                     </div>
                     <div class="stat-item">
@@ -505,7 +514,7 @@
                         <div class="stat-label">Successfully Adopted</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">156</div>
+                        <div class="stat-number">2</div>
                         <div class="stat-label">Active Foster Families</div>
                     </div>
                     <div class="stat-item">
@@ -521,9 +530,10 @@
             <div class="container">
                 <h2>Ready to Make a Difference?</h2>
                 <p>Join our foster family today and help save lives, one pet at a time. Your kindness can transform a life forever.</p>
-                <a href="#" class="cta-button">Start Foster Application</a>
+                <a href="http://localhost:3000/foster" class="cta-button">Start Foster Application</a>
             </div>
         </section>
+        
     </main>
 
     <!-- Footer -->

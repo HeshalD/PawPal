@@ -12,14 +12,14 @@ function Nav() {
         </li>
 
         <li className="nav-ll">
-          <Link to="/adoption" className="home-a">
-            Adoption Details
+          <Link to="/adoptionViewPage" className="home-a">
+             Add Adoption 
           </Link>
         </li>
 
         <li className="nav-ll">
-          <Link to="/foster" className="home-a">
-            Foster Details
+          <Link to="/fosterViewPage" className="home-a">
+            Add Foster 
           </Link>
         </li>
 

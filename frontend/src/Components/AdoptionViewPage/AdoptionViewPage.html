@@ -4,292 +4,76 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paw Pal - Find Your Perfect Companion</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-pink': '#E6738F',
+                        'primary-purple': '#6638E6',
+                        'light-pink': '#E69AAE',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fadeInUp': 'fadeInUp 1s ease-out',
+                        'slideIn': 'slideIn 1s ease-out',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'modalSlideIn': 'modalSlideIn 0.3s ease-out',
+                        'spin': 'spin 1s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(2deg)' },
+                        },
+                        fadeInUp: {
+                            'from': { opacity: '0', transform: 'translateY(50px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideIn: {
+                            'from': { opacity: '0', transform: 'translateX(-30px)' },
+                            'to': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        glow: {
+                            'from': { filter: 'drop-shadow(0 0 10px rgba(230, 115, 143, 0.5))' },
+                            'to': { filter: 'drop-shadow(0 0 20px rgba(230, 115, 143, 0.8))' },
+                        },
+                        modalSlideIn: {
+                            'from': { opacity: '0', transform: 'translateY(-50px) scale(0.9)' },
+                            'to': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        spin: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            overflow-x: hidden;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6638E6 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+        /* Custom styles that can't be easily done with Tailwind */
+        .hero-bg {
             background: radial-gradient(circle at 20% 20%, rgba(230, 115, 143, 0.3) 0%, transparent 50%),
                         radial-gradient(circle at 80% 80%, rgba(230, 154, 174, 0.3) 0%, transparent 50%),
                         radial-gradient(circle at 40% 60%, rgba(102, 56, 230, 0.2) 0%, transparent 50%);
-            animation: float 6s ease-in-out infinite;
         }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(2deg); }
+        
+        .contact-bg {
+            background: radial-gradient(circle at 30% 30%, rgba(230, 115, 143, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(230, 154, 174, 0.3) 0%, transparent 50%);
         }
-
-        .hero-content {
-            text-align: center;
-            color: white;
-            z-index: 10;
-            position: relative;
-            max-width: 800px;
-            padding: 0 20px;
-            animation: fadeInUp 1s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .hero h1 {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            background: linear-gradient(45deg, #E6738F, #E69AAE, white);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 10px rgba(230, 115, 143, 0.5)); }
-            to { filter: drop-shadow(0 0 20px rgba(230, 115, 143, 0.8)); }
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 30px;
-            opacity: 0.95;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 30px;
-            margin: 40px 0;
-            max-width: 600px;
-        }
-
-        .stat {
-            text-align: center;
-            animation: slideIn 1s ease-out;
-        }
-
-        .stat h3 {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat p {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 40px;
-        }
-
-        .btn {
-            padding: 15px 30px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            color: white;
-            box-shadow: 0 10px 30px rgba(230, 115, 143, 0.4);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(230, 115, 143, 0.6);
-            background: linear-gradient(45deg, #6638E6, #E69AAE);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-3px) scale(1.05);
-        }
-
-        /* Pets Section */
-        .pets-section {
-            padding: 100px 20px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-
-        .section-header h2 {
-            font-size: 3.5rem;
+        
+        .gradient-text {
             background: linear-gradient(45deg, #E6738F, #6638E6);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 20px;
         }
-
-        .section-header p {
-            font-size: 1.2rem;
-            color: #666;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* Search and Filter */
-        .search-filter {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            margin-bottom: 50px;
-            backdrop-filter: blur(10px);
-        }
-
-        .search-bar {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .search-bar input {
-            width: 100%;
-            padding: 15px 50px 15px 20px;
-            font-size: 1.1rem;
-            border: 2px solid #f0f0f0;
-            border-radius: 15px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .search-bar input:focus {
-            border-color: #E6738F;
-            box-shadow: 0 0 0 3px rgba(230, 115, 143, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #999;
-        }
-
-        .filters {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .filter-group label {
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #333;
-        }
-
-        .filter-group select {
-            padding: 12px;
-            border: 2px solid #f0f0f0;
-            border-radius: 10px;
-            font-size: 1rem;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        .filter-group select:focus {
-            border-color: #6638E6;
-        }
-
-        /* Pet Grid */
-        .pets-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .pet-card {
-            background: white;
-            border-radius: 25px;
-            overflow: hidden;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            transition: all 0.4s ease;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .pet-card::before {
+        
+        .gradient-border::before {
             content: '';
             position: absolute;
             top: 0;
@@ -298,959 +82,309 @@
             height: 5px;
             background: linear-gradient(90deg, #E6738F, #6638E6, #E69AAE);
         }
-
-        .pet-card:hover {
-            transform: translateY(-15px) scale(1.02);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-        }
-
-        .pet-image {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            transition: transform 0.4s ease;
-        }
-
-        .pet-card:hover .pet-image {
-            transform: scale(1.1);
-        }
-
-        .pet-info {
-            padding: 25px;
-        }
-
-        .pet-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: start;
-            margin-bottom: 15px;
-        }
-
-        .pet-name {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-        }
-
-        .pet-breed {
-            color: #666;
-            font-size: 1rem;
-        }
-
-        .pet-price {
-            text-align: right;
-        }
-
-        .price {
-            font-size: 1.8rem;
-            font-weight: bold;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .price-label {
-            font-size: 0.8rem;
-            color: #999;
-        }
-
-        .pet-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 15px 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .pet-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 15px 0;
-        }
-
-        .tag {
-            background: linear-gradient(45deg, rgba(230, 115, 143, 0.2), rgba(102, 56, 230, 0.2));
-            color: #6638E6;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .pet-description {
-            color: #666;
-            line-height: 1.5;
-            margin: 15px 0;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .pet-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-adopt {
-            flex: 1;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-adopt:hover {
-            background: linear-gradient(45deg, #6638E6, #E69AAE);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(230, 115, 143, 0.4);
-        }
-
-        .btn-learn {
-            flex: 1;
-            background: transparent;
-            color: #6638E6;
-            border: 2px solid rgba(230, 115, 143, 0.3);
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-learn:hover {
-            background: rgba(230, 115, 143, 0.1);
-            border-color: #E6738F;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 0;
-            border-radius: 25px;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-header {
-            padding: 30px;
-            border-bottom: 1px solid #eee;
-            position: relative;
-        }
-
-        .modal-title {
-            font-size: 2rem;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin: 0;
-        }
-
-        .close {
-            position: absolute;
-            right: 30px;
-            top: 30px;
-            font-size: 2rem;
-            font-weight: bold;
-            color: #999;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .close:hover {
-            color: #E6738F;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .modal-pet-image {
-            width: 100%;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 15px;
-            margin-bottom: 30px;
-        }
-
-        .modal-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
-        }
-
-        .info-section h4 {
-            font-size: 1.2rem;
-            color: #333;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #E6738F;
-            padding-bottom: 5px;
-        }
-
-        .info-section p {
-            margin: 8px 0;
-            color: #666;
-        }
-
-        .personality-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 15px 0;
-        }
-
-        .personality-tag {
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-
-        /* Adoption Info Section */
-        .adoption-info {
-            padding: 100px 20px;
-            background: linear-gradient(135deg, #f8f9fa 0%, rgba(230, 115, 143, 0.05) 100%);
-        }
-
-        .info-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .info-card {
-            background: white;
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .info-card:hover {
-            transform: translateY(-10px);
-        }
-
-        .info-card h3 {
-            font-size: 1.5rem;
-            color: #E6738F;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-card ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .info-card li {
-            margin: 12px 0;
-            padding-left: 25px;
-            position: relative;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        .info-card li::before {
-            content: "🐾";
-            position: absolute;
-            left: 0;
-            top: 0;
-        }
-
-        /* Process Steps */
-        .process-steps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 50px 0;
-        }
-
-        .step {
-            background: white;
-            padding: 30px 20px;
-            border-radius: 20px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .step:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .step-number {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 0 auto 20px;
-            transition: transform 0.3s ease;
-        }
-
-        .step:hover .step-number {
-            transform: scale(1.1) rotate(360deg);
-        }
-
-        .step h4 {
-            font-size: 1.2rem;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .step p {
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.4;
-        }
-
-        /* Contact Section */
-        .contact-section {
-            padding: 100px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6638E6 100%);
-            color: white;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .contact-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 30% 30%, rgba(230, 115, 143, 0.3) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 70%, rgba(230, 154, 174, 0.3) 0%, transparent 50%);
-            animation: float 8s ease-in-out infinite;
-        }
-
-        .contact-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .contact-card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .contact-card:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-10px);
-        }
-
-        .contact-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #E6738F, #E69AAE);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 1.5rem;
-        }
-
-        .contact-card h4 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-        }
-
-        .contact-card p {
-            opacity: 0.9;
-            line-height: 1.4;
-        }
-
-        .contact-card a {
-            color: white;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .contact-card a:hover {
-            color: #E69AAE;
-        }
-
-        /* Footer */
-        .footer {
-            background: #2c3e50;
-            color: white;
-            padding: 60px 20px 30px;
-            text-align: center;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .footer h3 {
-            font-size: 2rem;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 20px;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-            margin: 40px 0;
-            text-align: left;
-        }
-
-        .footer-section h4 {
-            color: #E6738F;
-            margin-bottom: 15px;
-        }
-
-        .footer-section p, .footer-section a {
-            color: #bbb;
-            text-decoration: none;
-            margin: 8px 0;
-            transition: color 0.3s ease;
-        }
-
-        .footer-section a:hover {
-            color: #E6738F;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid #444;
-            padding-top: 30px;
-            margin-top: 40px;
-            color: #999;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-            
-            .section-header h2 {
-                font-size: 2.5rem;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-            
-            .cta-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .pets-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-info-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .process-steps {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Loading Animation */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 50px;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #E6738F;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Scroll to top button */
-        .scroll-top {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(45deg, #E6738F, #6638E6);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 100;
-        }
-
-        .scroll-top.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .scroll-top:hover {
-            transform: translateY(-5px) scale(1.1);
-            box-shadow: 0 10px 25px rgba(230, 115, 143, 0.4);
-        }
     </style>
 </head>
-<body>
+<body class="font-sans text-gray-800 overflow-x-hidden">
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <h1>🐾 Paw Pal</h1>
-            <p>Give a loving home to pets in need. Every pet deserves a second chance at happiness and unconditional love!</p>
+    <section class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 flex items-center justify-center relative overflow-hidden">
+        <div class="hero-bg absolute inset-0 animate-float"></div>
+        <div class="text-center text-white z-10 relative max-w-4xl px-5 animate-fadeInUp">
+            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5 gradient-text animate-glow">🐾 Paw Pal</h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-95">Give a loving home to pets in need. Every pet deserves a second chance at happiness and unconditional love!</p>
             
-            <div class="stats">
-                <div class="stat">
-                    <h3>500+</h3>
-                    <p>Pets Adopted</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 my-10 max-w-2xl mx-auto">
+                <div class="text-center animate-slideIn">
+                    <h3 class="text-4xl font-bold mb-2">500+</h3>
+                    <p class="opacity-80">Pets Adopted</p>
                 </div>
-                <div class="stat">
-                    <h3>50+</h3>
-                    <p>Available Now</p>
+                <div class="text-center animate-slideIn" style="animation-delay: 200ms">
+                    <h3 class="text-4xl font-bold mb-2">50+</h3>
+                    <p class="opacity-80">Available Now</p>
                 </div>
-                <div class="stat">
-                    <h3>24/7</h3>
-                    <p>Support</p>
+                <div class="text-center animate-slideIn" style="animation-delay: 400ms">
+                    <h3 class="text-4xl font-bold mb-2">24/7</h3>
+                    <p class="opacity-80">Support</p>
                 </div>
             </div>
             
-            <!-- ...existing code... -->
-        <div class="cta-buttons">
-            <!-- Replace the previous To Adopt button with this -->
-         <a href="/adoption-details" class="btn btn-primary">To Adopt 🏠</a>
-        <a href="#info" class="btn btn-secondary">Learn More 📋</a>
-</div>
-<!-- ...existing code... -->
+            <div class="flex flex-col sm:flex-row gap-5 justify-center mt-10">
+                <a href="/adoption-details" class="bg-gradient-to-r from-primary-pink to-primary-purple text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-105">To Adopt 🏠</a>
+                <a href="#info" class="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105">Learn More 📋</a>
+            </div>
         </div>
     </section>
 
-    
-
     <!-- Adoption Info Section -->
-    <section id="info" class="adoption-info">
-        <div class="container">
-            <div class="section-header">
-                <h2>🏠 Pet Adoption Information</h2>
-                <p>Everything you need to know about our adoption process and how to give a loving pet their forever home.</p>
+    <section id="info" class="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div class="container mx-auto px-5 max-w-6xl">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-5 gradient-text">🏠 Pet Adoption Information</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Everything you need to know about our adoption process and how to give a loving pet their forever home.</p>
             </div>
 
             <!-- Mission Statement -->
-            <div class="info-card" style="text-align: center; margin-bottom: 50px;">
-                <h3>🎯 Our Mission</h3>
-                <p style="font-size: 1.1rem; line-height: 1.6;">We believe every pet deserves a loving home. Our comprehensive adoption program ensures the perfect match between pets and families, creating lifelong bonds filled with happiness and companionship.</p>
+            <div class="bg-white p-8 rounded-2xl shadow-lg mb-12 text-center">
+                <h3 class="text-2xl font-bold mb-4">🎯 Our Mission</h3>
+                <p class="text-lg text-gray-700 leading-relaxed">We believe every pet deserves a loving home. Our comprehensive adoption program ensures the perfect match between pets and families, creating lifelong bonds filled with happiness and companionship.</p>
             </div>
 
             <!-- Info Cards -->
-            <div class="info-cards">
-                <div class="info-card">
-                    <h3>🤍 Why Adopt?</h3>
-                    <ul>
-                        <li>Save a life and give a pet a second chance</li>
-                        <li>Gain a loyal, loving companion for life</li>
-                        <li>Help reduce pet overpopulation</li>
-                        <li>Support animal welfare initiatives</li>
-                        <li>Experience unconditional love and joy</li>
-                        <li>Get a pet that's already socialized</li>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">🤍 Why Adopt?</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Save a life and give a pet a second chance</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Gain a loyal, loving companion for life</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Help reduce pet overpopulation</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Support animal welfare initiatives</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Experience unconditional love and joy</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Get a pet that's already socialized</span>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="info-card">
-                    <h3>📋 Adoption Requirements</h3>
-                    <ul>
-                        <li>Must be 18+ years old</li>
-                        <li>Stable living situation with pet-friendly housing</li>
-                        <li>Financial capability to provide proper care</li>
-                        <li>Previous pet experience preferred but not required</li>
-                        <li>Commitment to the pet's lifetime care</li>
-                        <li>Valid identification and references</li>
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">📋 Adoption Requirements</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Must be 18+ years old</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Stable living situation with pet-friendly housing</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Financial capability to provide proper care</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Previous pet experience preferred but not required</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Commitment to the pet's lifetime care</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Valid identification and references</span>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="info-card">
-                    <h3>💝 What's Included</h3>
-                    <ul>
-                        <li>Complete vaccination records</li>
-                        <li>Spay/neuter procedure (if age appropriate)</li>
-                        <li>Microchip identification</li>
-                        <li>Health certificate from our veterinarian</li>
-                        <li>Starter kit with food and essentials</li>
-                        <li>24/7 post-adoption support</li>
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">💝 What's Included</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Complete vaccination records</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Spay/neuter procedure (if age appropriate)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Microchip identification</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Health certificate from our veterinarian</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Starter kit with food and essentials</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>24/7 post-adoption support</span>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="info-card">
-                    <h3>💰 Adoption Fees</h3>
-                    <div style="text-align: center;">
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 20px 0;">
-                            <div style="padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                                <div style="font-size: 2rem;">🐕</div>
-                                <strong style="color: #E6738F;">Dogs</strong><br>
-                                <span style="font-size: 0.9rem;">$150 - $300</span>
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">💰 Adoption Fees</h3>
+                    <div class="text-center">
+                        <div class="grid grid-cols-3 gap-4 my-5">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐕</div>
+                                <strong class="text-primary-pink">Dogs</strong><br>
+                                <span class="text-sm">$150 - $300</span>
                             </div>
-                            <div style="padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                                <div style="font-size: 2rem;">🐱</div>
-                                <strong style="color: #6638E6;">Cats</strong><br>
-                                <span style="font-size: 0.9rem;">$75 - $200</span>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐱</div>
+                                <strong class="text-primary-purple">Cats</strong><br>
+                                <span class="text-sm">$75 - $200</span>
                             </div>
-                            <div style="padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                                <div style="font-size: 2rem;">🐰</div>
-                                <strong style="color: #E69AAE;">Small Pets</strong><br>
-                                <span style="font-size: 0.9rem;">$25 - $75</span>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐰</div>
+                                <strong class="text-light-pink">Small Pets</strong><br>
+                                <span class="text-sm">$25 - $75</span>
                             </div>
                         </div>
-                        <p style="font-size: 0.9rem; font-style: italic; color: #666;">Fees help cover medical care, vaccinations, spaying/neutering, and facility maintenance.</p>
+                        <p class="text-sm italic text-gray-600">Fees help cover medical care, vaccinations, spaying/neutering, and facility maintenance.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Process Steps -->
-            <div style="text-align: center; margin: 60px 0 40px;">
-                <h3 style="font-size: 2.5rem; color: #333; margin-bottom: 20px;">🚀 Our Simple Adoption Process</h3>
+            <div class="text-center mb-12">
+                <h3 class="text-3xl md:text-4xl font-bold text-gray-800 mb-5">🚀 Our Simple Adoption Process</h3>
             </div>
             
-            <div class="process-steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h4>Browse & Choose</h4>
-                    <p>Browse available pets and find your perfect match</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">1</div>
+                    <h4 class="text-lg font-bold mb-2">Browse & Choose</h4>
+                    <p class="text-gray-600 text-sm">Browse available pets and find your perfect match</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h4>Application</h4>
-                    <p>Complete our adoption application form</p>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">2</div>
+                    <h4 class="text-lg font-bold mb-2">Application</h4>
+                    <p class="text-gray-600 text-sm">Complete our adoption application form</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h4>Meet & Greet</h4>
-                    <p>Schedule a visit to meet your chosen pet</p>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">3</div>
+                    <h4 class="text-lg font-bold mb-2">Meet & Greet</h4>
+                    <p class="text-gray-600 text-sm">Schedule a visit to meet your chosen pet</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h4>Home Check</h4>
-                    <p>Quick home environment assessment</p>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">4</div>
+                    <h4 class="text-lg font-bold mb-2">Home Check</h4>
+                    <p class="text-gray-600 text-sm">Quick home environment assessment</p>
                 </div>
-                <div class="step">
-                    <div class="step-number">5</div>
-                    <h4>Finalize</h4>
-                    <p>Complete paperwork and take your pet home!</p>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">5</div>
+                    <h4 class="text-lg font-bold mb-2">Finalize</h4>
+                    <p class="text-gray-600 text-sm">Complete paperwork and take your pet home!</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Contact Section -->
-    <section class="contact-section">
-        <div class="container">
-            <div class="section-header">
-                <h2>📞 Ready to Adopt?</h2>
-                <p>Contact us today to start your adoption journey! Our friendly team is here to help you find your perfect companion.</p>
+    <section class="py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 text-white relative overflow-hidden">
+        <div class="contact-bg absolute inset-0 animate-float"></div>
+        <div class="container mx-auto px-5 max-w-6xl relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-5">📞 Ready to Adopt?</h2>
+                <p class="text-xl max-w-2xl mx-auto">Contact us today to start your adoption journey! Our friendly team is here to help you find your perfect companion.</p>
             </div>
 
-            <div class="contact-grid">
-                <div class="contact-card">
-                    <div class="contact-icon">📞</div>
-                    <h4>Phone</h4>
-                    <p><a href="tel:+15551234737">(555) 123-PETS</a></p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📞</div>
+                    <h4 class="text-lg font-bold mb-2">Phone</h4>
+                    <p><a href="tel:+15551234737" class="hover:text-light-pink transition-colors">(555) 123-PETS</a></p>
                 </div>
-                <div class="contact-card">
-                    <div class="contact-icon">📧</div>
-                    <h4>Email</h4>
-                    <p><a href="/cdn-cgi/l/email-protection#5332373c232713233627303221367d303c3e"><span class="__cf_email__" data-cfemail="39585d56494d79495c4d5a584b5c175a5654">[email&#160;protected]</span></a></p>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📧</div>
+                    <h4 class="text-lg font-bold mb-2">Email</h4>
+                    <p><a href="/cdn-cgi/l/email-protection#5332373c232713233627303221367d303c3e" class="hover:text-light-pink transition-colors"><span class="__cf_email__" data-cfemail="5431363d222614243122353724337835393b">[email&#160;protected]</span></a></p>
                 </div>
-                <div class="contact-card">
-                    <div class="contact-icon">📍</div>
-                    <h4>Address</h4>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📍</div>
+                    <h4 class="text-lg font-bold mb-2">Address</h4>
                     <p>123 Pet Care Lane<br>Animal City, AC 12345</p>
                 </div>
-                <div class="contact-card">
-                    <div class="contact-icon">🕒</div>
-                    <h4>Hours</h4>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">🕒</div>
+                    <h4 class="text-lg font-bold mb-2">Hours</h4>
                     <p>Mon-Sat 9AM-6PM<br>Sun 10AM-4PM</p>
                 </div>
             </div>
 
-            <div style="text-align: center; margin-top: 50px;">
-                <a href="#pets" class="btn btn-primary" style="margin-right: 20px;">Browse Available Pets 🐾</a>
-                <a href="tel:+15551234737" class="btn btn-secondary">Call Us Now 📞</a>
+            <div class="text-center">
+                <a href="#pets" class="bg-gradient-to-r from-primary-pink to-primary-purple text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 mr-4 inline-block mb-4">Browse Available Pets 🐾</a>
+                <a href="tel:+15551234737" class="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 inline-block mb-4">Call Us Now 📞</a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <h3>🐾 Pet Adoption Center</h3>
-            <p style="color: #bbb; margin-bottom: 40px;">Connecting loving families with pets in need since 2010. Every adoption saves a life and creates a lifetime of happiness.</p>
+    <footer class="bg-gray-900 text-white py-16 px-5">
+        <div class="container mx-auto max-w-6xl">
+            <h3 class="text-3xl font-bold mb-5 gradient-text text-center">🐾 Pet Adoption Center</h3>
+            <p class="text-gray-400 text-center mb-10 max-w-2xl mx-auto">Connecting loving families with pets in need since 2010. Every adoption saves a life and creates a lifetime of happiness.</p>
             
-            <div class="footer-grid">
-                <div class="footer-section">
-                    <h4>Quick Links</h4>
-                    <p><a href="#pets">Available Pets</a></p>
-                    <p><a href="#info">Adoption Info</a></p>
-                    <p><a href="#">Volunteer</a></p>
-                    <p><a href="#">Donate</a></p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Quick Links</h4>
+                    <div class="space-y-2">
+                        <p><a href="#pets" class="text-gray-400 hover:text-white transition-colors">Available Pets</a></p>
+                        <p><a href="#info" class="text-gray-400 hover:text-white transition-colors">Adoption Info</a></p>
+                        <p><a href="#" class="text-gray-400 hover:text-white transition-colors">Volunteer</a></p>
+                        <p><a href="#" class="text-gray-400 hover:text-white transition-colors">Donate</a></p>
+                    </div>
                 </div>
-                <div class="footer-section">
-                    <h4>Services</h4>
-                    <p>Pet Adoption</p>
-                    <p>Veterinary Care</p>
-                    <p>Pet Training</p>
-                    <p>Emergency Care</p>
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Services</h4>
+                    <div class="space-y-2">
+                        <p class="text-gray-400">Pet Adoption</p>
+                        <p class="text-gray-400">Veterinary Care</p>
+                        <p class="text-gray-400">Pet Training</p>
+                        <p class="text-gray-400">Emergency Care</p>
+                    </div>
                 </div>
-                <div class="footer-section">
-                    <h4>Contact</h4>
-                    <p>(555) 123-PETS</p>
-                    <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6a0b0e051a1e2a1a0f1e090b180f44090507">[email&#160;protected]</a></p>
-                    <p>123 Pet Care Lane</p>
-                    <p>Animal City, AC 12345</p>
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Contact</h4>
+                    <div class="space-y-2">
+                        <p class="text-gray-400">(555) 123-PETS</p>
+                        <p class="text-gray-400"><a href="/cdn-cgi/l/email-protection" class="hover:text-white transition-colors"><span class="__cf_email__" data-cfemail="7a1b1e150a0e3a0a1f0e190b180f44191517">[email&#160;protected]</span></a></p>
+                        <p class="text-gray-400">123 Pet Care Lane</p>
+                        <p class="text-gray-400">Animal City, AC 12345</p>
+                    </div>
                 </div>
             </div>
             
-            <div class="footer-bottom">
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-500">
                 <p>© 2024 Pet Adoption Center. All rights reserved. Made with ❤️ for pets in need.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Pet Modal -->
-    <div id="petModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Meet Luna</h2>
-                <span class="close">&times;</span>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Modal content will be dynamically inserted here -->
-            </div>
-        </div>
-    </div>
-
     <!-- Scroll to Top Button -->
-    <button class="scroll-top" id="scrollTop">↑</button>
+    <button id="scrollTop" class="fixed bottom-8 right-8 w-12 h-12 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-110 opacity-0 invisible z-50">↑</button>
 
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-        // Pet data
-        const petsData = [
-            {
-                id: 1,
-                name: 'Luna',
-                type: 'Dog',
-                breed: 'Golden Retriever',
-                age: '2 years',
-                ageCategory: 'adult',
-                gender: 'Female',
-                size: 'Large',
-                description: 'Luna is a gentle and loving Golden Retriever who adores children and other pets. She\'s house-trained, knows basic commands, and loves long walks in the park.',
-                personality: ['Friendly', 'Gentle', 'Playful', 'Loyal'],
-                image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400&h=300&fit=crop',
-                adoptionFee: 250,
-                isVaccinated: true,
-                isNeutered: true,
-                goodWithKids: true,
-                goodWithPets: true
-            },
-            {
-                id: 2,
-                name: 'Whiskers',
-                type: 'Cat',
-                breed: 'Maine Coon',
-                age: '3 years',
-                ageCategory: 'adult',
-                gender: 'Male',
-                size: 'Large',
-                description: 'Whiskers is a majestic Maine Coon with a calm temperament. He loves to be petted and enjoys quiet afternoons by the window watching birds.',
-                personality: ['Calm', 'Affectionate', 'Independent', 'Gentle'],
-                image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400&h=300&fit=crop',
-                adoptionFee: 180,
-                isVaccinated: true,
-                isNeutered: true,
-                goodWithKids: true,
-                goodWithPets: false
-            },
-            {
-                id: 3,
-                name: 'Buddy',
-                type: 'Dog',
-                breed: 'Labrador Mix',
-                age: '1 year',
-                ageCategory: 'young',
-                gender: 'Male',
-                size: 'Medium',
-                description: 'Buddy is an energetic young pup who loves to play fetch and go on adventures. He\'s very smart and eager to learn new tricks.',
-                personality: ['Energetic', 'Smart', 'Playful', 'Loving'],
-                image: 'https://images.unsplash.com/photo-1551717743-49959800b1f6?w=400&h=300&fit=crop',
-                adoptionFee: 200,
-                isVaccinated: true,
-                isNeutered: false,
-                goodWithKids: true,
-                goodWithPets: true
-            },
-            {
-                id: 4,
-                name: 'Mittens',
-                type: 'Cat',
-                breed: 'Domestic Shorthair',
-                age: '4 years',
-                ageCategory: 'adult',
-                gender: 'Female',
-                size: 'Medium',
-                description: 'Mittens is a sweet and cuddly cat who loves to purr and snuggle. She\'s perfect for someone looking for a calm, loving companion.',
-                personality: ['Cuddly', 'Sweet', 'Quiet', 'Loving'],
-                image: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?w=400&h=300&fit=crop',
-                adoptionFee: 150,
-                isVaccinated: true,
-                isNeutered: true,
-                goodWithKids: true,
-                goodWithPets: true
-            },
-            {
-                id: 5,
-                name: 'Coco',
-                type: 'Rabbit',
-                breed: 'Holland Lop',
-                age: '6 months',
-                ageCategory: 'young',
-                gender: 'Female',
-                size: 'Small',
-                description: 'Coco is an adorable Holland Lop rabbit with soft, floppy ears. She\'s litter-trained and loves to hop around and explore.',
-                personality: ['Curious', 'Gentle', 'Active', 'Sweet'],
-                image: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?w=400&h=300&fit=crop',
-                adoptionFee: 75,
-                isVaccinated: true,
-                isNeutered: true,
-                goodWithKids: true,
-                goodWithPets: false
-            },
-            {
-                id: 6,
-                name: 'Charlie',
-                type: 'Bird',
-                breed: 'Cockatiel',
-                age: '2 years',
-                ageCategory: 'adult',
-                gender: 'Male',
-                size: 'Small',
-                description: 'Charlie is a beautiful cockatiel who loves to whistle and can learn to mimic words. He\'s social and enjoys interacting with people.',
-                personality: ['Social', 'Vocal', 'Intelligent', 'Friendly'],
-                image: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?w=400&h=300&fit=crop',
-                adoptionFee: 100,
-                isVaccinated: true,
-                isNeutered: false,
-                goodWithKids: true,
-                goodWithPets: false
-            }
-        ];
-
-        let filteredPets = [...petsData];
-
-        // DOM elements
-        const searchInput = document.getElementById('searchInput');
-        const typeFilter = document.getElementById('typeFilter');
-        const sizeFilter = document.getElementById('sizeFilter');
-        const ageFilter = document.getElementById('ageFilter');
-        const petsGrid = document.getElementById('petsGrid');
-        const loading = document.getElementById('loading');
-        const noResults = document.getElementById('noResults');
-        const modal = document.getElementById('petModal');
-        const scrollTop = document.getElementById('scrollTop');
-
-        // Initialize
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script>
+        // Scroll to top functionality
         document.addEventListener('DOMContentLoaded', function() {
-            renderPets();
-            setupEventListeners();
-            setupScrollToTop();
-        });
-
-        // Event listeners
-        function setupEventListeners() {
-            searchInput.addEventListener('input', debounce(filterPets, 300));
-            typeFilter.addEventListener('change', filterPets);
-            sizeFilter.addEventListener('change', filterPets);
-            ageFilter.addEventListener('change', filterPets);
-
-            // Modal events
-            const closeBtn = document.querySelector('.close');
-            closeBtn.addEventListener('click', closeModal);
-            window.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    closeModal();
+            const scrollTopBtn = document.getElementById('scrollTop');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollTopBtn.classList.remove('opacity-0', 'invisible');
+                    scrollTopBtn.classList.add('opacity-100', 'visible');
+                } else {
+                    scrollTopBtn.classList.remove('opacity-100', 'visible');
+                    scrollTopBtn.classList.add('opacity-0', 'invisible');
                 }
+            });
+
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
             });
 
             // Smooth scrolling for anchor links
@@ -1266,228 +400,23 @@
                     }
                 });
             });
-        }
 
-        // Debounce function
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Filter pets
-        function filterPets() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const typeValue = typeFilter.value;
-            const sizeValue = sizeFilter.value;
-            const ageValue = ageFilter.value;
-
-            filteredPets = petsData.filter(pet => {
-                const matchesSearch = !searchTerm || 
-                    pet.name.toLowerCase().includes(searchTerm) ||
-                    pet.breed.toLowerCase().includes(searchTerm) ||
-                    pet.personality.some(trait => trait.toLowerCase().includes(searchTerm));
-
-                const matchesType = typeValue === 'all' || pet.type === typeValue;
-                const matchesSize = sizeValue === 'all' || pet.size === sizeValue;
-                const matchesAge = ageValue === 'all' || pet.ageCategory === ageValue;
-
-                return matchesSearch && matchesType && matchesSize && matchesAge;
-            });
-
-            renderPets();
-        }
-
-        // Clear filters
-        function clearFilters() {
-            searchInput.value = '';
-            typeFilter.value = 'all';
-            sizeFilter.value = 'all';
-            ageFilter.value = 'all';
-            filteredPets = [...petsData];
-            renderPets();
-        }
-
-        // Render pets
-        function renderPets() {
-            // Show loading
-            loading.style.display = 'block';
-            petsGrid.style.display = 'none';
-            noResults.style.display = 'none';
-
-            // Simulate loading delay
-            setTimeout(() => {
-                loading.style.display = 'none';
-
-                if (filteredPets.length === 0) {
-                    noResults.style.display = 'block';
-                    return;
-                }
-
-                petsGrid.style.display = 'grid';
-                petsGrid.innerHTML = '';
-
-                filteredPets.forEach((pet, index) => {
-                    const petCard = createPetCard(pet, index);
-                    petsGrid.appendChild(petCard);
-                });
-            }, 500);
-        }
-
-        // Create pet card
-        function createPetCard(pet, index) {
-            const card = document.createElement('div');
-            card.className = 'pet-card';
-            card.style.animationDelay = `${index * 100}ms`;
-            
-            card.innerHTML = `
-                <img src="${pet.image}" alt="${pet.name}" class="pet-image">
-                <div class="pet-info">
-                    <div class="pet-header">
-                        <div>
-                            <div class="pet-name">${pet.name}</div>
-                            <div class="pet-breed">${pet.breed}</div>
-                        </div>
-                        <div class="pet-price">
-                            <div class="price">$${pet.adoptionFee}</div>
-                            <div class="price-label">adoption fee</div>
-                        </div>
-                    </div>
-                    
-                    <div class="pet-details">
-                        <div>📅 ${pet.age}</div>
-                        <div>👤 ${pet.gender}</div>
-                        <div>📏 ${pet.size}</div>
-                        <div>💉 ${pet.isVaccinated ? 'Vaccinated' : 'Not Vaccinated'}</div>
-                    </div>
-                    
-                    <div class="pet-tags">
-                        ${pet.personality.slice(0, 3).map(trait => `<span class="tag">${trait}</span>`).join('')}
-                    </div>
-                    
-                    <div class="pet-description">${pet.description}</div>
-                    
-                    <div class="pet-actions">
-                        <button class="btn-learn" onclick="openModal(${pet.id})">Learn More</button>
-                        <button class="btn-adopt" onclick="adoptPet('${pet.name}')">Adopt Me! 🏠</button>
-                    </div>
-                </div>
-            `;
-
-            return card;
-        }
-
-        // Open modal
-        function openModal(petId) {
-            const pet = petsData.find(p => p.id === petId);
-            if (!pet) return;
-
-            document.getElementById('modalTitle').textContent = `Meet ${pet.name}`;
-            
-            const modalBody = document.getElementById('modalBody');
-            modalBody.innerHTML = `
-                <img src="${pet.image}" alt="${pet.name}" class="modal-pet-image">
-                
-                <div class="modal-info-grid">
-                    <div class="info-section">
-                        <h4>Basic Information</h4>
-                        <p><strong>Breed:</strong> ${pet.breed}</p>
-                        <p><strong>Age:</strong> ${pet.age}</p>
-                        <p><strong>Gender:</strong> ${pet.gender}</p>
-                        <p><strong>Size:</strong> ${pet.size}</p>
-                        <p><strong>Adoption Fee:</strong> $${pet.adoptionFee}</p>
-                    </div>
-                    
-                    <div class="info-section">
-                        <h4>Health & Care</h4>
-                        <p><strong>Vaccinated:</strong> ${pet.isVaccinated ? 'Yes ✅' : 'No ❌'}</p>
-                        <p><strong>Spayed/Neutered:</strong> ${pet.isNeutered ? 'Yes ✅' : 'No ❌'}</p>
-                        <p><strong>Good with Kids:</strong> ${pet.goodWithKids ? 'Yes ✅' : 'No ❌'}</p>
-                        <p><strong>Good with Pets:</strong> ${pet.goodWithPets ? 'Yes ✅' : 'No ❌'}</p>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h4>Personality Traits</h4>
-                    <div class="personality-tags">
-                        ${pet.personality.map(trait => `<span class="personality-tag">${trait}</span>`).join('')}
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h4>About ${pet.name}</h4>
-                    <p style="line-height: 1.6; color: #666;">${pet.description}</p>
-                </div>
-                
-                <button class="btn btn-primary" onclick="adoptPet('${pet.name}')" style="width: 100%; margin-top: 30px; padding: 15px; font-size: 1.2rem;">
-                    Adopt ${pet.name} 🏠
-                </button>
-            `;
-
-            modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
-
-        // Close modal
-        function closeModal() {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        // Adopt pet function
-        function adoptPet(petName) {
-            alert(`Thank you for your interest in adopting ${petName}! 🐾\n\nYou will be redirected to our adoption application form. Our team will contact you within 24 hours to schedule a meet and greet.\n\nWe're excited to help you find your perfect companion!`);
-            closeModal();
-        }
-
-        // Scroll to top functionality
-        function setupScrollToTop() {
-            window.addEventListener('scroll', function() {
-                if (window.pageYOffset > 300) {
-                    scrollTop.classList.add('visible');
-                } else {
-                    scrollTop.classList.remove('visible');
-                }
-            });
-
-            scrollTop.addEventListener('click', function() {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
-        }
-
-        // Add some entrance animations
-        function observeElements() {
+            // Add entrance animations to elements as they come into view
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
                     }
                 });
             }, {
                 threshold: 0.1
             });
 
-            document.querySelectorAll('.info-card, .step, .contact-card').forEach(el => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(30px)';
-                el.style.transition = 'all 0.6s ease';
+            // Observe elements for animation
+            document.querySelectorAll('.bg-white').forEach(el => {
+                el.classList.add('opacity-0', 'translate-y-8', 'transition-all', 'duration-700');
                 observer.observe(el);
             });
-        }
-
-        // Initialize animations after DOM load
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(observeElements, 1000);
         });
     </script>
 </body>

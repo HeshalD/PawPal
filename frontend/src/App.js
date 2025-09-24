@@ -8,7 +8,8 @@ import Home from './Components/Home/Home';
 import React from 'react';
 import AdoptionDetailsDisplay from "./Components/AdoptionDetailsDisplay/AdoptionDetailsDisplay"; 
 import FosterDetailsDisplay from "./Components/FosterDetailsDisplay/FosterDetailsDisplay";
-
+import AdoptionViewPage from './Components/AdoptionViewPage/AdoptionViewPage';
+import FosterViewPage from './Components/FosterViewPage/FosterViewPage';
 
 function App() {
 
@@ -23,7 +24,9 @@ function App() {
           <Route path="/adoption" element={<AdoptionDetails />} />
           <Route path="/foster" element={<FosterDetails />} />
           <Route path="/adoptionDisplay" element={<AdoptionDetailsDisplay />} />
-           <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
+          <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
+          <Route path="/adoptionViewPage" element={<AdoptionViewPage/>} />
+          <Route path="/fosterViewPage" element={<FosterViewPage/>} />
            
         </Routes>
       </React.Fragment>

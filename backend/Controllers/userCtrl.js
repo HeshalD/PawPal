@@ -59,26 +59,29 @@ const getById = async(req, res, next) => {
      return res.status(200).json({users});
 };
 
-//Update user details
-const updateUser = async(req, res, next) => {
-    const id = req.params.id;
-    const {name,age,address} = req.body;
+// Update user details
+const updateUser = async (req, res, next) => {
+  const id = req.params.id;
+  const { Fname, Lname, email, password, confirmpassword, age } = req.body;
 
-    let users;
+  let user;
 
-    try{
-        users = await User.findByIdAndUpdate(id,
-            { name :name, age:age, address:address});
-            users = await users.save();
-    }catch(err){
-        console.log(err);
-    }
-    //not avilable users
-     if (!users){
-        return res.status(404).json({message:"Unable to update user."});
-     }
-     return res.status(200).json({users});
+  try {
+    user = await User.findByIdAndUpdate(
+      id,
+      { Fname, Lname, email, password, confirmpassword, age },
+    );
+  } catch (err) {
+    console.log(err);
+  }
+
+  if (!user) {
+    return res.status(404).json({ message: "Unable to update user." });
+  }
+
+  return res.status(200).json({ user });
 };
+
 
 //Delete user details
 const deleteUser = async(req, res, next) => {
@@ -87,7 +90,8 @@ const deleteUser = async(req, res, next) => {
     let users;
      
     try{
-        users = await User.findByIdAndDelete(id);
+        users = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updateUser); 
     }catch(err){
         console.log(err);
     }

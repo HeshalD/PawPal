@@ -916,8 +916,8 @@ function UserProfile() {
                 >
                   <PawPrint className="w-5 h-5 text-[#6638E6] mr-3 group-hover:scale-110 transition duration-300" />
                   <span className="font-medium text-gray-700 group-hover:text-[#6638E6]">
-                    <Link to="pets">Manage Pets</Link>
-                    
+                    <Link to="pets"></Link>
+                    Manage Pets
                   </span>
                 </Link>
                 

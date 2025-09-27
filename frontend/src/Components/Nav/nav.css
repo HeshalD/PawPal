@@ -1,0 +1,42 @@
+/* nav.css */
+
+/* Nav bar container */
+.nav-ul {
+  list-style: none;
+  display: flex;
+  gap: 30px;
+  margin: 0;
+  padding: 15px 20px;
+  background-color: #333; /* Dark background */
+  align-items: center;
+}
+
+/* Individual nav items */
+.nav-ll {
+  margin: 0;
+  padding: 0;
+}
+
+/* Links inside nav items */
+.nav-ll a {
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  font-size: 1.2rem;
+  padding: 5px 0;
+  transition: color 0.3s ease, transform 0.2s ease, border-bottom 0.3s ease;
+  border-bottom: 2px solid transparent; /* For active/hover underline */
+}
+
+/* Hover effect for links */
+.nav-ll a:hover {
+  color: #ffcc00;
+  transform: scale(1.05);
+  border-bottom: 2px solid #ffcc00;
+}
+
+/* Active link styling */
+.nav-ll a.active {
+  color: #ffcc00;
+  border-bottom: 2px solid #ffcc00;
+}

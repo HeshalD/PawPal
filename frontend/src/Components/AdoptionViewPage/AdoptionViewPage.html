@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paw Pal - Find Your Perfect Companion</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-pink': '#E6738F',
+                        'primary-purple': '#6638E6',
+                        'light-pink': '#E69AAE',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'fadeInUp': 'fadeInUp 1s ease-out',
+                        'slideIn': 'slideIn 1s ease-out',
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'modalSlideIn': 'modalSlideIn 0.3s ease-out',
+                        'spin': 'spin 1s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(2deg)' },
+                        },
+                        fadeInUp: {
+                            'from': { opacity: '0', transform: 'translateY(50px)' },
+                            'to': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideIn: {
+                            'from': { opacity: '0', transform: 'translateX(-30px)' },
+                            'to': { opacity: '1', transform: 'translateX(0)' },
+                        },
+                        glow: {
+                            'from': { filter: 'drop-shadow(0 0 10px rgba(230, 115, 143, 0.5))' },
+                            'to': { filter: 'drop-shadow(0 0 20px rgba(230, 115, 143, 0.8))' },
+                        },
+                        modalSlideIn: {
+                            'from': { opacity: '0', transform: 'translateY(-50px) scale(0.9)' },
+                            'to': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        spin: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles that can't be easily done with Tailwind */
+        .hero-bg {
+            background: radial-gradient(circle at 20% 20%, rgba(230, 115, 143, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(230, 154, 174, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 40% 60%, rgba(102, 56, 230, 0.2) 0%, transparent 50%);
+        }
+        
+        .contact-bg {
+            background: radial-gradient(circle at 30% 30%, rgba(230, 115, 143, 0.3) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(230, 154, 174, 0.3) 0%, transparent 50%);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(45deg, #E6738F, #6638E6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-border::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #E6738F, #6638E6, #E69AAE);
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 overflow-x-hidden">
+    <!-- Hero Section -->
+    <section class="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 flex items-center justify-center relative overflow-hidden">
+        <div class="hero-bg absolute inset-0 animate-float"></div>
+        <div class="text-center text-white z-10 relative max-w-4xl px-5 animate-fadeInUp">
+            <h1 class="text-5xl md:text-6xl lg:text-7xl font-bold mb-5 gradient-text animate-glow">🐾 Paw Pal</h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-95">Give a loving home to pets in need. Every pet deserves a second chance at happiness and unconditional love!</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 my-10 max-w-2xl mx-auto">
+                <div class="text-center animate-slideIn">
+                    <h3 class="text-4xl font-bold mb-2">500+</h3>
+                    <p class="opacity-80">Pets Adopted</p>
+                </div>
+                <div class="text-center animate-slideIn" style="animation-delay: 200ms">
+                    <h3 class="text-4xl font-bold mb-2">50+</h3>
+                    <p class="opacity-80">Available Now</p>
+                </div>
+                <div class="text-center animate-slideIn" style="animation-delay: 400ms">
+                    <h3 class="text-4xl font-bold mb-2">24/7</h3>
+                    <p class="opacity-80">Support</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-5 justify-center mt-10">
+                <a href="/adoption-details" class="bg-gradient-to-r from-primary-pink to-primary-purple text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-105">To Adopt 🏠</a>
+                <a href="#info" class="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105">Learn More 📋</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Adoption Info Section -->
+    <section id="info" class="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div class="container mx-auto px-5 max-w-6xl">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-5 gradient-text">🏠 Pet Adoption Information</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Everything you need to know about our adoption process and how to give a loving pet their forever home.</p>
+            </div>
+
+            <!-- Mission Statement -->
+            <div class="bg-white p-8 rounded-2xl shadow-lg mb-12 text-center">
+                <h3 class="text-2xl font-bold mb-4">🎯 Our Mission</h3>
+                <p class="text-lg text-gray-700 leading-relaxed">We believe every pet deserves a loving home. Our comprehensive adoption program ensures the perfect match between pets and families, creating lifelong bonds filled with happiness and companionship.</p>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">🤍 Why Adopt?</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Save a life and give a pet a second chance</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Gain a loyal, loving companion for life</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Help reduce pet overpopulation</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Support animal welfare initiatives</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Experience unconditional love and joy</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Get a pet that's already socialized</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">📋 Adoption Requirements</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Must be 18+ years old</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Stable living situation with pet-friendly housing</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Financial capability to provide proper care</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Previous pet experience preferred but not required</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Commitment to the pet's lifetime care</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Valid identification and references</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">💝 What's Included</h3>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Complete vaccination records</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Spay/neuter procedure (if age appropriate)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Microchip identification</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Health certificate from our veterinarian</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>Starter kit with food and essentials</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🐾</span>
+                            <span>24/7 post-adoption support</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-lg hover:transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">💰 Adoption Fees</h3>
+                    <div class="text-center">
+                        <div class="grid grid-cols-3 gap-4 my-5">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐕</div>
+                                <strong class="text-primary-pink">Dogs</strong><br>
+                                <span class="text-sm">$150 - $300</span>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐱</div>
+                                <strong class="text-primary-purple">Cats</strong><br>
+                                <span class="text-sm">$75 - $200</span>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="text-3xl">🐰</div>
+                                <strong class="text-light-pink">Small Pets</strong><br>
+                                <span class="text-sm">$25 - $75</span>
+                            </div>
+                        </div>
+                        <p class="text-sm italic text-gray-600">Fees help cover medical care, vaccinations, spaying/neutering, and facility maintenance.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process Steps -->
+            <div class="text-center mb-12">
+                <h3 class="text-3xl md:text-4xl font-bold text-gray-800 mb-5">🚀 Our Simple Adoption Process</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-16">
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">1</div>
+                    <h4 class="text-lg font-bold mb-2">Browse & Choose</h4>
+                    <p class="text-gray-600 text-sm">Browse available pets and find your perfect match</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">2</div>
+                    <h4 class="text-lg font-bold mb-2">Application</h4>
+                    <p class="text-gray-600 text-sm">Complete our adoption application form</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">3</div>
+                    <h4 class="text-lg font-bold mb-2">Meet & Greet</h4>
+                    <p class="text-gray-600 text-sm">Schedule a visit to meet your chosen pet</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">4</div>
+                    <h4 class="text-lg font-bold mb-2">Home Check</h4>
+                    <p class="text-gray-600 text-sm">Quick home environment assessment</p>
+                </div>
+                <div class="bg-white p-6 rounded-2xl text-center shadow-lg hover:shadow-xl hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 transition-transform duration-300 hover:rotate-12">5</div>
+                    <h4 class="text-lg font-bold mb-2">Finalize</h4>
+                    <p class="text-gray-600 text-sm">Complete paperwork and take your pet home!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="py-24 bg-gradient-to-br from-blue-600 via-purple-600 to-purple-700 text-white relative overflow-hidden">
+        <div class="contact-bg absolute inset-0 animate-float"></div>
+        <div class="container mx-auto px-5 max-w-6xl relative z-10">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl md:text-5xl font-bold mb-5">📞 Ready to Adopt?</h2>
+                <p class="text-xl max-w-2xl mx-auto">Contact us today to start your adoption journey! Our friendly team is here to help you find your perfect companion.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📞</div>
+                    <h4 class="text-lg font-bold mb-2">Phone</h4>
+                    <p><a href="tel:+15551234737" class="hover:text-light-pink transition-colors">(555) 123-PETS</a></p>
+                </div>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📧</div>
+                    <h4 class="text-lg font-bold mb-2">Email</h4>
+                    <p><a href="/cdn-cgi/l/email-protection#5332373c232713233627303221367d303c3e" class="hover:text-light-pink transition-colors"><span class="__cf_email__" data-cfemail="5431363d222614243122353724337835393b">[email&#160;protected]</span></a></p>
+                </div>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">📍</div>
+                    <h4 class="text-lg font-bold mb-2">Address</h4>
+                    <p>123 Pet Care Lane<br>Animal City, AC 12345</p>
+                </div>
+                <div class="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300">
+                    <div class="w-16 h-16 bg-gradient-to-r from-primary-pink to-light-pink text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">🕒</div>
+                    <h4 class="text-lg font-bold mb-2">Hours</h4>
+                    <p>Mon-Sat 9AM-6PM<br>Sun 10AM-4PM</p>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <a href="#pets" class="bg-gradient-to-r from-primary-pink to-primary-purple text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 mr-4 inline-block mb-4">Browse Available Pets 🐾</a>
+                <a href="tel:+15551234737" class="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 inline-block mb-4">Call Us Now 📞</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-16 px-5">
+        <div class="container mx-auto max-w-6xl">
+            <h3 class="text-3xl font-bold mb-5 gradient-text text-center">🐾 Pet Adoption Center</h3>
+            <p class="text-gray-400 text-center mb-10 max-w-2xl mx-auto">Connecting loving families with pets in need since 2010. Every adoption saves a life and creates a lifetime of happiness.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Quick Links</h4>
+                    <div class="space-y-2">
+                        <p><a href="#pets" class="text-gray-400 hover:text-white transition-colors">Available Pets</a></p>
+                        <p><a href="#info" class="text-gray-400 hover:text-white transition-colors">Adoption Info</a></p>
+                        <p><a href="#" class="text-gray-400 hover:text-white transition-colors">Volunteer</a></p>
+                        <p><a href="#" class="text-gray-400 hover:text-white transition-colors">Donate</a></p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Services</h4>
+                    <div class="space-y-2">
+                        <p class="text-gray-400">Pet Adoption</p>
+                        <p class="text-gray-400">Veterinary Care</p>
+                        <p class="text-gray-400">Pet Training</p>
+                        <p class="text-gray-400">Emergency Care</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-primary-pink text-lg font-bold mb-4">Contact</h4>
+                    <div class="space-y-2">
+                        <p class="text-gray-400">(555) 123-PETS</p>
+                        <p class="text-gray-400"><a href="/cdn-cgi/l/email-protection" class="hover:text-white transition-colors"><span class="__cf_email__" data-cfemail="7a1b1e150a0e3a0a1f0e190b180f44191517">[email&#160;protected]</span></a></p>
+                        <p class="text-gray-400">123 Pet Care Lane</p>
+                        <p class="text-gray-400">Animal City, AC 12345</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 pt-8 text-center text-gray-500">
+                <p>© 2024 Pet Adoption Center. All rights reserved. Made with ❤️ for pets in need.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <button id="scrollTop" class="fixed bottom-8 right-8 w-12 h-12 bg-gradient-to-r from-primary-pink to-primary-purple text-white rounded-full shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-110 opacity-0 invisible z-50">↑</button>
+
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
+    <script>
+        // Scroll to top functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollTopBtn = document.getElementById('scrollTop');
+            
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    scrollTopBtn.classList.remove('opacity-0', 'invisible');
+                    scrollTopBtn.classList.add('opacity-100', 'visible');
+                } else {
+                    scrollTopBtn.classList.remove('opacity-100', 'visible');
+                    scrollTopBtn.classList.add('opacity-0', 'invisible');
+                }
+            });
+
+            scrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Add entrance animations to elements as they come into view
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('opacity-100', 'translate-y-0');
+                    }
+                });
+            }, {
+                threshold: 0.1
+            });
+
+            // Observe elements for animation
+            document.querySelectorAll('.bg-white').forEach(el => {
+                el.classList.add('opacity-0', 'translate-y-8', 'transition-all', 'duration-700');
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

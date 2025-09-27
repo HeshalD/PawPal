@@ -1,42 +1,76 @@
-/* nav.css */
-
-/* Nav bar container */
-.nav-ul {
-  list-style: none;
-  display: flex;
-  gap: 30px;
+/* Reset styles */
+* {
   margin: 0;
-  padding: 15px 20px;
-  background-color: #333; /* Dark background */
-  align-items: center;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Individual nav items */
+/* Navbar wrapper */
+.nav-ul {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem; /* space between links */
+  list-style: none;
+  background: linear-gradient(90deg, #6a11cb, #2575fc); /* purple to blue */
+  padding: 1rem 2rem;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* List item */
 .nav-ll {
+  position: relative;
   margin: 0;
   padding: 0;
 }
 
-/* Links inside nav items */
-.nav-ll a {
+/* Link styles */
+.nav-ll a,
+.home-a {
   text-decoration: none;
-  color: white;
-  font-weight: bold;
-  font-size: 1.2rem;
-  padding: 5px 0;
-  transition: color 0.3s ease, transform 0.2s ease, border-bottom 0.3s ease;
-  border-bottom: 2px solid transparent; /* For active/hover underline */
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 0.5rem 0.8rem;
+  transition: all 0.3s ease, color 0.3s ease, transform 0.2s ease, border-bottom 0.3s ease;
+  border-radius: 6px;
+  border-bottom: 2px solid transparent;
+  display: block;
 }
 
-/* Hover effect for links */
-.nav-ll a:hover {
-  color: #ffcc00;
-  transform: scale(1.05);
-  border-bottom: 2px solid #ffcc00;
+/* Hover effect */
+.nav-ll a:hover,
+.home-a:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffeb3b;
+  transform: translateY(-2px) scale(1.05);
+  border-bottom: 2px solid #ffeb3b;
 }
 
-/* Active link styling */
-.nav-ll a.active {
-  color: #ffcc00;
-  border-bottom: 2px solid #ffcc00;
+/* Active link */
+.nav-ll a.active,
+.home-a.active,
+.active {
+  font-weight: 700;
+  color: #ffeb3b;
+  border-bottom: 2px solid #ffeb3b;
 }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .nav-ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .nav-ll a,
+  .home-a {
+    font-size: 1.1rem;
+    width: 100%;
+    display: block;
+  }
+}
+

@@ -27,6 +27,12 @@ import AdoptionDetailsDisplay from "./Components/AdoptionDetailsDisplay/Adoption
 import FosterDetailsDisplay from "./Components/FosterDetailsDisplay/FosterDetailsDisplay";
 import AdoptionViewPage from './Components/AdoptionViewPage/AdoptionViewPage';
 import FosterViewPage from './Components/FosterViewPage/FosterViewPage';
+import DonationManagement from './Components/DonationManager/DonationManager';
+import DonorForm from './Components/DonorForm/DonorForm';
+import HomeAds from './Components/HomeAds/HomeAds';
+import ManagerDashboard from './Components/ManagerDashboard/ManagerDashboard';
+import SponsorForm from './Components/SponsorForm/SponsorForm'; 
+import Nav from './Components/Nav/Nav';
 
 function App() {
   const [collapsed] = useState(false);
@@ -41,6 +47,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/addpet" element={<AddPet />} />
         <Route path="/pets/:id" element={<UpdatePet />} />
+        <Route path="/nav" element={<Nav />} />
         
         {/* Dashboard routes */}
         <Route path="/dashboard" element={<Dashboard />} />
@@ -55,12 +62,17 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         
         {/* Component routes */}
-        <Route path="/adoption" element={<AdoptionDetails />} />
-        <Route path="/foster" element={<FosterDetails />} />
+        <Route path="/adoptionDetails" element={<AdoptionDetails />} />
+        <Route path="/fosterDetails" element={<FosterDetails />} />
         <Route path="/adoptionDisplay" element={<AdoptionDetailsDisplay />} />
         <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
         <Route path="/adoptionViewPage" element={<AdoptionViewPage/>} />
         <Route path="/fosterViewPage" element={<FosterViewPage/>} />
+        <Route path="/donationform" element={<DonorForm />} />
+        <Route path="/donations" element={<DonationManagement />} />
+        <Route path="/sponsor" element={<SponsorForm />} />
+        <Route path="/manager" element={<ManagerDashboard />} />
+        <Route path="/ads" element={<HomeAds />} />
       </Routes>
     </div>
   );

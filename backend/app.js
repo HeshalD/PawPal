@@ -1,19 +1,42 @@
+
 //password - lJv2dSasOC6LPFG1
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+require('dotenv').config();
 
 // Route imports
 const userRouter = require("./Routes/userRoute");
 const petRouter = require("./Routes/petRoute");
 const AdoptionRoute = require("./Routes/AdoptionRoute");
 const fosterRoutes = require("./Routes/FosterRoutes");
+const sponsorRoutes = require("./Routes/SponsorRoute");
+const Sponsor = require("./Models/SponsorModel");
+const donationRoutes = require("./Routes/DonationRoute");
 
 const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && /^http:\/\/localhost:\d+$/.test(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
@@ -23,6 +46,8 @@ app.use("/users", userRouter);
 app.use("/pets", petRouter);
 app.use("/adoptions", AdoptionRoute);
 app.use("/fosters", fosterRoutes);
+app.use("/sponsors", sponsorRoutes);
+app.use("/donations", donationRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
@@ -91,4 +116,32 @@ app.post("/registerpet", async (req, res) => {
     console.error(err);
     res.send({ status: "err" });
   }
+
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+
+
+const startExpiryJob = () => {
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const result = await Sponsor.updateMany(
+        { status: "active", endDate: { $lte: now } },
+        { status: "past", updatedAt: Date.now() }
+      );
+      if (result.modifiedCount) {
+        console.log(`Expired -> past: ${result.modifiedCount}`);
+      }
+    } catch (e) {
+      console.error("Expiry job error", e.message);
+    }
+  }, 30 * 1000); // every 30s
+};
+
+
+
+
 });

@@ -3,6 +3,7 @@ import { useCart } from '../../Contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import OrderConfirmationModal from '../order/OrderConfirmationModal';
 
 const Cart = ({ isOpen, onClose }) => {
   const { 
@@ -216,6 +217,8 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
 
   const handleInputChange = (e) => {
     setFormData({
@@ -259,8 +262,20 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
       const result = await response.json();
       
       if (response.ok) {
-        setOrderId(result.order?.orderId || generateOrderId());
-        onOrderComplete();
+        const orderId = result.order?.orderId || generateOrderId();
+        setOrderId(orderId);
+        
+        // Create order object for confirmation modal
+        const orderForConfirmation = {
+          ...orderData,
+          orderId: orderId,
+          orderDate: new Date().toISOString(),
+          status: 'pending'
+        };
+        
+        setConfirmedOrder(orderForConfirmation);
+        setShowConfirmation(true);
+        // Don't call onOrderComplete yet, let user see confirmation
       } else {
         throw new Error(result.message || 'Failed to place order');
       }
@@ -272,90 +287,6 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
     }
   };
 
-  const downloadOrderPDF = () => {
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.text('PawPal - Order Receipt', 20, 20);
-    
-    // Order details
-    doc.setFontSize(12);
-    doc.text(`Order ID: ${orderId}`, 20, 35);
-    doc.text(`Order Date: ${new Date().toLocaleDateString()}`, 20, 45);
-    doc.text(`Customer: ${formData.customerName}`, 20, 55);
-    doc.text(`Email: ${formData.customerEmail}`, 20, 65);
-    doc.text(`Phone: ${formData.customerPhone}`, 20, 75);
-    doc.text(`Delivery Address: ${formData.deliveryAddress}`, 20, 85);
-    
-    // Items table
-    const tableColumns = ['Item', 'Price', 'Qty', 'Total'];
-    const tableRows = items.map(item => [
-      item.Item_Name,
-      `Rs. ${item.Price.toFixed(2)}`,
-      item.quantity.toString(),
-      `Rs. ${(item.Price * item.quantity).toFixed(2)}`
-    ]);
-    
-    // Add total row
-    tableRows.push(['', '', 'TOTAL:', `Rs. ${totalPrice.toFixed(2)}`]);
-    
-    doc.autoTable({
-      head: [tableColumns],
-      body: tableRows,
-      startY: 100,
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [102, 56, 230] },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 30 }
-      }
-    });
-    
-    // Footer
-    const finalY = doc.lastAutoTable.finalY + 20;
-    doc.setFontSize(10);
-    doc.text('Thank you for your order!', 20, finalY);
-    doc.text('For any queries, contact us at support@pawpal.com', 20, finalY + 10);
-    
-    // Save the PDF
-    doc.save(`PawPal-Order-${orderId}.pdf`);
-  };
-
-  if (orderId) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-6">
-          <div className="text-center">
-            <div className="text-6xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
-            <p className="text-gray-600 mb-4">Your order has been placed and will be processed soon.</p>
-            <div className="bg-gray-100 p-4 rounded-lg mb-6">
-              <p className="text-sm text-gray-600">Order ID:</p>
-              <p className="text-lg font-mono font-bold text-[#6638E6]">{orderId}</p>
-            </div>
-            <div className="space-y-3">
-              <button
-                onClick={downloadOrderPDF}
-                className="w-full bg-[#4CB5AE] text-white py-2 rounded-md font-semibold hover:bg-[#3aa39c] transition-colors"
-              >
-                Download Order Details (PDF)
-              </button>
-              <button
-                onClick={onClose}
-                className="w-full bg-gray-100 text-gray-700 py-2 rounded-md font-semibold hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -481,6 +412,18 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
           </form>
         </div>
       </div>
+
+      {/* Order Confirmation Modal */}
+      <OrderConfirmationModal
+        order={confirmedOrder}
+        isOpen={showConfirmation}
+        onClose={() => {
+          setShowConfirmation(false);
+          setConfirmedOrder(null);
+          // Now complete the order process
+          onOrderComplete();
+        }}
+      />
     </div>
   );
 };

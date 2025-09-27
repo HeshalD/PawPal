@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import OrderConfirmationModal from "./OrderConfirmationModal";
 
 function BulkOrderModal({ items, isOpen, onClose, onOrder }) {
   const [selectedItems, setSelectedItems] = useState({});
@@ -10,6 +11,8 @@ function BulkOrderModal({ items, isOpen, onClose, onOrder }) {
     notes: ""
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedOrders, setConfirmedOrders] = useState([]);
 
   const handleItemSelect = (itemId, quantity) => {
     if (quantity > 0) {
@@ -65,21 +68,19 @@ function BulkOrderModal({ items, isOpen, onClose, onOrder }) {
       });
 
       // Submit all orders
+      const results = [];
       for (const order of orders) {
-        await onOrder(order);
+        const result = await onOrder(order);
+        results.push(result || order);
       }
 
-      onClose();
-      setSelectedItems({});
-      setCustomerInfo({
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        deliveryAddress: "",
-        notes: ""
-      });
+      // Show confirmation modal with all orders
+      setConfirmedOrders(results);
+      setShowConfirmation(true);
+      // Don't close the modal yet, let user see confirmation
     } catch (error) {
       console.error("Bulk order submission failed:", error);
+      alert("Failed to place orders. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -256,6 +257,38 @@ function BulkOrderModal({ items, isOpen, onClose, onOrder }) {
           </form>
         </div>
       </div>
+
+      {/* Order Confirmation Modal */}
+      {confirmedOrders.length > 0 && (
+        <OrderConfirmationModal
+          order={{
+            ...confirmedOrders[0],
+            items: confirmedOrders.map(order => ({
+              itemId: order.itemId,
+              itemName: order.itemName,
+              itemPrice: order.itemPrice,
+              quantity: order.quantity,
+              itemTotal: order.totalAmount
+            })),
+            totalAmount: confirmedOrders.reduce((sum, order) => sum + order.totalAmount, 0)
+          }}
+          isOpen={showConfirmation}
+          onClose={() => {
+            setShowConfirmation(false);
+            setConfirmedOrders([]);
+            // Reset form and close modal
+            setSelectedItems({});
+            setCustomerInfo({
+              customerName: "",
+              customerEmail: "",
+              customerPhone: "",
+              deliveryAddress: "",
+              notes: ""
+            });
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 }

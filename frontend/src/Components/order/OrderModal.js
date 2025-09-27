@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import OrderConfirmationModal from "./OrderConfirmationModal";
 
 function OrderModal({ item, isOpen, onClose, onOrder }) {
   const [orderDetails, setOrderDetails] = useState({
@@ -11,6 +12,8 @@ function OrderModal({ item, isOpen, onClose, onOrder }) {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmedOrder, setConfirmedOrder] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,18 +43,14 @@ function OrderModal({ item, isOpen, onClose, onOrder }) {
     };
 
     try {
-      await onOrder(order);
-      onClose();
-      setOrderDetails({
-        quantity: 1,
-        customerName: "",
-        customerEmail: "",
-        customerPhone: "",
-        deliveryAddress: "",
-        notes: ""
-      });
+      const result = await onOrder(order);
+      // Show confirmation modal with order details
+      setConfirmedOrder(result || order);
+      setShowConfirmation(true);
+      // Don't close the modal yet, let user see confirmation
     } catch (error) {
       console.error("Order failed:", error);
+      alert("Failed to place order. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -227,6 +226,26 @@ function OrderModal({ item, isOpen, onClose, onOrder }) {
           </form>
         </div>
       </div>
+
+      {/* Order Confirmation Modal */}
+      <OrderConfirmationModal
+        order={confirmedOrder}
+        isOpen={showConfirmation}
+        onClose={() => {
+          setShowConfirmation(false);
+          setConfirmedOrder(null);
+          // Reset form and close modal
+          setOrderDetails({
+            quantity: 1,
+            customerName: "",
+            customerEmail: "",
+            customerPhone: "",
+            deliveryAddress: "",
+            notes: ""
+          });
+          onClose();
+        }}
+      />
     </div>
   );
 }

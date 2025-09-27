@@ -1,7 +1,7 @@
 //password - lJv2dSasOC6LPFG1
 const express = require("express");
 const mongoose = require("mongoose");
-const router = require("./Routes/userRoute");
+const userRouter = require("./Routes/userRoute");
 const petRouter = require("./Routes/petRoute");
 
 const app = express();
@@ -10,7 +10,7 @@ const cors = require("cors");
 //middleware
 app.use(express.json());
 app.use(cors());
-app.use("/users", router);
+app.use("/users", userRouter);
 app.use("/pets", petRouter);
 
 // MongoDB connection

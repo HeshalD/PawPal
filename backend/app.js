@@ -2,7 +2,6 @@
 //password - lJv2dSasOC6LPFG1
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -17,7 +16,12 @@ const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
 
+const inventoryRouter = require("./Routes/inventoryRoutes");
+const orderRouter = require("./Routes/orderRoutes");
+
 const app = express();
+const cors = require ("cors");
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
@@ -48,6 +52,8 @@ app.use("/adoptions", AdoptionRoute);
 app.use("/fosters", fosterRoutes);
 app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
+app.use("/items", inventoryRouter);
+app.use("/orders", orderRouter);
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
@@ -145,3 +151,9 @@ const startExpiryJob = () => {
 
 
 });
+
+
+
+
+
+

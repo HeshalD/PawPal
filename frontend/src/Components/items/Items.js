@@ -54,7 +54,7 @@ const handleExportPdf = () => {
     it._id || "-",
     it.Item_Name || "-",
     it.image ? `http://localhost:5000${it.image}` : "No Image",
-    it.Price !== undefined ? `$${parseFloat(it.Price).toFixed(2)}` : "-",
+    it.Price !== undefined ? `Rs. ${parseFloat(it.Price).toFixed(2)}` : "-",
     it.Quantity !== undefined ? it.Quantity.toString() : "0",
     it.Unit_of_Measure || "-",
     it.Category || "-"

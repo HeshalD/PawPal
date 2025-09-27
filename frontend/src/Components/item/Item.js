@@ -46,7 +46,7 @@ function Item({ item, onDelete }) {
           </div>
         </td>
         <td className="py-3 px-6 align-middle whitespace-nowrap text-[#333333]">#{_id?.slice(-6)}</td>
-        <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Price !== undefined ? `$${parseFloat(Price).toFixed(2)}` : '-'}</td>
+        <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Price !== undefined ? `Rs. ${parseFloat(Price).toFixed(2)}` : '-'}</td>
         <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Quantity ?? 0}</td>
         <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Unit_of_Measure}</td>
         <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Category}</td>

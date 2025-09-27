@@ -23,6 +23,13 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// Generate unique order ID
+const generateOrderId = () => {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substr(2, 5);
+  return `PP-${timestamp}-${random}`.toUpperCase();
+};
+
 // Create new order
 const createOrder = async (req, res) => {
   try {
@@ -30,8 +37,7 @@ const createOrder = async (req, res) => {
     
     // Validate required fields
     const requiredFields = [
-      'itemId', 'itemName', 'itemPrice', 'quantity', 'totalAmount',
-      'customerName', 'customerEmail', 'customerPhone', 'deliveryAddress'
+      'items', 'totalAmount', 'customerName', 'customerEmail', 'customerPhone', 'deliveryAddress'
     ];
     
     for (const field of requiredFields) {
@@ -40,7 +46,20 @@ const createOrder = async (req, res) => {
       }
     }
 
-    const order = new Order(orderData);
+    // Validate items array
+    if (!Array.isArray(orderData.items) || orderData.items.length === 0) {
+      return res.status(400).json({ message: "Items array is required and must not be empty" });
+    }
+
+    // Generate unique order ID
+    const orderId = generateOrderId();
+    
+    // Create order with generated ID
+    const order = new Order({
+      ...orderData,
+      orderId: orderId
+    });
+    
     await order.save();
     
     res.status(201).json({ 
@@ -48,6 +67,10 @@ const createOrder = async (req, res) => {
       order 
     });
   } catch (error) {
+    if (error.code === 11000) {
+      // Duplicate order ID, retry with new ID
+      return createOrder(req, res);
+    }
     res.status(500).json({ message: "Failed to create order", error: error.message });
   }
 };

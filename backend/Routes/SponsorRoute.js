@@ -31,6 +31,7 @@ router.delete("/:id", SponsorController.deleteSponsor);
 
 router.put("/:id/approve", SponsorController.approveSponsor);
 router.put("/:id/reject", SponsorController.rejectSponsor);
+router.put("/:id/soft-delete", SponsorController.softDeleteSponsor);
 router.post("/:id/upload-ad", upload.single("adImage"), SponsorController.uploadAd);
 
 router.get("/status/:status", SponsorController.getSponsorsByStatus);
@@ -44,5 +45,4 @@ router.get("/filter/data", SponsorController.getSponsorsWithFilter);
 router.get("/summary/stats", SponsorController.getSponsorSummary);
 
 module.exports = router;
-
 

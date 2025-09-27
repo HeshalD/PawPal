@@ -23,7 +23,8 @@ export const SponsorsAPI = {
   }),
   remove: (id) => apiClient.delete(`/sponsors/${id}`),
   approve: (id) => apiClient.put(`/sponsors/${id}/approve`),
-  reject: (id) => apiClient.put(`/sponsors/${id}/reject`),
+  reject: (id, reason) => apiClient.put(`/sponsors/${id}/reject`, { reason }),
+  softDelete: (id, reason) => apiClient.put(`/sponsors/${id}/soft-delete`, { reason }),
   uploadAd: (id, file) => {
     const fd = new FormData();
     fd.append('adImage', file);

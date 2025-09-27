@@ -249,23 +249,54 @@ const approveSponsor = async (req, res, next) => {
   }
 };
 
-const rejectSponsor = async (req, res, next) => {
-  try {
-    const id = req.params.id;
-    const sponsor = await Sponsor.findByIdAndUpdate(
-      id,
-      { status: "rejected", updatedAt: Date.now() },
-      { new: true }
-    );
-    if (!sponsor) {
-      return res.status(404).json({ message: "Sponsor not found" });
+  const rejectSponsor = async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      const { reason } = req.body || {};
+      const sponsor = await Sponsor.findByIdAndUpdate(
+        id,
+        {
+          status: "rejected",
+          rejectReason: reason || null,
+          rejectedAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+        { new: true }
+      );
+      if (!sponsor) {
+        return res.status(404).json({ message: "Sponsor not found" });
+      }
+      return res.status(200).json({ sponsor });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Server error" });
     }
-    return res.status(200).json({ sponsor });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
+  };
+
+  const softDeleteSponsor = async (req, res, next) => {
+    try {
+      const id = req.params.id;
+      const { reason } = req.body || {};
+      const sponsor = await Sponsor.findById(id);
+      if (!sponsor) {
+        return res.status(404).json({ message: "Sponsor not found" });
+      }
+      if (sponsor.status === "past") {
+        return res.status(400).json({ message: "Cannot delete past sponsor" });
+      }
+
+      sponsor.status = "deleted";
+      sponsor.deleteReason = reason || null;
+      sponsor.deletedAt = Date.now();
+      sponsor.updatedAt = Date.now();
+      await sponsor.save();
+
+      return res.status(200).json({ sponsor });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Server error" });
+    }
+  };
 
 const uploadAd = async (req, res, next) => {
   try {
@@ -462,6 +493,7 @@ module.exports = {
   deleteSponsor,
   approveSponsor,
   rejectSponsor,
+  softDeleteSponsor,
   uploadAd,
   getSponsorsByStatus,
   getManagerPending,

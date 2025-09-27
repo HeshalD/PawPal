@@ -17,7 +17,7 @@ const sponsorSchema = new Schema({
     required: true,
     lowercase: true,
     trim: true,
-    match: [/^\S+@\S+\.[\w\-]+$/, "Invalid email"],
+    match: [/^\S+@\S+.[\w\-]+$/, "Invalid email"],
   },
   phone: {
     type: String,
@@ -45,7 +45,7 @@ const sponsorSchema = new Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "active", "past", "rejected"],
+    enum: ["pending", "active", "past", "rejected", "deleted"],
     default: "pending",
   },
   startDate: {
@@ -53,6 +53,24 @@ const sponsorSchema = new Schema({
     default: null,
   },
   endDate: {
+    type: Date,
+    default: null,
+  },
+  rejectReason: {
+    type: String,
+    default: null,
+    trim: true,
+  },
+  rejectedAt: {
+    type: Date,
+    default: null,
+  },
+  deleteReason: {
+    type: String,
+    default: null,
+    trim: true,
+  },
+  deletedAt: {
     type: Date,
     default: null,
   },

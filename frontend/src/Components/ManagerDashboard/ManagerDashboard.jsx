@@ -7,6 +7,7 @@ export default function ManagerDashboard() {
   const [active, setActive] = useState([]);
   const [past, setPast] = useState([]);
   const [rejected, setRejected] = useState([]);
+  const [deleted, setDeleted] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,18 +16,21 @@ export default function ManagerDashboard() {
     pending: [],
     active: [],
     past: [],
-    rejected: []
+    rejected: [],
+    deleted: []
   });
+  const [reasonModal, setReasonModal] = useState({ open: false, action: null, id: null, reason: '' });
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [p, a, pa, rj] = await Promise.all([
+      const [p, a, pa, rj, dl] = await Promise.all([
         SponsorsAPI.managerPending(),
         SponsorsAPI.managerActive(),
         SponsorsAPI.managerPast(),
         SponsorsAPI.byStatus('rejected'),
+        SponsorsAPI.byStatus('deleted'),
       ]);
       
       console.log('Loaded pending sponsors:', p.data.sponsors);
@@ -40,6 +44,7 @@ export default function ManagerDashboard() {
       setActive(a.data.sponsors || []);
       setPast(pa.data.sponsors || []);
       setRejected(rj.data.sponsors || []);
+      setDeleted(dl.data.sponsors || []);
     } catch (e) {
       console.error('Manager load error:', e);
       setError(`Failed to load: ${e?.response?.data?.message || e.message || 'Unknown error'}`);
@@ -102,9 +107,10 @@ export default function ManagerDashboard() {
       pending: filterData(pending),
       active: filterData(active),
       past: filterData(past),
-      rejected: filterData(rejected)
+      rejected: filterData(rejected),
+      deleted: filterData(deleted)
     });
-  }, [pending, active, past, rejected, searchTerm, dateFilter]);
+  }, [pending, active, past, rejected, deleted, searchTerm, dateFilter]);
 
   const approve = async (id) => {
     try {
@@ -116,13 +122,26 @@ export default function ManagerDashboard() {
     }
   };
 
-  const reject = async (id) => {
+  const openReasonModal = (action, id) => {
+    setReasonModal({ open: true, action, id, reason: '' });
+  };
+
+  const submitReason = async () => {
+    const { action, id, reason } = reasonModal;
+    if (!reason?.trim()) {
+      return setError('Please provide a reason.');
+    }
     try {
-      await SponsorsAPI.reject(id);
+      if (action === 'reject') {
+        await SponsorsAPI.reject(id, reason.trim());
+      } else if (action === 'delete') {
+        await SponsorsAPI.softDelete(id, reason.trim());
+      }
+      setReasonModal({ open: false, action: null, id: null, reason: '' });
       await load();
     } catch (e) {
-      console.error('Reject error:', e);
-      setError(`Reject failed: ${e?.response?.data?.message || e.message}`);
+      console.error('Reason action error:', e);
+      setError(`${action === 'reject' ? 'Reject' : 'Delete'} failed: ${e?.response?.data?.message || e.message}`);
     }
   };
 
@@ -269,9 +288,9 @@ export default function ManagerDashboard() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 font-gilroyBold">
-                ⚙️ Manager Dashboard
+                ⚙️Sponsor Management
               </h1>
-              <p className="text-gray-600 mt-1">Professional Pet Care Management System</p>
+              <p className="text-gray-600 mt-1">Pawpal Pet Care Management System</p>
             </div>
             <div className="flex space-x-4">
               <button
@@ -419,7 +438,7 @@ export default function ManagerDashboard() {
                           Approve
                         </button>
                         <button
-                          onClick={() => reject(sponsor._id)}
+                          onClick={() => openReasonModal('reject', sponsor._id)}
                           className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors duration-200"
                         >
                           Reject
@@ -480,7 +499,7 @@ export default function ManagerDashboard() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
-                          onClick={() => remove(sponsor._id)}
+                          onClick={() => openReasonModal('delete', sponsor._id)}
                           className="text-red-600 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-1 rounded-lg transition-colors duration-200"
                         >
                           Delete
@@ -558,7 +577,7 @@ export default function ManagerDashboard() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
@@ -578,8 +597,8 @@ export default function ManagerDashboard() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {sponsor.durationMonths === 0.001 ? '1 min' : `${sponsor.durationMonths} months`}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(sponsor.createdAt).toLocaleDateString()}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {sponsor.rejectReason || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
@@ -592,8 +611,89 @@ export default function ManagerDashboard() {
               </table>
             </div>
           </div>
+
+          {/* Deleted Sponsors */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-red-50">
+              <h3 className="text-lg font-semibold text-gray-900">🗑️ Deleted Sponsors ({filteredData.deleted.length})</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredData.deleted.map((sponsor) => (
+                    <tr key={sponsor._id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{sponsor.sponsorName}</div>
+                        <div className="text-sm text-gray-500">{sponsor.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {sponsor.companyName || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-purple-600">
+                        Rs. {Number(sponsor.sponsorAmount || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {sponsor.durationMonths === 0.001 ? '1 min' : `${sponsor.durationMonths} months`}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {sponsor.deleteReason || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                          {sponsor.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Reason Modal */}
+      {reasonModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {reasonModal.action === 'reject' ? 'Enter rejection reason' : 'Enter deletion reason'}
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">This reason will be shown under the {reasonModal.action === 'reject' ? 'Rejected' : 'Deleted'} ads list.</p>
+            <textarea
+              value={reasonModal.reason}
+              onChange={(e) => setReasonModal(prev => ({ ...prev, reason: e.target.value }))}
+              rows={4}
+              className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="Type your reason here..."
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setReasonModal({ open: false, action: null, id: null, reason: '' })}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={submitReason}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+              >
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

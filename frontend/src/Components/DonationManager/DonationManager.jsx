@@ -219,7 +219,7 @@ const DonationManager = () => {
               <h1 className="text-3xl font-bold text-gray-900 font-gilroyBold">
                 💝 Donation Management
               </h1>
-              <p className="text-gray-600 mt-1">Professional Pet Care Donation System</p>
+              <p className="text-gray-600 mt-1">PawPal Pet Care Donation System</p>
             </div>
             <div className="flex space-x-4">
               <button

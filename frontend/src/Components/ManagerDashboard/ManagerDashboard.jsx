@@ -20,6 +20,7 @@ export default function ManagerDashboard() {
     deleted: []
   });
   const [reasonModal, setReasonModal] = useState({ open: false, action: null, id: null, reason: '' });
+  const [imagePreview, setImagePreview] = useState({ open: false, url: null });
 
   const load = async () => {
     setLoading(true);
@@ -397,6 +398,7 @@ export default function ManagerDashboard() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ad</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
@@ -409,6 +411,18 @@ export default function ManagerDashboard() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredData.pending.map((sponsor) => (
                     <tr key={sponsor._id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {sponsor.adImagePath ? (
+                          <img
+                            src={toImageUrl(sponsor.adImagePath)}
+                            alt="Ad Thumbnail"
+                            className="h-12 w-20 object-cover rounded border cursor-pointer"
+                            onClick={() => setImagePreview({ open: true, url: toImageUrl(sponsor.adImagePath) })}
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{sponsor.sponsorName}</div>
                         <div className="text-sm text-gray-500">{sponsor.email}</div>
@@ -691,6 +705,20 @@ export default function ManagerDashboard() {
                 Submit
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {imagePreview.open && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={() => setImagePreview({ open: false, url: null })}>
+          <div className="relative max-w-4xl w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="absolute -top-10 right-0 text-white bg-black/60 hover:bg-black/80 px-3 py-1 rounded"
+              onClick={() => setImagePreview({ open: false, url: null })}
+            >
+              Close ✕
+            </button>
+            <img src={imagePreview.url} alt="Ad Full Preview" className="w-full h-auto rounded shadow-2xl" />
           </div>
         </div>
       )}

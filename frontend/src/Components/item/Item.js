@@ -2,15 +2,24 @@ import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 function Item({ item, onDelete }) {
-  const { _id, Item_Name, Category, Description, Unit_of_Measure, Quantity, Price, image } = item;
+  const { _id, Item_Name, Category, Description, Unit_of_Measure, Quantity, Price, image, status } = item;
   const navigate = useNavigate();
 
-  const status = useMemo(() => {
-    // Simple derived status for demo: alternate by price / category
-    if (Price === 0) return { label: "Inactive", color: "bg-red-100 text-red-700" };
-    if ((Price || 0) > 100) return { label: "Active", color: "bg-green-100 text-green-700" };
-    return { label: "Pending", color: "bg-yellow-100 text-yellow-700" };
-  }, [Price]);
+  // Use status from backend if available, otherwise calculate locally
+  const itemStatus = useMemo(() => {
+    if (status) {
+      return status;
+    }
+    // Fallback calculation if status not provided by backend
+    const stock = Quantity || 0;
+    if (stock === 0) {
+      return { label: "Out of Stock", color: "bg-red-100 text-red-700" };
+    } else if (stock < 5) {
+      return { label: "Low Stock", color: "bg-yellow-100 text-yellow-700" };
+    } else {
+      return { label: "Active", color: "bg-green-100 text-green-700" };
+    }
+  }, [status, Quantity]);
 
   const handleDeleteClick = () => {
     const ok = window.confirm("Are you sure you want to delete this item?");
@@ -42,7 +51,7 @@ function Item({ item, onDelete }) {
         <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Unit_of_Measure}</td>
         <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Category}</td>
         <td className="py-3 px-6 align-middle">
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.color}`}>{status.label}</span>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${itemStatus.color}`}>{itemStatus.label}</span>
         </td>
         <td className="py-3 px-6 align-middle">
           <div className="inline-flex gap-2">

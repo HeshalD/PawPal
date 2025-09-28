@@ -38,7 +38,11 @@ import DonationForm from "./Components/donation/DonationForm";
 import Orders from "./Components/order/Orders";
 import { CartProvider } from "./Contexts/CartContext";
 import ShopAdmin from "./Components/items/Items";
-import OrderConfirmationModal from "./Components/order/OrderConfirmationModal";     
+import OrderConfirmationModal from "./Components/order/OrderConfirmationModal";   
+import AdminPetView from "./Pages/AdminPetview";  
+import AdminAddPet from "./Pages/AdminAddPet";
+import AdminUpdatePet from "./Pages/AdminUpdatePet";
+
 
 
 function App() {
@@ -68,6 +72,9 @@ function App() {
         <Route path="/userprofile" element={<UserProfile />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/shop" element={<Shop />} />
+        <Route path="/adminpets" element={<AdminPetView />} />
+        <Route path="/adminaddpet" element={<AdminAddPet />} />
+        <Route path="/adminupdatepet/:id" element={<AdminUpdatePet />} />
         
 
         {/* Component routes */}

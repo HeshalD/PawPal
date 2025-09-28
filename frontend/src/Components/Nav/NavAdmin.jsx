@@ -24,54 +24,65 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
   const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
   const userRole = localStorage.getItem('userRole') || 'Admin';
 
-  const navItems = [
+  // Define all navigation items with their required roles
+  const allNavItems = [
     { 
       name: "Dashboard", 
       path: "/admin", 
-      icon: LayoutDashboard 
+      icon: LayoutDashboard,
+      roles: ["Veterinarian", "Data Entry Operator", "Donation Manager", "Adoption Manager", "Inventory Manager"] // All roles have access
     },
     { 
       name: "Pet Management", 
-      path: "/admin/pets", 
-      icon: Heart 
+      path: "/adminpets", 
+      icon: Heart,
+      roles: ["Veterinarian", "Data Entry Operator"] // Only Vet and Data Entry
     },
     { 
       name: "Healthcare Management", 
       path: "/admin/healthcare", 
-      icon: Stethoscope 
+      icon: Stethoscope,
+      roles: ["Veterinarian"] // Only Vet
     },
     { 
       name: "Donation Management", 
       path: "/donations", 
-      icon: DollarSign 
+      icon: DollarSign,
+      roles: ["Veterinarian", "Donation Manager"] // Only Vet and Donation Manager
     },
     { 
       name: "Sponsor Management", 
       path: "/manager", 
-      icon: Handshake 
+      icon: Handshake,
+      roles: ["Veterinarian", "Donation Manager"] // Only Vet and Donation Manager
     },
     { 
       name: "Adoption Management", 
       path: "/adoptionDisplay", 
-      icon: Users 
+      icon: Users,
+      roles: ["Veterinarian", "Adoption Manager"] // Only Vet and Adoption Manager
     },
     { 
       name: "Foster Management", 
       path: "/admin/foster", 
-      icon: Home 
+      icon: Home,
+      roles: ["Veterinarian", "Adoption Manager"] // Only Vet and Adoption Manager
     },
     { 
       name: "Inventory", 
       path: "/shopadmin", 
-      icon: Package 
+      icon: Package,
+      roles: ["Veterinarian", "Inventory Manager"] // Only Vet and Inventory Manager
     },
   ];
+
+  // Filter navigation items based on user role
+  const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
   const handleLogout = () => {
     localStorage.clear();
     // You might want to add additional logout logic here
   };
-
 
   return (
     <div
@@ -114,6 +125,15 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
             </div>
           )}
         </div>
+
+        {/* Role Badge */}
+        {!collapsed && (
+          <div className="mt-3 px-3 py-1 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-full border border-purple-500/30">
+            <span className="text-xs font-medium text-purple-200">
+              {userRole}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Navigation Section */}
@@ -170,13 +190,14 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
             );
           })}
         </div>
+
       </nav>
 
       {/* Admin Profile Section */}
       <div className="p-4 border-t border-gray-700">
         {/* Admin Profile */}
         <Link
-          to="/admin/profile"
+          to="/admin"
           className="group flex items-center px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-pink-600/20 hover:to-purple-600/20 transition-all duration-300 relative overflow-hidden mb-2"
         >
           {/* Background glow effect */}

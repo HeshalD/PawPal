@@ -332,8 +332,14 @@ function UserProfile() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-white">
-        <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className="min-h-screen bg-white">
+      {/* Sidebar Navigation */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`font-sans text-gray-800 overflow-x-hidden transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      }`}>
         <div className={`p-6`}>
           <div>
             <div className="animate-spin rounded-full h-20 w-20 border-b-4 border-[#6638E6] mx-auto mb-6"></div>
@@ -344,13 +350,20 @@ function UserProfile() {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex min-h-screen bg-white">
-        <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className="min-h-screen bg-white">
+      {/* Sidebar Navigation */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`font-sans text-gray-800 overflow-x-hidden transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      }`}>
         <div className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-64'} flex items-center justify-center`}>
           <div className="text-center max-w-md p-8 bg-white rounded-3xl shadow-2xl border border-gray-100">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -366,12 +379,19 @@ function UserProfile() {
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
+      {/* Sidebar Navigation */}
       <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`font-sans text-gray-800 overflow-x-hidden transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      }`}>
       <div className={`p-8`}>
         
         {/* Header Section */}
@@ -793,13 +813,11 @@ function UserProfile() {
                     <h4 className="text-xl font-bold text-gray-500 mb-2">No Pets Yet</h4>
                     <p className="text-gray-400 mb-6">You haven't registered any pets. Start by adding your first furry friend!</p>
                     <Link 
-                      to="/pet-management" 
+                      to="/addpet" 
                       className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#6638E6] to-[#E6738F] text-white rounded-xl hover:from-[#5530CC] hover:to-[#E69AAE] transform hover:scale-105 transition duration-300 shadow-lg"
                     >
                       <Plus className="w-5 h-5 mr-2" />
-                      <Link to="/addpet">
                       Add Your First Pet
-                      </Link>
                      </Link>
                   </div>
                 )}
@@ -948,6 +966,7 @@ function UserProfile() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

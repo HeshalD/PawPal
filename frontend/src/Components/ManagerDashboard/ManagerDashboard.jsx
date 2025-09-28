@@ -1,8 +1,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { SponsorsAPI, toImageUrl } from '../../services/api';
+import Nav from '../Nav/NavAdmin';
+
 
 export default function ManagerDashboard() {
+  const [collapsed, setCollapsed] = useState(false);
   const [pending, setPending] = useState([]);
   const [active, setActive] = useState([]);
   const [past, setPast] = useState([]);
@@ -272,16 +275,34 @@ export default function ManagerDashboard() {
 
   if (loading) {
     return (
+      <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
           <p className="text-purple-600 font-medium">Loading Manager Dashboard...</p>
         </div>
       </div>
+      </div>
+      </div>
     );
   }
 
   return (
+      <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
       {/* Header */}
       <div className="bg-white shadow-lg border-b border-purple-100">
@@ -722,6 +743,8 @@ export default function ManagerDashboard() {
           </div>
         </div>
       )}
+    </div>
+    </div>
     </div>
   );
 }

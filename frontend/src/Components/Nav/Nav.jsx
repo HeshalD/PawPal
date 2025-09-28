@@ -7,7 +7,9 @@ import {
   DollarSign, 
   Users, 
   ShoppingBag,
-  User
+  User,
+  HandHeart,  // Icon for Sponsor
+  Home        // Icon for Foster
 } from "lucide-react";
 import logo from "./logo.jpg";
 
@@ -17,8 +19,10 @@ const Nav = ({ collapsed, setCollapsed }) => {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Pets", path: "/pets", icon: Heart },
-    { name: "Donation", path: "/donation", icon: DollarSign },
-    { name: "Adoption", path: "/adoption", icon: Users },
+    { name: "Donation", path: "/donationform", icon: DollarSign },
+    { name: "Sponsor", path: "/sponsor", icon: HandHeart },
+    { name: "Adoption", path: "/adoptionViewPage", icon: Users },
+    { name: "Foster", path: "/fosterViewPage", icon: Home },
     { name: "Shop", path: "/shop", icon: ShoppingBag },
   ];
 

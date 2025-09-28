@@ -10,7 +10,9 @@ import {
   User,
   Stethoscope,
   Package,
-  LogOut
+  LogOut,
+  Handshake,
+  Home
 } from "lucide-react";
 import logo from "./logo.jpg";
 
@@ -40,17 +42,27 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
     },
     { 
       name: "Donation Management", 
-      path: "/admin/donations", 
+      path: "/donations", 
       icon: DollarSign 
     },
     { 
+      name: "Sponsor Management", 
+      path: "/manager", 
+      icon: Handshake 
+    },
+    { 
       name: "Adoption Management", 
-      path: "/admin/adoptions", 
+      path: "/adoptionDisplay", 
       icon: Users 
     },
     { 
+      name: "Foster Management", 
+      path: "/admin/foster", 
+      icon: Home 
+    },
+    { 
       name: "Inventory", 
-      path: "/admin/inventory", 
+      path: "/shopadmin", 
       icon: Package 
     },
   ];
@@ -59,6 +71,7 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
     localStorage.clear();
     // You might want to add additional logout logic here
   };
+
 
   return (
     <div

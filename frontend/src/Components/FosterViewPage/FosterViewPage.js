@@ -1,4 +1,8 @@
 import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
+import Nav from "../Nav/Nav";
+import { useState } from "react"; 
+
 
 const FosterPage = () => {
 
@@ -30,7 +34,17 @@ const FosterPage = () => {
     document.querySelectorAll('.foster-card, .step, .requirement-item').forEach(el => observer.observe(el));
   }, []);
 
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <div className="font-sans text-gray-800 bg-gradient-to-br from-gray-100 to-pink-50">
 
       
@@ -126,11 +140,13 @@ const FosterPage = () => {
         </section>
 
         {/* Final CTA */}
+        <Link to="/fosterDetails">
         <section className="text-center py-16" id="apply">
           <h2 className="text-3xl md:text-4xl font-bold text-purple-700 mb-4">Ready to Make a Difference?</h2>
           <p className="text-gray-700 mb-6 text-lg">Join our foster family today and help save lives, one pet at a time. Your kindness can transform a life forever.</p>
           <a href="/foster" className="inline-block bg-purple-700 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:bg-pink-400 transition">Start Foster Application</a>
         </section>
+        </Link>
 
       </main>
 
@@ -141,6 +157,8 @@ const FosterPage = () => {
         </div>
       </footer>
 
+    </div>
+    </div>
     </div>
   );
 };

@@ -61,12 +61,14 @@ function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex">
       {/* Sidebar */}
       <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
       
-      {/* Main Content */}
-      <div className={` p-6`}>
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
         {/* Header with Add Pet Button */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -74,7 +76,7 @@ function Dashboard() {
             <p className="text-gray-600">Welcome to Pet Care Management System</p>
           </div>
           
-          {/* Add Pet Button - Top Left */}
+          {/* Add Pet Button - Top Right */}
           <Link
             to="/addpet"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
@@ -148,7 +150,7 @@ function Dashboard() {
                 </div>
               </div>
 
-              <div className="mt-8 flex gap-4">
+              <div className="mt-8 flex flex-wrap gap-4">
                 <Link
                   to="/pets"
                   className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200"

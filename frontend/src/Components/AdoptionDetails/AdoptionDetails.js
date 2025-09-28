@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 // Note: This is the URL for your actual implementation
@@ -461,6 +462,7 @@ function AdoptionDetails() {
 
                 {/* Submit Button */}
                 <div className="pt-6">
+                  <Link to="/adoptionViewPage">
                   <button
                     type="button"
                     onClick={handleSubmit}
@@ -476,6 +478,7 @@ function AdoptionDetails() {
                       "Submit Adoption Request"
                     )}
                   </button>
+                  </Link>
                 </div>
 
                 {/* Submit Message */}

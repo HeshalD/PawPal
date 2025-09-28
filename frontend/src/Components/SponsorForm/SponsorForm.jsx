@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import Nav from '../Nav/Nav';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { SponsorsAPI, toImageUrl } from '../../services/api';
+import { Link } from 'react-router-dom';
 
 const validationSchema = Yup.object({
   sponsorName: Yup.string().required('Required'),
@@ -73,7 +75,16 @@ export default function SponsorForm() {
     },
   });
 
+  const [collapsed, setCollapsed] = useState(false);
   return (
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -440,6 +451,8 @@ export default function SponsorForm() {
           </div>
         </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

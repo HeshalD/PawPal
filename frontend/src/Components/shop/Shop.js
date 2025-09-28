@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import Cart from "../cart/Cart";
 import { useCart } from "../../Contexts/CartContext";
+import Nav from "../Nav/Nav";
 
 const URL = "http://localhost:5000/items";
 
@@ -49,6 +50,7 @@ function Shop() {
     return "Other";
   };
 
+    const [collapsed, setCollapsed] = useState(false);
   const filteredAndSortedItems = useMemo(() => {
     let filtered = items.filter((item) => {
       // Search filter
@@ -92,7 +94,15 @@ function Shop() {
   };
 
   if (loading) {
-    return (
+  return (
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
       <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
@@ -103,10 +113,20 @@ function Shop() {
           </div>
         </div>
       </div>
+      </div>
+    </div>
     );
   }
 
   return (
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -328,6 +348,8 @@ function Shop() {
       </div>
 
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
+    </div>
+    </div>
     </div>
   );
 }

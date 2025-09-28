@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Link } from "react-router-dom";
 
 const API_BASE = "http://localhost:5000/orders";
 
@@ -182,12 +183,15 @@ function Orders() {
                       <div className="inline-flex gap-2">
                         {order.status === "pending" && (
                           <>
+                            <Link to="/orderconfirm">
                             <button
                               onClick={() => handleAcceptOrder(order._id)}
                               className="bg-green-500 hover:bg-green-600 text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors"
                             >
                               Accept
                             </button>
+                            </Link>
+                            
                             <button
                               onClick={() => handleRejectOrder(order._id)}
                               className="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors"

@@ -10,6 +10,20 @@ const getAllFosters = async (req, res) => {
   }
 };
 
+// Get a single foster request by ID
+const getFosterById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const foster = await Foster.findById(id);
+    if (!foster) {
+      return res.status(404).json({ message: "Foster request not found" });
+    }
+    res.status(200).json({ foster });
+  } catch (err) {
+    res.status(400).json({ message: "Error fetching foster", error: err.message });
+  }
+};
+
 // Add a foster request
 const addFoster = async (req, res) => {
   try {
@@ -68,12 +82,9 @@ const updateFosterStatus = async (req, res) => {
     if (!updated) {
       return res.status(404).json({ message: "Foster request not found" });
     }
-    res.status(200).json({ foster: updated });
   } catch (err) {
     res.status(400).json({ message: "Error updating foster status", error: err.message });
   }
 };
 
-module.exports = { getAllFosters, addFoster, updateFoster, deleteFoster, updateFosterStatus };
-
-// Delete a foster request
+module.exports = { getAllFosters, getFosterById, addFoster, updateFoster, deleteFoster, updateFosterStatus };

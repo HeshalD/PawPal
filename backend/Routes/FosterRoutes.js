@@ -1,9 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { getAllFosters, addFoster, updateFoster, deleteFoster, updateFosterStatus } = require("../Controllers/FosterController");
+const { getAllFosters, getFosterById, addFoster, updateFoster, deleteFoster, updateFosterStatus } = require("../Controllers/FosterController");
 
 // GET all foster requests
 router.get("/", getAllFosters);
+
+// GET foster by ID
+router.get("/:id", getFosterById);
 
 // POST a new foster request
 router.post("/", addFoster);

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 // Note: This is the URL for your actual implementation
 const API_URL = 'http://localhost:5001/adoptions/add';
 
 function AdoptionDetails() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     selectedPets: [],
     fullName: '',
@@ -124,6 +126,10 @@ function AdoptionDetails() {
       const created = response?.data?.adoption;
       setSubmittedAdoption(created || null);
       setSubmitMessage('✅ Adoption request submitted successfully!');
+      if (created && created._id) {
+        // Navigate user to view/edit their submission
+        navigate(`/adoption/submitted/${created._id}`);
+      }
       setFormData({
         selectedPets: [],
         fullName: '',

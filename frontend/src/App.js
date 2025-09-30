@@ -10,6 +10,8 @@ import AdoptionDetailsDisplay from "./Components/AdoptionDetailsDisplay/Adoption
 import FosterDetailsDisplay from "./Components/FosterDetailsDisplay/FosterDetailsDisplay";
 import AdoptionViewPage from './Components/AdoptionViewPage/AdoptionViewPage';
 import FosterViewPage from './Components/FosterViewPage/FosterViewPage';
+import AdoptionSubmission from './Components/AdoptionSubmission/AdoptionSubmission';
+import FosterSubmission from './Components/FosterSubmission/FosterSubmission';
 
 function App() {
 
@@ -27,6 +29,8 @@ function App() {
           <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
           <Route path="/adoptionViewPage" element={<AdoptionViewPage/>} />
           <Route path="/fosterViewPage" element={<FosterViewPage/>} />
+          <Route path="/adoption/submitted/:id" element={<AdoptionSubmission />} />
+          <Route path="/foster/submitted/:id" element={<FosterSubmission />} />
            
         </Routes>
       </React.Fragment>

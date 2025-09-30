@@ -15,6 +15,10 @@ const fosterRoutes = require("./Routes/FosterRoutes");
 const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
+const healthRecordRoutes = require('./Routes/healthRecordRoutes');
+const doctorRoutes = require('./Routes/doctorRoutes');
+const appointmentRoutes = require('./Routes/appointmentRoutes');
+const chatbotRoutes = require('./Routes/chatbotRoutes');
 
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
@@ -54,6 +58,10 @@ app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
 app.use("/items", inventoryRouter);
 app.use("/orders", orderRouter);
+app.use('/health-records', healthRecordRoutes);
+app.use('/doctor-availability', doctorRoutes);
+app.use('/appointments', appointmentRoutes);
+app.use('/chatbot', chatbotRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")

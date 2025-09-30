@@ -43,6 +43,13 @@ import AdminPetView from "./Pages/AdminPetview";
 import AdminAddPet from "./Pages/AdminAddPet";
 import AdminUpdatePet from "./Pages/AdminUpdatePet";
 
+//Vilani's Routes
+import AppointmentBooking from './Pages/AppoinmentForm';
+import AppointmentDashboard from './Pages/AppoinmentView';  
+import AdminAppointmentView from './Pages/AdminAppoinmetView';
+import AdminHealthRec from './Pages/AdminHealthRec';
+
+
 
 
 function App() {
@@ -94,6 +101,12 @@ function App() {
         <Route path="/donationsomething" element={<DonationForm />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orderconfirm" element={<OrderConfirmationModal />} />
+
+        {/*Vilani's pages */}
+        <Route path="/appointmentBooking" element={<AppointmentBooking/>}/>
+        <Route path="/appointmentDashboard" element={<AppointmentDashboard/>}/>
+        <Route path="/adminAppointmentView" element={<AdminAppointmentView/>}/>
+        <Route path="/adminHealthRec" element={<AdminHealthRec/>}/>
       </Routes>
       </CartProvider>
     

@@ -22,7 +22,7 @@ import {
   StickyNote
 } from "lucide-react";
 
-const URL = "http://localhost:5001/fosters";
+const URL = "http://localhost:5000/fosters";
 
 export default function FosterDetailsDisplay() {
   const [fosters, setFosters] = useState([]);

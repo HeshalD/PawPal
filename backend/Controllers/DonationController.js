@@ -1,4 +1,5 @@
 const Donation = require("../Models/DonationModel");
+const { sendEmail } = require("../utils/mailer");
 
 const getAllDonations = async (req, res, next) => {
   try {
@@ -46,6 +47,27 @@ const addDonations = async (req, res, next) => {
     });
     
     await donation.save();
+    
+    // Send confirmation email to donor on submission
+    try {
+      await sendEmail({
+        to: Email,
+        subject: "We received your donation request",
+        html: `
+          <p>Hi ${fullname},</p>
+          <p>Thank you for your generosity to PawPal. We've received your donation request.</p>
+          <p><strong>Contribution Type:</strong> ${ContributionType}<br/>
+             <strong>Amount:</strong> ${Amount} ${Currency} <br/>
+             <strong>Payment Method:</strong> ${PaymentMethod}</p>
+          <p>We will notify you by email once it's processed.</p>
+          <p>— PawPal Team</p>
+        `,
+        text: `Hi ${fullname}, Thank you for your donation request to PawPal. We will notify you once it's processed.`,
+      });
+    } catch (e) {
+      console.warn('Donation submission email failed:', e?.message || e);
+    }
+
     return res.status(201).json({ donation });
    } catch (err) {
     console.log(err);
@@ -79,7 +101,7 @@ const updateDonation = async (req, res, next) => {
     const donation = await Donation.findByIdAndUpdate(
       id,
       { fullname, age, phone, NIC, Email, Address, ContributionType, Amount, Currency, PaymentMethod, donationFrequency, updatedAt: Date.now() },
-      { new: true } // යාවත්කාලීන කළ document එක return කිරීමට
+      { new: true } // document return 
     );
 
     if (!donation) {
@@ -164,6 +186,25 @@ const markAsCompleted = async (req, res, next) => {
 
     if (!donation) {
       return res.status(404).json({ message: "Donation not found" });
+    }
+
+    // Send completion/approval email to donor
+    try {
+      await sendEmail({
+        to: donation.Email,
+        subject: "Your donation has been approved",
+        html: `
+          <p>Hi ${donation.fullname},</p>
+          <p>Thank you! Your donation has been approved/processed.</p>
+          <p><strong>Contribution Type:</strong> ${donation.ContributionType}<br/>
+             <strong>Amount:</strong> ${donation.Amount} ${donation.Currency}</p>
+          <p>We deeply appreciate your support to PawPal.</p>
+          <p>— PawPal Team</p>
+        `,
+        text: `Hi ${donation.fullname}, Your donation has been approved. Thank you for your support to PawPal!`,
+      });
+    } catch (e) {
+      console.warn('Donation approval email failed:', e?.message || e);
     }
 
     return res.status(200).json({ donation });
@@ -313,7 +354,7 @@ const getDonationSummary = async (req, res, next) => {
   }
 };
 
-// නිවැරදි export කිරීම
+// export 
 module.exports = { 
   getAllDonations, 
   createDonation, 

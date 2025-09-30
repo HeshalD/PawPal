@@ -9,7 +9,6 @@ import {
   Save, 
   X, 
   FileText, 
-  Users, 
   Phone, 
   Mail, 
   MapPin, 
@@ -133,9 +132,9 @@ export default function FosterDetailsDisplay() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-2xl shadow-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#E6738F' }}></div>
           <p className="text-gray-600 text-center">Loading foster requests...</p>
         </div>
       </div>
@@ -143,14 +142,14 @@ export default function FosterDetailsDisplay() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-                <Heart className="text-green-600" size={32} />
+                <Heart style={{ color: '#E6738F' }} size={32} />
                 Foster Care Management
               </h1>
               <p className="text-gray-600">Manage and view pet foster care applications</p>
@@ -158,7 +157,10 @@ export default function FosterDetailsDisplay() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handlePrint}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                style={{ backgroundColor: '#E6738F' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E69AAE'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E6738F'}
               >
                 <FileText size={20} />
                 Print All Records
@@ -178,7 +180,13 @@ export default function FosterDetailsDisplay() {
                 placeholder="Search by name, animal name, or animal type..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm"
+                style={{ 
+                  outlineColor: '#E6738F',
+                  borderColor: search ? '#E6738F' : undefined
+                }}
+                onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
               />
             </div>
           </div>
@@ -187,7 +195,10 @@ export default function FosterDetailsDisplay() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full py-4 px-4 bg-white rounded-xl border border-gray-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 shadow-sm"
+              className="w-full py-4 px-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm"
+              style={{ outlineColor: '#E6738F' }}
+              onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+              onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             >
               <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
@@ -197,9 +208,9 @@ export default function FosterDetailsDisplay() {
           </div>
           
           {/* Stats Card */}
-          <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="rounded-xl p-6 text-white shadow-lg" style={{ background: 'linear-gradient(to right, #E6738F, #6638E6)' }}>
             <div className="text-3xl font-bold">{filteredFosters.length}</div>
-            <div className="text-green-100">Foster Requests</div>
+            <div className="text-pink-100">Foster Requests</div>
           </div>
         </div>
 
@@ -221,21 +232,21 @@ export default function FosterDetailsDisplay() {
                   className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
                 >
                   {/* Card Header */}
-                  <div className="bg-gradient-to-r from-green-600 to-teal-600 p-6 text-white">
+                  <div className="p-6 text-white" style={{ background: 'linear-gradient(to right, #E6738F, #6638E6)' }}>
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-xl font-bold flex items-center gap-2">
                           <PawPrint size={20} />
                           {item.fullName}
                         </h3>
-                        <p className="text-green-100">Foster Application</p>
+                        <p className="text-pink-100">Foster Application</p>
                       </div>
                       <div className="flex gap-2">
                         {/* Status badge */}
                         <div
                           className="px-3 py-1 rounded-full text-xs font-semibold mr-2"
                           style={{
-                            backgroundColor: (item.status || 'pending') === 'approved' ? '#22c55e' : (item.status || 'pending') === 'completed' ? '#6366f1' : '#f59e0b',
+                            backgroundColor: (item.status || 'pending') === 'approved' ? '#22c55e' : (item.status || 'pending') === 'completed' ? '#6638E6' : '#f59e0b',
                             color: '#fff'
                           }}
                           title={`Status: ${(item.status || 'pending').toUpperCase()}`}
@@ -246,13 +257,17 @@ export default function FosterDetailsDisplay() {
                           <>
                             <button
                               onClick={() => startEdit(item)}
-                              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                              className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
                             >
                               <Edit3 size={16} />
                             </button>
                             <button
                               onClick={() => deleteItem(item._id || item.id)}
-                              className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                              className="bg-red-500/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.3)'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.2)'}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -273,7 +288,10 @@ export default function FosterDetailsDisplay() {
                             value={editData.fullName || ""}
                             onChange={onEditChange}
                             placeholder="Full Name"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <textarea
                             name="address"
@@ -281,14 +299,20 @@ export default function FosterDetailsDisplay() {
                             onChange={onEditChange}
                             placeholder="Address"
                             rows={2}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 resize-none"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <input
                             name="contact"
                             value={editData.contact || ""}
                             onChange={onEditChange}
                             placeholder="Contact Number"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <input
                             name="email"
@@ -296,21 +320,30 @@ export default function FosterDetailsDisplay() {
                             value={editData.email || ""}
                             onChange={onEditChange}
                             placeholder="Email"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <input
                             name="animalName"
                             value={editData.animalName || ""}
                             onChange={onEditChange}
                             placeholder="Animal Name/ID"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <input
                             name="animalType"
                             value={editData.animalType || ""}
                             onChange={onEditChange}
                             placeholder="Animal Type"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -320,7 +353,10 @@ export default function FosterDetailsDisplay() {
                                 name="fosterFrom"
                                 value={editData.fosterFrom || ""}
                                 onChange={onEditChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                                style={{ outlineColor: '#E6738F' }}
+                                onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                               />
                             </div>
                             <div>
@@ -330,7 +366,10 @@ export default function FosterDetailsDisplay() {
                                 name="fosterTo"
                                 value={editData.fosterTo || ""}
                                 onChange={onEditChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                                style={{ outlineColor: '#E6738F' }}
+                                onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                               />
                             </div>
                           </div>
@@ -338,7 +377,10 @@ export default function FosterDetailsDisplay() {
                             name="experience"
                             value={editData.experience || "No"}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           >
                             <option value="No">No Experience</option>
                             <option value="Yes">Has Experience</option>
@@ -348,7 +390,10 @@ export default function FosterDetailsDisplay() {
                             value={editData.homeEnvironment || ""}
                             onChange={onEditChange}
                             placeholder="Home Environment"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                           <textarea
                             name="notes"
@@ -356,13 +401,19 @@ export default function FosterDetailsDisplay() {
                             onChange={onEditChange}
                             placeholder="Additional Notes"
                             rows={2}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-200 resize-none"
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none"
+                            style={{ outlineColor: '#E6738F' }}
+                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
+                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                           />
                         </div>
                         <div className="flex gap-3 pt-4">
                           <button
                             onClick={() => saveEdit(item._id || item.id)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
+                            className="text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
+                            style={{ backgroundColor: '#E6738F' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E69AAE'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E6738F'}
                           >
                             <Save size={16} />
                             Save
@@ -382,7 +433,7 @@ export default function FosterDetailsDisplay() {
                         {/* Personal Information */}
                         <div className="space-y-3">
                           <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                            <MapPin className="text-green-600 mt-1 flex-shrink-0" size={18} />
+                            <MapPin style={{ color: '#E6738F' }} className="mt-1 flex-shrink-0" size={18} />
                             <div className="min-w-0">
                               <div className="font-medium text-gray-800 break-words">{item.address}</div>
                               <div className="text-sm text-gray-600">Address</div>
@@ -390,14 +441,14 @@ export default function FosterDetailsDisplay() {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                              <Phone className="text-green-600 flex-shrink-0" size={18} />
+                              <Phone style={{ color: '#E6738F' }} className="flex-shrink-0" size={18} />
                               <div className="min-w-0">
                                 <div className="font-medium text-gray-800 break-all">{item.contact}</div>
                                 <div className="text-sm text-gray-600">Contact</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                              <Mail className="text-green-600 flex-shrink-0" size={18} />
+                              <Mail style={{ color: '#E6738F' }} className="flex-shrink-0" size={18} />
                               <div className="min-w-0">
                                 <div className="font-medium text-gray-800 break-all text-sm">{item.email}</div>
                                 <div className="text-sm text-gray-600">Email</div>
@@ -407,9 +458,9 @@ export default function FosterDetailsDisplay() {
                         </div>
 
                         {/* Animal Information */}
-                        <div className="bg-blue-50 rounded-lg p-4">
+                        <div className="rounded-lg p-4" style={{ backgroundColor: '#f3e8ff' }}>
                           <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <PawPrint className="text-blue-600" size={18} />
+                            <PawPrint style={{ color: '#6638E6' }} size={18} />
                             Animal Information
                           </h4>
                           <div className="grid grid-cols-2 gap-3 text-sm">
@@ -425,13 +476,13 @@ export default function FosterDetailsDisplay() {
                         </div>
 
                         {/* Foster Period */}
-                        <div className="bg-orange-50 rounded-lg p-4">
+                        <div className="rounded-lg p-4" style={{ backgroundColor: '#fce7f3' }}>
                           <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <Calendar className="text-orange-600" size={18} />
+                            <Calendar style={{ color: '#E6738F' }} size={18} />
                             Foster Period
                           </h4>
                           <div className="flex items-center gap-3 text-sm">
-                            <Clock className="text-orange-600" size={16} />
+                            <Clock style={{ color: '#E6738F' }} size={16} />
                             <span className="text-gray-600">
                               {item.fosterFrom} → {item.fosterTo}
                             </span>
@@ -440,18 +491,18 @@ export default function FosterDetailsDisplay() {
 
                         {/* Experience and Environment */}
                         <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-purple-50 rounded-lg p-3">
+                          <div className="rounded-lg p-3" style={{ backgroundColor: '#f3e8ff' }}>
                             <div className="flex items-center gap-2 mb-2">
-                              <Award className="text-purple-600" size={16} />
+                              <Award style={{ color: '#6638E6' }} size={16} />
                               <span className="font-medium text-gray-700 text-sm">Experience</span>
                             </div>
                             <div className={`text-sm font-medium ${item.experience === 'Yes' ? 'text-green-600' : 'text-gray-600'}`}>
                               {item.experience}
                             </div>
                           </div>
-                          <div className="bg-teal-50 rounded-lg p-3">
+                          <div className="rounded-lg p-3" style={{ backgroundColor: '#fce7f3' }}>
                             <div className="flex items-center gap-2 mb-2">
-                              <Home className="text-teal-600" size={16} />
+                              <Home style={{ color: '#E6738F' }} size={16} />
                               <span className="font-medium text-gray-700 text-sm">Home</span>
                             </div>
                             <div className="text-sm text-gray-600 break-words">{item.homeEnvironment}</div>
@@ -473,7 +524,10 @@ export default function FosterDetailsDisplay() {
                         <div className="flex gap-3 pt-4">
                           <button
                             onClick={() => handleWhatsApp(item)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 flex-1"
+                            className="text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 flex-1"
+                            style={{ backgroundColor: '#E6738F' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E69AAE'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E6738F'}
                           >
                             <MessageCircle size={16} />
                             WhatsApp
@@ -496,7 +550,10 @@ export default function FosterDetailsDisplay() {
                             </button>
                             <button
                               onClick={() => updateStatus(item._id || item.id, 'completed')}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm"
+                              className="text-white px-3 py-2 rounded-lg text-sm transition-all duration-200"
+                              style={{ backgroundColor: '#6638E6' }}
+                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7c4af0'}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6638E6'}
                               title="Mark as Completed"
                             >
                               Complete

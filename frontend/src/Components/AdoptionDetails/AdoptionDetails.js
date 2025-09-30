@@ -253,57 +253,33 @@ function AdoptionDetails() {
             <div className="p-8">
               <div className="space-y-10">
                 
-                {/* Pet Selection Section */}
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="w-8 h-8 gradient-bg rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">1</span>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-800">Select Pets to Adopt</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {pets.map((pet) => {
-                      const petValue = `${pet.name} (ID: ${pet.id}, Breed: ${pet.breed})`;
-                      const isSelected = formData.selectedPets.includes(petValue);
-                      
-                      return (
-                        <div
-                          key={pet.id}
-                          className={`pet-card p-4 rounded-xl cursor-pointer ${isSelected ? 'selected' : ''}`}
-                          onClick={() => {
-                            const event = {
-                              target: {
-                                value: petValue,
-                                checked: !isSelected
-                              }
-                            };
-                            handlePetSelection(event);
-                          }}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              value={petValue}
-                              checked={isSelected}
-                              onChange={handlePetSelection}
-                              className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div className="flex-1">
-                              <div className="font-semibold text-gray-800">{pet.name}</div>
-                              <div className="text-sm text-gray-600">{pet.breed}</div>
-                              <div className="text-xs text-gray-500">ID: {pet.id}</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {errors.selectedPets && <div className="error-text">{errors.selectedPets}</div>}
-                </div>
+                {/* Pet ID Input Section */}
+<div className="space-y-6">
+  <div className="flex items-center space-x-3 mb-6">
+    <div className="w-8 h-8 gradient-bg rounded-full flex items-center justify-center">
+      <span className="text-white text-sm font-bold">1</span>
+    </div>
+    <h3 className="text-xl font-semibold text-gray-800">Enter Pet ID(s) to Adopt</h3>
+  </div>
+  
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">
+      Pet ID(s) * <span className="text-gray-400 text-xs">(Separate multiple IDs with commas)</span>
+    </label>
+    <input
+      type="text"
+      name="selectedPets"
+      value={formData.selectedPets.join(', ')}
+      onChange={(e) =>
+        setFormData({ ...formData, selectedPets: e.target.value.split(',').map(id => id.trim()) })
+      }
+      placeholder="Enter Pet ID(s) like P001, P002"
+      className="form-input w-full p-4 rounded-xl text-gray-800"
+    />
+    {errors.selectedPets && <div className="error-text mt-1">{errors.selectedPets}</div>}
+  </div>
+</div>
 
-                <div className="section-divider"></div>
 
                 {/* Personal Information Section */}
                 <div className="space-y-6">

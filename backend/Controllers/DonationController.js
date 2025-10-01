@@ -75,7 +75,7 @@ const addDonations = async (req, res, next) => {
    }
 }
 
-// get by id - නිවැරදි කරන ලද version
+// get by id -  new version
 const getById = async (req, res, next) => {
   try {
     const id = req.params.id;
@@ -92,7 +92,7 @@ const getById = async (req, res, next) => {
   }
 }
 
-// update donation - නිවැරදි කරන ලද version
+// update donation
 const updateDonation = async (req, res, next) => {
   try {
     const id = req.params.id;

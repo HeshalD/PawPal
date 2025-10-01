@@ -341,8 +341,8 @@ const DonorForm = () => {
       const amountNum = parseFloat(formatted);
       if (!formatted) {
         setErrors({ ...errors, Amount: 'Amount is required' });
-      } else if (isNaN(amountNum) || amountNum <= 0) {
-        setErrors({ ...errors, Amount: 'Amount must be greater than 0' });
+      } else if (isNaN(amountNum) || amountNum <= 499) {
+        setErrors({ ...errors, Amount: 'Amount must be greater than 500' });
       } else {
         const newErrors = { ...errors };
         delete newErrors.Amount;
@@ -428,8 +428,8 @@ const DonorForm = () => {
         const amountNum = parseFloat(formData.Amount);
         if (!formData.Amount) {
           newErrors.Amount = 'Amount is required';
-        } else if (isNaN(amountNum) || amountNum <= 0) {
-          newErrors.Amount = 'Amount must be greater than 0';
+        } else if (isNaN(amountNum) || amountNum <= 499) {
+          newErrors.Amount = 'Amount must be greater than 500';
         } else {
           delete newErrors.Amount;
         }
@@ -485,7 +485,7 @@ const DonorForm = () => {
     if (!formData.ContributionType) newErrors.ContributionType = 'Contribution type is required';
     
     if (!formData.Amount) newErrors.Amount = 'Amount is required';
-    else if (parseFloat(formData.Amount) <= 0) newErrors.Amount = 'Amount must be greater than 0';
+    else if (parseFloat(formData.Amount) <= 499) newErrors.Amount = 'Amount must be greater than 500';
     
     if (!formData.PaymentMethod) newErrors.PaymentMethod = 'Payment method is required';
 
@@ -874,7 +874,7 @@ const DonorForm = () => {
                           {errors.NIC && touched.NIC && (
                             <p className="mt-1 text-sm text-red-600">{errors.NIC}</p>
                           )}
-                          <p className="text-xs text-gray-500 mt-1">Old: 9 digits + V/X | New: 12 digits</p>
+                          <p className="text-xs text-gray-500 mt-1">Old: 9 digits | New: 12 digits</p>
                         </div>
 
                         <div className="mt-6">
@@ -954,7 +954,7 @@ const DonorForm = () => {
                               onChange={handleAmountChange}
                               onBlur={() => handleBlur('Amount')}
                               className={inputClass('Amount')}
-                              placeholder="1000"
+                              placeholder="500"
                             />
                             {errors.Amount && touched.Amount && (
                               <p className="mt-1 text-sm text-red-600">{errors.Amount}</p>

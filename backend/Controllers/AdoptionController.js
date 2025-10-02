@@ -1,4 +1,4 @@
-const Adoption = require("../Model/AdoptionModel");
+const Adoption = require("../Models/AdoptionModel");
 const multer = require('multer');
 const path = require('path');
 

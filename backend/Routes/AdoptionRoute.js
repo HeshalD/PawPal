@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 //Insert Model
-const Adoption = require("../Model/AdoptionModel");
+const Adoption = require("../Models/AdoptionModel");
 //Insert User Conroller
 const AdoptionController = require("../Controllers/AdoptionController");
 

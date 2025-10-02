@@ -26,7 +26,7 @@ const createDonation = async (req, res, next) => {
   }
 };
 
-// insert data - නිවැරදි කරන ලද version
+// insert data 
 const addDonations = async (req, res, next) => {
    const { fullname, age, phone, NIC, Email, Address, ContributionType, Amount, Currency, PaymentMethod, donationFrequency } = req.body;
    
@@ -53,7 +53,7 @@ const addDonations = async (req, res, next) => {
    }
 }
 
-// get by id - නිවැරදි කරන ලද version
+// get by id 
 const getById = async (req, res, next) => {
   try {
     const id = req.params.id;

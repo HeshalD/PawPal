@@ -1,33 +1,69 @@
-import { Link } from "react-router-dom";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import { Heart, Users, DollarSign, Calendar, TrendingUp, Handshake } from 'lucide-react';
 import Nav from '../Components/Nav/Nav';
-import { PlusCircle, Heart, Users, ShoppingBag, Calendar } from 'lucide-react';
 
-function Dashboard() {
+function UserDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [stats, setStats] = useState({
     totalPets: 0,
     adoptedPets: 0,
     totalUsers: 0,
-    donations: 0
+    totalDonations: 0,
+    totalSponsors: 0,
+    activeSponsorAmount: 0
   });
+  const [loading, setLoading] = useState(true);
 
-  // Mock function to fetch stats - replace with actual API call
   useEffect(() => {
-    // Simulate API call
-    const fetchStats = async () => {
-      // Replace with actual API endpoint
-      const mockStats = {
-        totalPets: 127,
-        adoptedPets: 89,
-        totalUsers: 456,
-        donations: 1234
-      };
-      setStats(mockStats);
-    };
-    
-    fetchStats();
+    fetchDashboardStats();
   }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all required data
+      const [petsRes, donationsRes, sponsorsRes] = await Promise.all([
+        fetch('http://localhost:5000/pets').then(r => r.json()),
+        fetch('http://localhost:5000/donations').then(r => r.json()),
+        fetch('http://localhost:5000/sponsors').then(r => r.json())
+      ]);
+
+      const pets = petsRes.pets || petsRes || [];
+      const donations = donationsRes.donations || donationsRes || [];
+      const allSponsors = sponsorsRes.sponsors || sponsorsRes || [];
+
+      // Calculate total donation amount
+      const totalDonationAmount = donations.reduce((sum, donation) => {
+        return sum + (Number(donation.Amount) || 0);
+      }, 0);
+
+      // Calculate active sponsor amount
+      const activeSponsors = allSponsors.filter(s => s.status === 'active');
+      const activeSponsorAmount = activeSponsors.reduce((sum, sponsor) => {
+        return sum + (Number(sponsor.sponsorAmount) || 0);
+      }, 0);
+
+      // Count adopted pets
+      const adoptedPets = pets.filter(pet => 
+        pet.adoptionStatus === 'Adopted' || pet.status === 'Adopted'
+      );
+
+      setStats({
+        totalPets: pets.length,
+        adoptedPets: adoptedPets.length,
+        totalUsers: 0, // You can fetch users count if needed
+        totalDonations: totalDonationAmount,
+        totalSponsors: allSponsors.length,
+        activeSponsorAmount: activeSponsorAmount
+      });
+
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const statsCards = [
     {
@@ -45,45 +81,49 @@ function Dashboard() {
       hoverColor: "hover:from-pink-600 hover:to-pink-700"
     },
     {
-      title: "Active Users",
-      value: stats.totalUsers,
-      icon: <Users className="w-8 h-8" />,
-      color: "from-purple-400 to-pink-500",
-      hoverColor: "hover:from-purple-500 hover:to-pink-600"
+      title: "Total Donations",
+      value: `Rs. ${stats.totalDonations.toLocaleString()}`,
+      icon: <DollarSign className="w-8 h-8" />,
+      color: "from-green-500 to-emerald-600",
+      hoverColor: "hover:from-green-600 hover:to-emerald-700"
     },
     {
-      title: "Total Donations ($)",
-      value: stats.donations,
-      icon: <ShoppingBag className="w-8 h-8" />,
-      color: "from-pink-400 to-purple-500",
-      hoverColor: "hover:from-pink-500 hover:to-purple-600"
+      title: "Active Sponsors",
+      value: `Rs. ${stats.activeSponsorAmount.toLocaleString()}`,
+      icon: <Handshake className="w-8 h-8" />,
+      color: "from-blue-500 to-indigo-600",
+      hoverColor: "hover:from-blue-600 hover:to-indigo-700"
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex">
+        <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+        <div className={`flex-1 transition-all duration-300 ${
+          collapsed ? 'ml-16' : 'ml-64'
+        } p-6`}>
+          <div className="min-h-screen flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <p className="text-purple-600 font-medium">Loading Dashboard...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white flex">
-      {/* Sidebar */}
       <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
       
-      {/* Main Content - Adjusts based on sidebar state */}
       <div className={`flex-1 transition-all duration-300 ${
         collapsed ? 'ml-16' : 'ml-64'
       } p-6`}>
-        {/* Header with Add Pet Button */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard</h1>
-            <p className="text-gray-600">Welcome to Pet Care Management System</p>
-          </div>
-          
-          {/* Add Pet Button - Top Right */}
-          <Link
-            to="/addpet"
-            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200"
-          >
-            <PlusCircle className="w-5 h-5 mr-2" />
-            Add Pet
-          </Link>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Dashboard</h1>
+          <p className="text-gray-600">Welcome to PawPal Pet Care Management System</p>
         </div>
 
         {/* Stats Cards */}
@@ -108,7 +148,6 @@ function Dashboard() {
 
         {/* Main Content Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Hero Section */}
           <div className="lg:col-span-2 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 shadow-lg">
             <div className="max-w-2xl">
               <h2 className="text-3xl font-bold text-gray-800 mb-4">
@@ -142,95 +181,83 @@ function Dashboard() {
                 </div>
                 
                 <div className="flex items-start">
-                  <ShoppingBag className="w-5 h-5 text-pink-500 mt-1 mr-3 flex-shrink-0" />
+                  <DollarSign className="w-5 h-5 text-green-500 mt-1 mr-3 flex-shrink-0" />
                   <p>
-                    <strong>Complete Care Package:</strong> From nutrition to grooming supplies, 
-                    we provide everything needed for your pet's well-being.
+                    <strong>Support Through Donations:</strong> Your generous donations help us 
+                    provide food, medical care, and shelter for pets in need.
                   </p>
                 </div>
               </div>
 
               <div className="mt-8 flex flex-wrap gap-4">
-                <Link
-                  to="/pets"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200"
-                >
+                <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
                   View All Pets
-                </Link>
+                </button>
                 
-                <Link
-                  to="/adoption"
-                  className="inline-flex items-center px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200"
-                >
+                <button className="inline-flex items-center px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
                   Adopt Now
-                </Link>
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions Card */}
+          {/* Impact Summary Card */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-6">Quick Actions</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-6">Community Impact</h3>
             
-            <div className="space-y-3">
-              <Link
-                to="/pets"
-                className="block w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200"
-              >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
                 <div className="flex items-center">
-                  <Heart className="w-5 h-5 text-purple-500 mr-3" />
-                  <span className="font-medium text-gray-800">View All Pets</span>
-                </div>
-              </Link>
-              
-              <Link
-                to="/displayUser"
-                className="block w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200"
-              >
-                <div className="flex items-center">
-                  <Users className="w-5 h-5 text-pink-500 mr-3" />
-                  <span className="font-medium text-gray-800">Manage Users</span>
-                </div>
-              </Link>
-              
-              <Link
-                to="/donations"
-                className="block w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200"
-              >
-                <div className="flex items-center">
-                  <Heart className="w-5 h-5 text-purple-500 mr-3" />
-                  <span className="font-medium text-gray-800">Donations</span>
-                </div>
-              </Link>
-              
-              <Link
-                to="/shop"
-                className="block w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-lg border border-purple-100 hover:border-purple-200 transition-all duration-200"
-              >
-                <div className="flex items-center">
-                  <ShoppingBag className="w-5 h-5 text-pink-500 mr-3" />
-                  <span className="font-medium text-gray-800">Pet Shop</span>
-                </div>
-              </Link>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="mt-8">
-              <h4 className="font-semibold text-gray-800 mb-4">Recent Activity</h4>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center text-gray-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                  <span>New pet "Buddy" registered</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
-                  <span>Adoption request approved</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
-                  <span>Health checkup completed</span>
+                  <div className="p-3 bg-purple-100 rounded-lg mr-4">
+                    <Heart className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Pets Rescued</p>
+                    <p className="text-2xl font-bold text-gray-800">{stats.totalPets}</p>
+                  </div>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-3 bg-green-100 rounded-lg mr-4">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Donations Received</p>
+                    <p className="text-xl font-bold text-gray-800">Rs. {stats.totalDonations.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-3 bg-blue-100 rounded-lg mr-4">
+                    <Handshake className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Sponsor Support</p>
+                    <p className="text-xl font-bold text-gray-800">Rs. {stats.activeSponsorAmount.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg">
+                <div className="flex items-center">
+                  <div className="p-3 bg-pink-100 rounded-lg mr-4">
+                    <Users className="w-6 h-6 text-pink-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Happy Adoptions</p>
+                    <p className="text-2xl font-bold text-gray-800">{stats.adoptedPets}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white">
+              <p className="text-sm font-medium mb-2">Join Our Mission</p>
+              <p className="text-xs opacity-90">Together we've raised Rs. {(stats.totalDonations + stats.activeSponsorAmount).toLocaleString()} to care for pets in need!</p>
             </div>
           </div>
         </div>
@@ -239,4 +266,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default UserDashboard;

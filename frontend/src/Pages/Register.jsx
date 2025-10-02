@@ -24,7 +24,7 @@ function Register() {
     sendRequest()
       .then(() => {
         alert("Register Success");
-        history("/displayUser");
+        history("/login");
       })
       .catch((err) => {
         alert(err.message);

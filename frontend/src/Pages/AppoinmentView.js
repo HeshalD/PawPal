@@ -383,15 +383,6 @@ export default function AppointmentDashboard() {
                         }`}>
                           {isUpcoming ? 'Upcoming' : 'Past'}
                         </span>
-                        
-                        {isUpcoming && (
-                          <button
-                            onClick={() => cancelAppointment(appointment._id)}
-                            className="text-red-600 hover:text-white bg-red-100 hover:bg-red-600 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium"
-                          >
-                            Cancel
-                          </button>
-                        )}
                       </div>
                     </div>
                   </div>

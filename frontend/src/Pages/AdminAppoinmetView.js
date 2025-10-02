@@ -18,7 +18,8 @@ export default function AdminAppointmentView() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/appointments');
+      // ✅ FIXED: Changed from '/appointments' to '/api/appointments'
+      const response = await fetch('http://localhost:5000/api/appointments');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -60,44 +61,76 @@ export default function AdminAppointmentView() {
     setFilteredAppointments(filtered);
   }, [appointments, searchTerm, statusFilter]);
 
-// Accept appointment
-const acceptAppointment = async (id) => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: 'accepted' })
-    });
+  // Accept appointment - ✅ IMPROVED with better error handling
+  const acceptAppointment = async (id) => {
+    try {
+      console.log('Accepting appointment:', id);
+      
+      const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: 'accepted' })
+      });
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Response status:', response.status);
 
-    await loadAppointments(); // ✅ refresh list
-  } catch (e) {
-    setError(`Failed to accept: ${e.message}`);
-  }
-};
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
 
-// Reject appointment
-const rejectAppointment = async (id) => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: 'rejected' })
-    });
+      const result = await response.json();
+      console.log('Success:', result);
 
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      // ✅ Refresh list after successful update
+      await loadAppointments();
+      
+      // Clear any previous errors
+      setError(null);
+    } catch (e) {
+      console.error('Accept error:', e);
+      setError(`Failed to accept: ${e.message}`);
+    }
+  };
 
-    await loadAppointments(); // ✅ refresh list
-  } catch (e) {
-    setError(`Failed to reject: ${e.message}`);
-  }
-};
+  // Reject appointment - DELETE from database - ✅ IMPROVED
+  const rejectAppointment = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
+      return;
+    }
 
+    try {
+      console.log('Deleting appointment:', id);
+      
+      const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Success:', result);
+
+      // ✅ Refresh list after successful deletion
+      await loadAppointments();
+      
+      // Clear any previous errors
+      setError(null);
+    } catch (e) {
+      console.error('Delete error:', e);
+      setError(`Failed to delete appointment: ${e.message}`);
+    }
+  };
 
   // Calculate statistics
   const stats = {

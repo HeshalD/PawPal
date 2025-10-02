@@ -25,7 +25,8 @@ function AppointmentForm() {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/appointments', {
+      // ✅ Use /api/appointments to match your backend
+      const response = await axios.post('http://localhost:5000/api/appointments', {
         petName: appointment.petName,
         ownerName: appointment.ownerName,
         doctorName: appointment.doctorName,
@@ -43,8 +44,8 @@ function AppointmentForm() {
           date: '',
           timeSlot: ''
         });
-        // Navigate to appointments list or dashboard
-        navigate('/');
+        // ✅ Navigate AFTER successful submission
+        navigate('/appointmentview');
       }
     } catch (error) {
       console.error('Appointment booking error:', error);
@@ -196,10 +197,7 @@ function AppointmentForm() {
               </div>
             </div>
 
-            <br></br>
-
-            {/* Submit Button */}
-            <Link to ="/appointmentview">
+            {/* Submit Button - ✅ REMOVED Link wrapper */}
             <button
               type="submit"
               disabled={loading}
@@ -217,7 +215,6 @@ function AppointmentForm() {
                 'Book Appointment'
               )}
             </button>
-            </Link>
           </form>
 
           {/* Footer Links */}

@@ -1,4 +1,3 @@
-
 //password - lJv2dSasOC6LPFG1
 const express = require("express");
 const mongoose = require("mongoose");
@@ -17,7 +16,7 @@ const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
 const healthRecordRoutes = require('./Routes/healthRecordRoutes');
 const doctorRoutes = require('./Routes/doctorRoutes');
-const appointmentRoutes = require('./Routes/appointmentRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
 const chatbotRoutes = require('./Routes/chatbotRoutes');
 
 const inventoryRouter = require("./Routes/inventoryRoutes");
@@ -39,7 +38,7 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -62,6 +61,7 @@ app.use('/health-records', healthRecordRoutes);
 app.use('/doctor-availability', doctorRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/chatbot', chatbotRoutes);
+app.use('/api/appointments', appointmentRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
@@ -86,7 +86,7 @@ app.post("/register", async (req, res) => {
       confirmpassword,
       age,
     });
-    res.send({ status: "ok" });  // ✅ fixed
+    res.send({ status: "ok" });
   } catch (err) {
     console.error(err);
     res.send({ status: "err" });
@@ -95,15 +95,15 @@ app.post("/register", async (req, res) => {
 
 // Login ----------------------------------
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;  // ✅ match frontend fields
+  const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email: email });  // ✅ search by email  
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res.json({ err: "User not found" });
     }
 
-    if (user.password === password) {  // ✅ check password
-      return res.json({ status: "ok", user }); // return user info too
+    if (user.password === password) {
+      return res.json({ status: "ok", user });
     } else {
       return res.json({ err: "Incorrect Password" });
     }
@@ -125,18 +125,17 @@ app.post("/registerpet", async (req, res) => {
       breed,
       age,
     });
-    res.send({ status: "ok" });  // ✅ fixed
+    res.send({ status: "ok" });
   } catch (err) {
     console.error(err);
     res.send({ status: "err" });
   }
+}); // ← ADDED THIS MISSING CLOSING BRACE
 
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
-
 
 const startExpiryJob = () => {
   setInterval(async () => {
@@ -155,13 +154,5 @@ const startExpiryJob = () => {
   }, 30 * 1000); // every 30s
 };
 
-
-
-
-});
-
-
-
-
-
-
+// Start the expiry job
+startExpiryJob();

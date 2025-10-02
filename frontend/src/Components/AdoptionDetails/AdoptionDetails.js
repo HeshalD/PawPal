@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 // Note: This is the URL for your actual implementation
-const API_URL = 'http://localhost:5001/adoptions/add';
+const API_URL = 'http://localhost:5000/adoptions/add';
 
 function AdoptionDetails() {
   const navigate = useNavigate();

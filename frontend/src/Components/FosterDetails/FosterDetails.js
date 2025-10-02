@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const URL = "http://localhost:5001/fosters";
+const URL = "http://localhost:5000/fosters";
 
 export default function FosterDetails() {
   const navigate = useNavigate();

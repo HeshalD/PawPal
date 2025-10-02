@@ -4,7 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
-const URL = "http://localhost:5001/adoptions";
+const URL = "http://localhost:5000/adoptions";
 
 const fetchHandler = async () => {
   return await axios.get(URL).then((res) => res.data);
@@ -255,14 +255,14 @@ function AdoptionDetailsDisplay() {
   };
 
   const handlePdfView = (pdfPath) => {
-    const fullPdfUrl = `http://localhost:5001/${pdfPath}`;
+    const fullPdfUrl = `http://localhost:5000/${pdfPath}`;
     setSelectedPdf(fullPdfUrl);
   };
 
   const closePdfViewer = () => setSelectedPdf(null);
 
   const downloadPdf = (pdfPath, fileName) => {
-    const fullPdfUrl = `http://localhost:5001/${pdfPath}`;
+    const fullPdfUrl = `http://localhost:5000/${pdfPath}`;
     const link = document.createElement("a");
     link.href = fullPdfUrl;
     link.download = fileName || "salary-sheet.pdf";

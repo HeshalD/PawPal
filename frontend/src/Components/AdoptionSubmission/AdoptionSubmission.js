@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE = "http://localhost:5001/adoptions";
+const API_BASE = "http://localhost:5000/adoptions";
 
 export default function AdoptionSubmission() {
   const { id } = useParams();
@@ -184,7 +184,7 @@ export default function AdoptionSubmission() {
                     <div className="flex gap-3">
                       <a
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm"
-                        href={`http://localhost:5001/${data.salarySheet}`}
+                        href={`http://localhost:5000/${data.salarySheet}`}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -192,7 +192,7 @@ export default function AdoptionSubmission() {
                       </a>
                       <a
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm"
-                        href={`http://localhost:5001/${data.salarySheet}`}
+                        href={`http://localhost:5000/${data.salarySheet}`}
                         download={`salary-sheet-${data.fullName}.pdf`}
                       >
                         Download

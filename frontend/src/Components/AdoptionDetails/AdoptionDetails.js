@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import Nav from '../Nav/Nav';
+
 
 // Note: This is the URL for your actual implementation
 const API_URL = 'http://localhost:5000/adoptions/add';
 
 function AdoptionDetails() {
+  const [collapsed, setCollapsed] = useState(false);
   const [formData, setFormData] = useState({
     selectedPets: [],
     fullName: '',
@@ -152,6 +155,12 @@ function AdoptionDetails() {
   };
 
   return (
+     <div className="min-h-screen bg-white flex">
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <>
       <style jsx>{`
         .custom-purple-hover:hover {
@@ -534,6 +543,8 @@ function AdoptionDetails() {
         </div>
       </div>
     </>
+      </div>
+    </div>  
   );
 }
 

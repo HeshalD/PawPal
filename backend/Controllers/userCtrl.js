@@ -1,4 +1,4 @@
-const User = require("../Models/userModel");
+const User = require("../Models/RegisterModel");
 
 // ✅ Get all users
 const getallUsers = async (req, res) => {

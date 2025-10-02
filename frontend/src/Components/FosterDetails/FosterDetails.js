@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import axios from 'axios';
+import Nav from '../Nav/Nav';
+import { Link } from "react-router-dom";
 
 // Note: This is the URL for your actual implementation
  const URL = "http://localhost:5000/fosters";
 
 export default function FosterDetails() {
+  const [collapsed, setCollapsed] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     address: "",
@@ -116,6 +119,12 @@ export default function FosterDetails() {
   };
 
   return (
+    <div className="min-h-screen bg-white flex">
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      
+      <div className={`flex-1 transition-all duration-300 ${
+        collapsed ? 'ml-16' : 'ml-64'
+      } p-6`}>
     <>
       <style jsx>{`
         .custom-purple-hover:hover {
@@ -437,5 +446,7 @@ export default function FosterDetails() {
         </div>
       </div>
     </>
+      </div>
+    </div>  
   );
 }

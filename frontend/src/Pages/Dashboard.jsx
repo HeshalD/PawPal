@@ -23,15 +23,17 @@ function UserDashboard() {
       setLoading(true);
       
       // Fetch all required data
-      const [petsRes, donationsRes, sponsorsRes] = await Promise.all([
+      const [petsRes, donationsRes, sponsorsRes, usersRes] = await Promise.all([
         fetch('http://localhost:5000/pets').then(r => r.json()),
         fetch('http://localhost:5000/donations').then(r => r.json()),
-        fetch('http://localhost:5000/sponsors').then(r => r.json())
+        fetch('http://localhost:5000/sponsors').then(r => r.json()),
+        fetch('http://localhost:5000/users').then(r => r.json())
       ]);
 
       const pets = petsRes.pets || petsRes || [];
       const donations = donationsRes.donations || donationsRes || [];
       const allSponsors = sponsorsRes.sponsors || sponsorsRes || [];
+      const users = usersRes.users || usersRes || [];
 
       // Calculate total donation amount
       const totalDonationAmount = donations.reduce((sum, donation) => {
@@ -52,7 +54,7 @@ function UserDashboard() {
       setStats({
         totalPets: pets.length,
         adoptedPets: adoptedPets.length,
-        totalUsers: 0, // You can fetch users count if needed
+        totalUsers: users.length,
         totalDonations: totalDonationAmount,
         totalSponsors: allSponsors.length,
         activeSponsorAmount: activeSponsorAmount
@@ -81,6 +83,20 @@ function UserDashboard() {
       hoverColor: "hover:from-pink-600 hover:to-pink-700"
     },
     {
+      title: "Registered Users",
+      value: stats.totalUsers,
+      icon: <Users className="w-8 h-8" />,
+      color: "from-indigo-500 to-indigo-600",
+      hoverColor: "hover:from-indigo-600 hover:to-indigo-700"
+    },
+    {
+      title: "Total Sponsors",
+      value: stats.totalSponsors,
+      icon: <Handshake className="w-8 h-8" />,
+      color: "from-orange-500 to-orange-600",
+      hoverColor: "hover:from-orange-600 hover:to-orange-700"
+    },
+    {
       title: "Total Donations",
       value: `Rs. ${stats.totalDonations.toLocaleString()}`,
       icon: <DollarSign className="w-8 h-8" />,
@@ -91,8 +107,8 @@ function UserDashboard() {
       title: "Active Sponsors",
       value: `Rs. ${stats.activeSponsorAmount.toLocaleString()}`,
       icon: <Handshake className="w-8 h-8" />,
-      color: "from-blue-500 to-indigo-600",
-      hoverColor: "hover:from-blue-600 hover:to-indigo-700"
+      color: "from-blue-500 to-blue-600",
+      hoverColor: "hover:from-blue-600 hover:to-blue-700"
     }
   ];
 
@@ -127,7 +143,7 @@ function UserDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {statsCards.map((card, index) => (
             <div
               key={index}

@@ -60,69 +60,44 @@ export default function AdminAppointmentView() {
     setFilteredAppointments(filtered);
   }, [appointments, searchTerm, statusFilter]);
 
-  // Accept appointment
-  const acceptAppointment = async (id) => {
-    try {
-      const response = await fetch(`http://localhost:5000/appointments/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'accepted' })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-      
-      // Update local state without full page refresh
-      setAppointments(prevAppointments => 
-        prevAppointments.map(apt => 
-          apt._id === id ? { ...apt, status: 'accepted' } : apt
-        )
-      );
-      
-      alert('Appointment accepted successfully!');
-    } catch (e) {
-      console.error('Accept error:', e);
-      setError(`Failed to accept: ${e.message}`);
-    }
-  };
+// Accept appointment
+const acceptAppointment = async (id) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'accepted' })
+    });
 
-  // Reject appointment
-  const rejectAppointment = async (id) => {
-    if (!window.confirm('Are you sure you want to reject this appointment?')) {
-      return;
-    }
-    
-    try {
-      const response = await fetch(`http://localhost:5000/appointments/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: 'rejected' })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-      }
-      
-      // Update local state without full page refresh
-      setAppointments(prevAppointments => 
-        prevAppointments.map(apt => 
-          apt._id === id ? { ...apt, status: 'rejected' } : apt
-        )
-      );
-      
-      alert('Appointment rejected successfully!');
-    } catch (e) {
-      console.error('Reject error:', e);
-      setError(`Failed to reject: ${e.message}`);
-    }
-  };
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    await loadAppointments(); // ✅ refresh list
+  } catch (e) {
+    setError(`Failed to accept: ${e.message}`);
+  }
+};
+
+// Reject appointment
+const rejectAppointment = async (id) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: 'rejected' })
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    await loadAppointments(); // ✅ refresh list
+  } catch (e) {
+    setError(`Failed to reject: ${e.message}`);
+  }
+};
+
 
   // Calculate statistics
   const stats = {

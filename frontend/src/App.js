@@ -80,7 +80,7 @@ function App() {
         <Route path="/donation" element={<Donation />} />
         <Route path="/shopadmin" element={<ShopAdmin />} />
         <Route path="/addUser" element={<AddUser />} />
-        <Route path="/displayUser/:id" element={<UpdateUser />} />
+        <Route path="/updateuser/:id" element={<UpdateUser />} />
         <Route path="/userprofile" element={<UserProfile />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/shop" element={<Shop />} />

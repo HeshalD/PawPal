@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useReactToPrint } from "react-to-print";
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { 
   Search, 
   Edit3, 
@@ -8,7 +9,7 @@ import {
   MessageCircle, 
   Save, 
   X, 
-  FileText, 
+  Download, 
   Phone, 
   Mail, 
   MapPin, 
@@ -18,7 +19,8 @@ import {
   Home,
   Clock,
   Award,
-  StickyNote
+  StickyNote,
+  CheckCircle
 } from "lucide-react";
 
 const URL = "http://localhost:5001/fosters";
@@ -32,25 +34,88 @@ export default function FosterDetailsDisplay() {
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // ✅ Print setup
-  const ComponentsRef = useRef();
-  const handlePrint = useReactToPrint({
-    content: () => ComponentsRef.current,
-    documentTitle: "Foster_Details",
-    onAfterPrint: () => alert("Foster details printed successfully!"),
-  });
+  // ✅ PDF Download Function
+  const handleDownloadPDF = () => {
+    try {
+      const doc = new jsPDF();
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+    
+      // Add title
+      doc.setFontSize(20);
+      doc.setTextColor(230, 115, 143);
+      doc.text('PawPal Foster Care Management Report', pageWidth / 2, 20, { align: 'center' });
+      
+      // Add date and stats
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+      doc.text(`Total Records: ${filteredFosters.length}`, 14, 34);
+      
+      // Prepare table data
+      const tableData = filteredFosters.map(item => [
+        item.fullName || '-',
+        item.contact || '-',
+        item.email || '-',
+        item.animalName || '-',
+        item.animalType || '-',
+        `${item.fosterFrom || '-'} to ${item.fosterTo || '-'}`,
+        (item.status || 'pending').toUpperCase(),
+        item.experience || '-'
+      ]);
+      
+      // Add table using autoTable function
+      autoTable(doc, {
+        startY: 40,
+        head: [['Name', 'Contact', 'Email', 'Animal', 'Type', 'Period', 'Status', 'Experience']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [230, 115, 143],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        styles: {
+          fontSize: 8,
+          cellPadding: 3
+        },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 22 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 20 },
+          4: { cellWidth: 18 },
+          5: { cellWidth: 30 },
+          6: { cellWidth: 18 },
+          7: { cellWidth: 17 }
+        },
+        margin: { left: 14, right: 14 }
+      });
+      
+      // Save the PDF
+      doc.save(`Foster_Details_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      alert("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("PDF Generation Error:", error);
+      alert("Failed to generate PDF. Please check console for details.");
+    }
+  };
 
   const fetchFosters = () => {
     setIsLoading(true);
     axios
       .get(URL)
       .then((res) => {
+        console.log("Fetched data:", res.data);
         setFosters(res.data.fosters || []);
         setFilteredFosters(res.data.fosters || []);
         setIsLoading(false);
       })
       .catch((err) => {
-        console.error(err);
+        console.error("Fetch error:", err);
+        alert("Failed to fetch foster requests. Please check if the server is running.");
         setIsLoading(false);
       });
   };
@@ -91,33 +156,56 @@ export default function FosterDetailsDisplay() {
 
   const saveEdit = async (id) => {
     try {
-      await axios.put(`${URL}/${id}`, editData);
+      const response = await axios.put(`${URL}/${id}`, editData);
+      console.log("Update response:", response.data);
       setEditingId(null);
       setEditData({});
       fetchFosters();
+      alert("Foster request updated successfully!");
     } catch (err) {
-      console.error(err);
+      console.error("Update error:", err);
       alert("Failed to update. Please try again.");
     }
   };
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.patch(`${URL}/${id}/status`, { status });
+      console.log(`Updating status for ID: ${id} to ${status}`);
+      
+      // Try PATCH method first
+      const response = await axios.patch(`${URL}/${id}/status`, { status });
+      console.log("Status update response:", response.data);
+      
+      alert(`Foster request ${status} successfully!`);
       fetchFosters();
     } catch (err) {
-      console.error(err);
-      alert("Failed to update status. Please try again.");
+      console.error("Status update error:", err);
+      
+      // If PATCH fails, try PUT method as fallback
+      try {
+        const item = fosters.find(f => (f._id || f.id) === id);
+        if (item) {
+          const updatedData = { ...item, status: status };
+          const response = await axios.put(`${URL}/${id}`, updatedData);
+          console.log("Status update (PUT) response:", response.data);
+          alert(`Foster request ${status} successfully!`);
+          fetchFosters();
+        }
+      } catch (putErr) {
+        console.error("PUT fallback error:", putErr);
+        alert("Failed to update status. Please check your backend API.");
+      }
     }
   };
 
   const deleteItem = async (id) => {
-    if (!window.confirm("Delete this foster request?")) return;
+    if (!window.confirm("Are you sure you want to delete this foster request?")) return;
     try {
       await axios.delete(`${URL}/${id}`);
       setFosters((prev) => prev.filter((f) => f._id !== id));
+      alert("Foster request deleted successfully!");
     } catch (err) {
-      console.error(err);
+      console.error("Delete error:", err);
       alert("Failed to delete. Please try again.");
     }
   };
@@ -156,14 +244,14 @@ export default function FosterDetailsDisplay() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={handlePrint}
-                className="text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                onClick={handleDownloadPDF}
+                className="text-white px-6 py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
                 style={{ backgroundColor: '#E6738F' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E69AAE'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E6738F'}
               >
-                <FileText size={20} />
-                Print All Records
+                <Download size={20} />
+                Download PDF Report
               </button>
             </div>
           </div>
@@ -180,13 +268,12 @@ export default function FosterDetailsDisplay() {
                 placeholder="Search by name, animal name, or animal type..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm focus:outline-none"
                 style={{ 
-                  outlineColor: '#E6738F',
-                  borderColor: search ? '#E6738F' : undefined
+                  borderColor: search ? '#E6738F' : '#e5e7eb'
                 }}
                 onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                onBlur={(e) => e.currentTarget.style.borderColor = search ? '#E6738F' : '#e5e7eb'}
               />
             </div>
           </div>
@@ -195,15 +282,13 @@ export default function FosterDetailsDisplay() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full py-4 px-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm"
-              style={{ outlineColor: '#E6738F' }}
+              className="w-full py-4 px-4 bg-white rounded-xl border border-gray-200 transition-all duration-200 shadow-sm focus:outline-none"
               onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
               onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
             >
               <option value="all">All Statuses</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
-              <option value="completed">Completed</option>
             </select>
           </div>
           
@@ -215,7 +300,7 @@ export default function FosterDetailsDisplay() {
         </div>
 
         {/* Foster Cards Grid */}
-        <div ref={ComponentsRef}>
+        <div>
           {filteredFosters.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
               <PawPrint className="mx-auto text-gray-400 mb-4" size={64} />
@@ -234,22 +319,21 @@ export default function FosterDetailsDisplay() {
                   {/* Card Header */}
                   <div className="p-6 text-white" style={{ background: 'linear-gradient(to right, #E6738F, #6638E6)' }}>
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-xl font-bold flex items-center gap-2">
                           <PawPrint size={20} />
                           {item.fullName}
                         </h3>
                         <p className="text-pink-100">Foster Application</p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
                         {/* Status badge */}
                         <div
-                          className="px-3 py-1 rounded-full text-xs font-semibold mr-2"
+                          className="px-3 py-1 rounded-full text-xs font-semibold"
                           style={{
-                            backgroundColor: (item.status || 'pending') === 'approved' ? '#22c55e' : (item.status || 'pending') === 'completed' ? '#6638E6' : '#f59e0b',
+                            backgroundColor: (item.status || 'pending') === 'approved' ? '#22c55e' : '#f59e0b',
                             color: '#fff'
                           }}
-                          title={`Status: ${(item.status || 'pending').toUpperCase()}`}
                         >
                           {(item.status || 'pending').toUpperCase()}
                         </div>
@@ -257,17 +341,15 @@ export default function FosterDetailsDisplay() {
                           <>
                             <button
                               onClick={() => startEdit(item)}
-                              className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.3)'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)'}
+                              className="bg-white/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200 hover:bg-white/30"
+                              title="Edit"
                             >
                               <Edit3 size={16} />
                             </button>
                             <button
                               onClick={() => deleteItem(item._id || item.id)}
-                              className="bg-red-500/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200"
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.3)'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.2)'}
+                              className="bg-red-500/20 backdrop-blur-sm text-white p-2 rounded-lg transition-all duration-200 hover:bg-red-500/30"
+                              title="Delete"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -288,10 +370,7 @@ export default function FosterDetailsDisplay() {
                             value={editData.fullName || ""}
                             onChange={onEditChange}
                             placeholder="Full Name"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <textarea
                             name="address"
@@ -299,20 +378,14 @@ export default function FosterDetailsDisplay() {
                             onChange={onEditChange}
                             placeholder="Address"
                             rows={2}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none focus:outline-none focus:border-pink-500"
                           />
                           <input
                             name="contact"
                             value={editData.contact || ""}
                             onChange={onEditChange}
                             placeholder="Contact Number"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <input
                             name="email"
@@ -320,30 +393,21 @@ export default function FosterDetailsDisplay() {
                             value={editData.email || ""}
                             onChange={onEditChange}
                             placeholder="Email"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <input
                             name="animalName"
                             value={editData.animalName || ""}
                             onChange={onEditChange}
                             placeholder="Animal Name/ID"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <input
                             name="animalType"
                             value={editData.animalType || ""}
                             onChange={onEditChange}
                             placeholder="Animal Type"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -353,10 +417,7 @@ export default function FosterDetailsDisplay() {
                                 name="fosterFrom"
                                 value={editData.fosterFrom || ""}
                                 onChange={onEditChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                                style={{ outlineColor: '#E6738F' }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                               />
                             </div>
                             <div>
@@ -366,10 +427,7 @@ export default function FosterDetailsDisplay() {
                                 name="fosterTo"
                                 value={editData.fosterTo || ""}
                                 onChange={onEditChange}
-                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                                style={{ outlineColor: '#E6738F' }}
-                                onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                                onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                                className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                               />
                             </div>
                           </div>
@@ -377,10 +435,7 @@ export default function FosterDetailsDisplay() {
                             name="experience"
                             value={editData.experience || "No"}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           >
                             <option value="No">No Experience</option>
                             <option value="Yes">Has Experience</option>
@@ -390,10 +445,7 @@ export default function FosterDetailsDisplay() {
                             value={editData.homeEnvironment || ""}
                             onChange={onEditChange}
                             placeholder="Home Environment"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 focus:outline-none focus:border-pink-500"
                           />
                           <textarea
                             name="notes"
@@ -401,10 +453,7 @@ export default function FosterDetailsDisplay() {
                             onChange={onEditChange}
                             placeholder="Additional Notes"
                             rows={2}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none"
-                            style={{ outlineColor: '#E6738F' }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = '#E6738F'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-lg transition-all duration-200 resize-none focus:outline-none focus:border-pink-500"
                           />
                         </div>
                         <div className="flex gap-3 pt-4">
@@ -524,7 +573,7 @@ export default function FosterDetailsDisplay() {
                         <div className="flex gap-3 pt-4">
                           <button
                             onClick={() => handleWhatsApp(item)}
-                            className="text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 flex-1"
+                            className="text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 flex-1"
                             style={{ backgroundColor: '#E6738F' }}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#E69AAE'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E6738F'}
@@ -532,33 +581,23 @@ export default function FosterDetailsDisplay() {
                             <MessageCircle size={16} />
                             WhatsApp
                           </button>
-                          {/* Status actions */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => updateStatus(item._id || item.id, 'pending')}
-                              className="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-sm"
-                              title="Mark as Pending"
-                            >
-                              Pending
-                            </button>
+                          {/* Approve Button */}
+                          {(item.status || 'pending') !== 'approved' && (
                             <button
                               onClick={() => updateStatus(item._id || item.id, 'approved')}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm"
-                              title="Approve"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200"
+                              title="Approve Foster Request"
                             >
+                              <CheckCircle size={16} />
                               Approve
                             </button>
-                            <button
-                              onClick={() => updateStatus(item._id || item.id, 'completed')}
-                              className="text-white px-3 py-2 rounded-lg text-sm transition-all duration-200"
-                              style={{ backgroundColor: '#6638E6' }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#7c4af0'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6638E6'}
-                              title="Mark as Completed"
-                            >
-                              Complete
-                            </button>
-                          </div>
+                          )}
+                          {(item.status || 'pending') === 'approved' && (
+                            <div className="bg-emerald-100 text-emerald-700 px-6 py-2 rounded-lg font-medium flex items-center justify-center gap-2">
+                              <CheckCircle size={16} />
+                              Approved
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

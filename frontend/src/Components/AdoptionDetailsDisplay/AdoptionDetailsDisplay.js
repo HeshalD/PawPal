@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useReactToPrint } from "react-to-print";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
 const URL = "http://localhost:5001/adoptions";
@@ -20,14 +21,6 @@ function AdoptionDetailsDisplay() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  // ✅ Print setup
-  const ComponentsRef = useRef();
-  const handlePrint = useReactToPrint({
-    content: () => ComponentsRef.current,
-    documentTitle: "Adoption_Details",
-    onAfterPrint: () => alert("Adoption details printed successfully!"),
-  });
-
   useEffect(() => {
     fetchHandler().then((data) => {
       setAdoption(data.adoptions);
@@ -35,6 +28,142 @@ function AdoptionDetailsDisplay() {
       setIsLoading(false);
     });
   }, []);
+
+  // PDF Download Function
+  const downloadPdfReport = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(79, 70, 229);
+    doc.text('Paw Pal Adoption Records Report', pageWidth / 2, 20, { align: 'center' });
+    
+    // Report metadata
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
+    doc.text(`Total Records: ${filteredAdoptions.length}`, 14, 40);
+    doc.text(`Filter: ${statusFilter === 'all' ? 'All Status' : statusFilter}`, 14, 45);
+    
+    // Summary Statistics
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('Summary Statistics', 14, 55);
+    
+    const summaryData = [
+      ['Total Applications', adoption.length.toString()],
+      ['Pending', adoption.filter(item => item.status === 'pending').length.toString()],
+      ['Approved', adoption.filter(item => item.status === 'approved').length.toString()],
+      ['Rejected', adoption.filter(item => item.status === 'rejected').length.toString()],
+      ['Completed', adoption.filter(item => item.status === 'completed').length.toString()]
+    ];
+    
+    autoTable(doc, {
+      startY: 60,
+      head: [['Status', 'Count']],
+      body: summaryData,
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229] },
+      margin: { left: 14, right: 14 }
+    });
+    
+    let currentY = doc.lastAutoTable.finalY + 10;
+    
+    // Adoption Records Table
+    if (filteredAdoptions.length > 0) {
+      doc.setFontSize(12);
+      doc.text('Adoption Applications', 14, currentY);
+      
+      const tableData = filteredAdoptions.map((item, index) => [
+        (index + 1).toString(),
+        item.fullName,
+        item.email,
+        item.phone,
+        `${item.age} years`,
+        `Rs. ${item.salary?.toLocaleString() || 'N/A'}`,
+        item.selectedPets?.join(', ') || 'None',
+        (item.status || 'pending').toUpperCase(),
+        item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'N/A'
+      ]);
+      
+      autoTable(doc, {
+        startY: currentY + 5,
+        head: [['#', 'Name', 'Email', 'Phone', 'Age', 'Salary', 'Pets', 'Status', 'Date']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [79, 70, 229] },
+        styles: { fontSize: 7 },
+        margin: { left: 14, right: 14 }
+      });
+      
+      currentY = doc.lastAutoTable.finalY + 10;
+      
+      // Detailed Information
+      if (currentY > 250) {
+        doc.addPage();
+        currentY = 20;
+      }
+      
+      doc.setFontSize(12);
+      doc.text('Detailed Application Information', 14, currentY);
+      currentY += 10;
+      
+      filteredAdoptions.forEach((item, index) => {
+        if (currentY > 250) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text(`Application #${index + 1}: ${item.fullName}`, 14, currentY);
+        doc.setFont(undefined, 'normal');
+        currentY += 7;
+        
+        const detailData = [
+          ['Email', item.email],
+          ['Phone', item.phone],
+          ['Age', `${item.age} years`],
+          ['Address', item.address],
+          ['Salary', `Rs. ${item.salary?.toLocaleString() || 'N/A'}`],
+          ['Selected Pets', item.selectedPets?.join(', ') || 'None'],
+          ['Status', (item.status || 'pending').toUpperCase()],
+          ['Admin Notes', item.adminNotes || 'None']
+        ];
+        
+        autoTable(doc, {
+          startY: currentY,
+          body: detailData,
+          theme: 'plain',
+          styles: { fontSize: 8 },
+          margin: { left: 20, right: 14 },
+          columnStyles: {
+            0: { cellWidth: 40, fontStyle: 'bold' },
+            1: { cellWidth: 130 }
+          }
+        });
+        
+        currentY = doc.lastAutoTable.finalY + 8;
+      });
+    }
+    
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+    
+    doc.save(`adoption-records-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   // Status utility functions
   const getStatusColor = (status) => {
@@ -57,11 +186,9 @@ function AdoptionDetailsDisplay() {
     }
   };
 
-  // Search and filter functionality
   useEffect(() => {
     let filtered = adoption;
 
-    // Apply search filter
     if (searchTerm.trim() !== "") {
       filtered = filtered.filter(item =>
         item.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +199,6 @@ function AdoptionDetailsDisplay() {
       );
     }
 
-    // Apply status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(item => item.status === statusFilter);
     }
@@ -117,7 +243,6 @@ function AdoptionDetailsDisplay() {
       };
       
       await axios.put(`${URL}/${id}`, payload);
-      // Refresh locally
       setAdoption((prev) =>
         prev.map((it) => (it._id === id ? { ...it, ...payload } : it))
       );
@@ -162,16 +287,14 @@ function AdoptionDetailsDisplay() {
     if (item) startEdit(item);
   };
 
-  // Update adoption status
   const updateStatus = async (id, newStatus, adminNotes = '') => {
     setUpdatingStatus(id);
     try {
-      const response = await axios.put(`${URL}/status/${id}`, {
+      await axios.put(`${URL}/status/${id}`, {
         status: newStatus,
         adminNotes: adminNotes
       });
       
-      // Update local state
       setAdoption(prev => 
         prev.map(item => 
           item._id === id ? { ...item, status: newStatus, adminNotes: adminNotes, updatedAt: new Date() } : item
@@ -187,7 +310,6 @@ function AdoptionDetailsDisplay() {
     }
   };
 
-  // Quick status update handlers
   const handleApprove = (id) => {
     if (window.confirm('Are you sure you want to approve this adoption application?')) {
       updateStatus(id, 'approved', 'Application approved by admin');
@@ -221,7 +343,6 @@ function AdoptionDetailsDisplay() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
@@ -233,19 +354,17 @@ function AdoptionDetailsDisplay() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={handlePrint}
+                onClick={downloadPdfReport}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                <FileText size={20} />
-                Print All Records
+                <Download size={20} />
+                Download PDF Report
               </button>
             </div>
           </div>
         </div>
 
-        {/* Search, Filter and Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-8">
-          {/* Search */}
           <div className="lg:col-span-3">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -259,7 +378,6 @@ function AdoptionDetailsDisplay() {
             </div>
           </div>
 
-          {/* Status Filter */}
           <div className="lg:col-span-2">
             <select
               value={statusFilter}
@@ -274,14 +392,12 @@ function AdoptionDetailsDisplay() {
             </select>
           </div>
           
-          {/* Stats Card */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white shadow-lg">
             <div className="text-3xl font-bold">{filteredAdoptions.length}</div>
             <div className="text-indigo-100">Applications</div>
           </div>
         </div>
 
-        {/* Status Summary Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-xl p-4 shadow-sm border border-yellow-200">
             <div className="flex items-center gap-2 text-yellow-600 mb-2">
@@ -321,8 +437,7 @@ function AdoptionDetailsDisplay() {
           </div>
         </div>
 
-        {/* Records Grid */}
-        <div ref={ComponentsRef} className="space-y-6">
+        <div className="space-y-6">
           {filteredAdoptions.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
               <Users className="mx-auto text-gray-400 mb-4" size={64} />
@@ -337,7 +452,6 @@ function AdoptionDetailsDisplay() {
                 key={item._id}
                 className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
               >
-                {/* Card Header */}
                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -349,7 +463,6 @@ function AdoptionDetailsDisplay() {
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
-                        {/* Status Badge */}
                         <div className={`px-3 py-1 rounded-full border text-sm font-medium flex items-center gap-2 ${getStatusColor(item.status || 'pending')}`}>
                           {getStatusIcon(item.status || 'pending')}
                           {(item.status || 'pending').toUpperCase()}
@@ -357,16 +470,14 @@ function AdoptionDetailsDisplay() {
                       </div>
                     </div>
                     
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex wrap gap-2">
                       {editingId !== item._id && (
                         <>
                           <button
                             onClick={() => handleUpdate(item._id)}
-                            className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
                           >
                             <Edit3 size={14} />
-                            Edit
+                            
                           </button>
                           
                           {item.status !== 'approved' && (
@@ -415,10 +526,8 @@ function AdoptionDetailsDisplay() {
                   </div>
                 </div>
 
-                {/* Card Content */}
                 <div className="p-6">
                   {editingId === item._id ? (
-                    /* Edit Form */
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div>
@@ -528,7 +637,6 @@ function AdoptionDetailsDisplay() {
                       </div>
                     </div>
                   ) : (
-                    /* Display Mode */
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-4">
@@ -581,7 +689,6 @@ function AdoptionDetailsDisplay() {
                         </div>
                       </div>
 
-                      {/* Selected Pets */}
                       <div className="bg-blue-50 rounded-lg p-6">
                         <h4 className="font-semibold text-gray-800 mb-3">Selected Pets for Adoption</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -599,7 +706,6 @@ function AdoptionDetailsDisplay() {
                         </div>
                       </div>
 
-                      {/* Salary Sheet Section */}
                       <div className="bg-yellow-50 rounded-lg p-6">
                         <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                           <FileText className="text-yellow-600" size={20} />
@@ -626,12 +732,11 @@ function AdoptionDetailsDisplay() {
                           </div>
                         ) : (
                           <div className="text-amber-700 bg-amber-100 p-3 rounded-lg">
-                            ⚠️ No salary sheet has been uploaded for this application
+                            No salary sheet has been uploaded for this application
                           </div>
                         )}
                       </div>
 
-                      {/* Admin Notes Section */}
                       {item.adminNotes && (
                         <div className="bg-gray-50 rounded-lg p-6">
                           <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -655,7 +760,6 @@ function AdoptionDetailsDisplay() {
         </div>
       </div>
 
-      {/* PDF Viewer Modal */}
       {selectedPdf && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">

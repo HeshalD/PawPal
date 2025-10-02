@@ -13,10 +13,27 @@ const DonationManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [filteredDonations, setFilteredDonations] = useState([]);
+  
+  // ✅ Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 20;
 
+  // ✅ Auto-refresh toggle
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  // ✅ Auto-refresh every 10 seconds (only if enabled)
   useEffect(() => {
     fetchDonations();
-  }, [filter]);
+    
+    if (autoRefresh) {
+      const interval = setInterval(() => {
+        fetchDonations(true); // Pass true to indicate auto-refresh
+      }, 10000); // Refresh every 10 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [filter, autoRefresh]);
 
   useEffect(() => {
     const filterDonations = (data) => {
@@ -61,22 +78,34 @@ const DonationManager = () => {
     };
     
     setFilteredDonations(filterDonations(donations));
+    setCurrentPage(1);
   }, [donations, searchTerm, dateFilter]);
 
-  const fetchDonations = async () => {
+  const fetchDonations = async (isAutoRefresh = false) => {
     setLoading(true);
     try {
       const allResponse = await DonationsAPI.getAll();
-      setAllDonations(allResponse.data.donations || []);
+      let newDonations = allResponse.data.donations || [];
       
-      let filteredDonations = allResponse.data.donations || [];
+      // ✅ Sort by newest first (most recent donations at the top)
+      newDonations = newDonations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      // If it's an auto-refresh and we have new data, go to page 1
+      if (isAutoRefresh && newDonations.length !== allDonations.length) {
+        setCurrentPage(1);
+      }
+      
+      setAllDonations(newDonations);
+      
+      let filteredDonations = newDonations;
       if (filter === 'pending') {
-        filteredDonations = (allResponse.data.donations || []).filter(d => d.status === 'pending');
+        filteredDonations = newDonations.filter(d => d.status === 'pending');
       } else if (filter === 'completed') {
-        filteredDonations = (allResponse.data.donations || []).filter(d => d.status === 'completed');
+        filteredDonations = newDonations.filter(d => d.status === 'completed');
       }
       
       setDonations(filteredDonations);
+      setLastRefresh(new Date());
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -148,23 +177,34 @@ const DonationManager = () => {
 
   const summary = calculateSummary();
 
+  // ✅ Pagination calculations
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredDonations.slice(indexOfFirstRecord, indexOfLastRecord);
+  const totalPages = Math.ceil(filteredDonations.length / recordsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const nextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+  const prevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
   const downloadReport = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    // Header
     doc.setFontSize(20);
-    doc.setTextColor(147, 51, 234); // Purple color
+    doc.setTextColor(147, 51, 234);
     doc.text('PawPal Donation Report', pageWidth / 2, 20, { align: 'center' });
     
-    // Report metadata
     doc.setFontSize(10);
     doc.setTextColor(100);
     doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
     doc.text(`Filter: ${dateFilter === 'all' ? 'All Time' : dateFilter}`, 14, 40);
     doc.text(`Search: ${searchTerm || 'All'}`, 14, 45);
     
-    // Summary section
     doc.setFontSize(14);
     doc.setTextColor(0);
     doc.text('Summary', 14, 55);
@@ -188,7 +228,6 @@ const DonationManager = () => {
       margin: { left: 14, right: 14 }
     });
     
-    // Donations table
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFontSize(14);
     doc.text('Donations', 14, finalY);
@@ -209,12 +248,11 @@ const DonationManager = () => {
       head: [['Name', 'Email', 'Phone', 'Amount', 'Type', 'Frequency', 'Status', 'Date']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [236, 72, 153] }, // Pink color
+      headStyles: { fillColor: [236, 72, 153] },
       styles: { fontSize: 8 },
       margin: { left: 14, right: 14 }
     });
     
-    // Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -228,7 +266,6 @@ const DonationManager = () => {
       );
     }
     
-    // Save the PDF
     doc.save(`donation-report-${dateFilter}-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
@@ -268,6 +305,18 @@ const DonationManager = () => {
                   <p className="text-gray-600 mt-1">PawPal Pet Care Donation System</p>
                 </div>
                 <div className="flex space-x-4">
+                  {/* ✅ Auto-refresh toggle button */}
+                  <button
+                    onClick={() => setAutoRefresh(!autoRefresh)}
+                    className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl ${
+                      autoRefresh
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                        : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                    }`}
+                  >
+                    {autoRefresh ? '🔄 Auto-Refresh ON' : '⏸️ Auto-Refresh OFF'}
+                  </button>
+                  
                   <button
                     onClick={downloadReport}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -275,6 +324,13 @@ const DonationManager = () => {
                     📊 Download Report
                   </button>
                 </div>
+              </div>
+              
+              {/* ✅ Last refresh time display */}
+              <div className="pb-4">
+                <p className="text-sm text-gray-500">
+                  Last updated: {lastRefresh.toLocaleTimeString()} {autoRefresh && '• Refreshing every 10 seconds'}
+                </p>
               </div>
             </div>
           </div>
@@ -384,7 +440,12 @@ const DonationManager = () => {
 
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-                <h3 className="text-lg font-semibold text-gray-900">💝 Donations ({filteredDonations.length})</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-gray-900">💝 Donations ({filteredDonations.length})</h3>
+                  <p className="text-sm text-gray-600">
+                    Showing {indexOfFirstRecord + 1}-{Math.min(indexOfLastRecord, filteredDonations.length)} of {filteredDonations.length}
+                  </p>
+                </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -401,7 +462,7 @@ const DonationManager = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredDonations.map((donation) => (
+                    {currentRecords.map((donation) => (
                       <tr key={donation._id} className="hover:bg-gray-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{donation.fullname}</div>
@@ -458,6 +519,67 @@ const DonationManager = () => {
                   </tbody>
                 </table>
               </div>
+
+              {filteredDonations.length > recordsPerPage && (
+                <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={prevPage}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                      }`}
+                    >
+                      ← Previous
+                    </button>
+
+                    <div className="flex gap-2">
+                      {[...Array(totalPages)].map((_, index) => {
+                        const pageNum = index + 1;
+                        if (
+                          pageNum === 1 ||
+                          pageNum === totalPages ||
+                          (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => paginate(pageNum)}
+                              className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                currentPage === pageNum
+                                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                                  : 'bg-white text-gray-700 hover:bg-purple-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        } else if (
+                          pageNum === currentPage - 2 ||
+                          pageNum === currentPage + 2
+                        ) {
+                          return <span key={pageNum} className="px-2">...</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+
+                    <button
+                      onClick={nextPage}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-purple-500 text-white hover:bg-purple-600'
+                      }`}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {filteredDonations.length === 0 && (

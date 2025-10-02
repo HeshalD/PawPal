@@ -14,9 +14,9 @@ const fosterRoutes = require("./Routes/FosterRoutes");
 const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
-
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
+const appointmentRoutes = require("./Routes/appointmentRoutes"); 
 
 const app = express();
 const cors = require("cors");
@@ -34,7 +34,6 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-  // ✅ Fixed: Removed spaces after commas
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
@@ -54,6 +53,7 @@ app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
 app.use("/items", inventoryRouter);
 app.use("/orders", orderRouter);
+app.use("/appointments", appointmentRoutes); // ✅ Add this line
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
@@ -122,15 +122,13 @@ app.post("/registerpet", async (req, res) => {
     console.error(err);
     res.send({ status: "err" });
   }
-}); // ✅ Fixed: Properly closed the function
+});
 
-// ✅ Fixed: Moved uploads directory creation outside the function
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// ✅ Fixed: Start expiry job
 const startExpiryJob = () => {
   setInterval(async () => {
     try {
@@ -145,7 +143,7 @@ const startExpiryJob = () => {
     } catch (e) {
       console.error("Expiry job error", e.message);
     }
-  }, 30 * 1000); // every 30s
+  }, 30 * 1000);
 };
 
-startExpiryJob(); // ✅ Call the function
+startExpiryJob();

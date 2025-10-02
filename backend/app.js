@@ -14,18 +14,12 @@ const fosterRoutes = require("./Routes/FosterRoutes");
 const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
-<<<<<<< HEAD
 const healthRecordRoutes = require('./Routes/healthRecordRoutes');
 const doctorRoutes = require('./Routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const chatbotRoutes = require('./Routes/chatbotRoutes');
-
-=======
->>>>>>> 255be97ac4c3aaf1228f9afda21da93d10804188
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
-const appointmentRoutes = require("./Routes/appointmentRoutes"); 
-
 const app = express();
 const cors = require("cors");
 const PORT = process.env.PORT || 5000;
@@ -42,11 +36,10 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-<<<<<<< HEAD
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-=======
+
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
->>>>>>> 255be97ac4c3aaf1228f9afda21da93d10804188
+
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -65,15 +58,14 @@ app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
 app.use("/items", inventoryRouter);
 app.use("/orders", orderRouter);
-<<<<<<< HEAD
+
 app.use('/health-records', healthRecordRoutes);
 app.use('/doctor-availability', doctorRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/chatbot', chatbotRoutes);
 app.use('/api/appointments', appointmentRoutes);
-=======
+
 app.use("/appointments", appointmentRoutes); // ✅ Add this line
->>>>>>> 255be97ac4c3aaf1228f9afda21da93d10804188
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
@@ -142,11 +134,9 @@ app.post("/registerpet", async (req, res) => {
     console.error(err);
     res.send({ status: "err" });
   }
-<<<<<<< HEAD
+
 }); // ← ADDED THIS MISSING CLOSING BRACE
-=======
-});
->>>>>>> 255be97ac4c3aaf1228f9afda21da93d10804188
+
 
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -170,8 +160,5 @@ const startExpiryJob = () => {
   }, 30 * 1000);
 };
 
-<<<<<<< HEAD
-// Start the expiry job
-=======
->>>>>>> 255be97ac4c3aaf1228f9afda21da93d10804188
+
 startExpiryJob();

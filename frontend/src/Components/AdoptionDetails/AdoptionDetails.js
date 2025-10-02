@@ -1,16 +1,9 @@
-<<<<<<< HEAD
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 // Note: This is the URL for your actual implementation
 const API_URL = 'http://localhost:5001/adoptions/add';
-=======
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import Nav from '../Nav/Nav';
->>>>>>> 125a0744a70e6628f213f571bf76c0a14526160b
 
 function AdoptionDetails() {
   const navigate = useNavigate();
@@ -30,63 +23,13 @@ function AdoptionDetails() {
   const [submitMessage, setSubmitMessage] = useState('');
   const [submittedAdoption, setSubmittedAdoption] = useState(null);
 
-  // Pet list from database
-  const [pets, setPets] = useState([]);
-  const [loadingPets, setLoadingPets] = useState(true);
-
-  // Fetch pets from database
-  useEffect(() => {
-    const fetchPets = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/pets');
-        console.log('API Response:', response.data);
-        
-        // Handle different response formats
-        let petsData = [];
-        if (Array.isArray(response.data)) {
-          petsData = response.data;
-        } else if (response.data.pets && Array.isArray(response.data.pets)) {
-          petsData = response.data.pets;
-        } else if (response.data.data && Array.isArray(response.data.data)) {
-          petsData = response.data.data;
-        }
-        
-        setPets(petsData);
-        setLoadingPets(false);
-      } catch (error) {
-        console.error('Error fetching pets:', error);
-        setLoadingPets(false);
-        // Fallback to sample data if API fails
-        setPets([
-          { 
-            _id: 'P001', 
-            name: 'Bella', 
-            breed: 'Labrador',
-            image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=400'
-          },
-          { 
-            _id: 'P002', 
-            name: 'Max', 
-            breed: 'German Shepherd',
-            image: 'https://images.unsplash.com/photo-1568572933382-74d440642117?w=400'
-          },
-          { 
-            _id: 'P003', 
-            name: 'Milo', 
-            breed: 'Persian Cat',
-            image: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?w=400'
-          },
-          { 
-            _id: 'P004', 
-            name: 'Lucy', 
-            breed: 'Beagle',
-            image: 'https://images.unsplash.com/photo-1505628346881-b72b27e84530?w=400'
-          },
-        ]);
-      }
-    };
-    fetchPets();
-  }, []);
+  // Sample pet list (later can be loaded from DB)
+  const pets = [
+    { id: 'P001', name: 'Bella', breed: 'Labrador' },
+    { id: 'P002', name: 'Max', breed: 'German Shepherd' },
+    { id: 'P003', name: 'Milo', breed: 'Persian Cat' },
+    { id: 'P004', name: 'Lucy', breed: 'Beagle' },
+  ];
 
   // Handle input changes
   const handleChange = (e) => {
@@ -436,58 +379,16 @@ function AdoptionDetails() {
                           >✕</button>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          {pets.map((pet) => {
-                            const petValue = `${pet.name} (ID: ${pet._id || pet.id}, Breed: ${pet.breed})`;
-                            const isSelected = formData.selectedPets.includes(petValue);
-                            
-                            return (
-                              <div
-                                key={pet._id || pet.id}
-                                className={`pet-card p-0 rounded-xl cursor-pointer ${isSelected ? 'selected' : ''}`}
-                                onClick={() => {
-                                  const event = {
-                                    target: {
-                                      value: petValue,
-                                      checked: !isSelected
-                                    }
-                                  };
-                                  handlePetSelection(event);
-                                }}
-                              >
-                                {isSelected && (
-                                  <div className="selected-badge">✓ Selected</div>
-                                )}
-                                
-                                
-                                <div className="p-4">
-                                  <div className="flex items-start space-x-3">
-                                    <input
-                                      type="checkbox"
-                                      value={petValue}
-                                      checked={isSelected}
-                                      onChange={handlePetSelection}
-                                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500 mt-1"
-                                      onClick={(e) => e.stopPropagation()}
-                                    />
-                                    <div className="flex-1">
-                                      <div className="font-bold text-lg text-gray-800">{pet.name}</div>
-                                      <div className="text-sm text-gray-600 mb-1">{pet.breed}</div>
-                                      <div className="text-xs text-gray-500">ID: {pet._id || pet.id}</div>
-                                      {pet.age && (
-                                        <div className="text-xs text-gray-500 mt-1">Age: {pet.age}</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
+                        <div>
+                          <span className="text-4xl mb-2 block">📁</span>
+                          <div className="text-gray-700 font-medium">Click to upload PDF file</div>
+                          <div className="text-sm text-gray-500 mt-1">Maximum file size: 5MB</div>
                         </div>
                       )}
-                      
-                      {errors.selectedPets && <div className="error-text">{errors.selectedPets}</div>}
                     </div>
+                    {errors.salarySheet && <div className="error-text mt-1">{errors.salarySheet}</div>}
+                  </div>
+                </div>
 
                 {/* Submit Button */}
                 <div className="pt-6">

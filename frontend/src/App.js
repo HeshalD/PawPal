@@ -54,8 +54,8 @@ import AppointmentDashboard from './Pages/AppoinmentView';
 import AdminAppointmentView from './Pages/AdminAppoinmetView';
 import AdminHealthRec from './Pages/AdminHealthRec';
 
-
-
+import AdoptionSubmission from './Components/AdoptionSubmission/AdoptionSubmission';
+import FosterSubmission from './Components/FosterSubmission/FosterSubmission';
 
 function App() {
   const [collapsed] = useState(false);
@@ -101,6 +101,10 @@ function App() {
         <Route path="/adoptionDisplay" element={<AdoptionDetailsDisplay />} />
         <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
         <Route path="/fosterViewPage" element={<FosterViewPage />} />
+        <Route path="/adoptionViewPage" element={<AdoptionViewPage/>} />
+        <Route path="/fosterViewPage" element={<FosterViewPage/>} />
+        <Route path="/adoption/submitted/:id" element={<AdoptionSubmission />} />
+        <Route path="/foster/submitted/:id" element={<FosterSubmission />} />
         <Route path="/donationform" element={<DonorForm />} />
         <Route path="/donations" element={<DonationManagement />} />
         <Route path="/sponsor" element={<SponsorForm />} />

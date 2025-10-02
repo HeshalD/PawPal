@@ -178,16 +178,17 @@ if (loading) {
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                  <Link to={`/UserPetProfile/${pet._id}`}>
                   <button
-                    onClick={() => handlePetCardClick(pet._id)}
                     className="flex items-center px-3 py-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
                   >
                     <Eye className="w-4 h-4 mr-1" />
                     <span className="text-sm font-medium">View</span>
                   </button>
+                  </Link>
 
                   <div className="flex space-x-2">
-                    <Link to={`/pets/${pet._id}`}>
+                    <Link to={`/updatepet/${pet._id}`}>
                       <button className="flex items-center px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200">
                         <Edit className="w-4 h-4 mr-1" />
                         <span className="text-sm font-medium">Edit</span>

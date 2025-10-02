@@ -40,7 +40,7 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
     },
     { 
       name: "Healthcare Management", 
-      path: "/admin/healthcare", 
+      path: "/adminAppoinmentView", 
       icon: Stethoscope,
       roles: ["Veterinarian"] // Only Vet
     },
@@ -64,7 +64,7 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
     },
     { 
       name: "Foster Management", 
-      path: "/admin/foster", 
+      path: "/fosterDisplay", 
       icon: Home,
       roles: ["Veterinarian", "Adoption Manager"] // Only Vet and Adoption Manager
     },

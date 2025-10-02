@@ -4,12 +4,13 @@ import {
   Menu, 
   LayoutDashboard, 
   Heart, 
+  Calendar,   // Icon for Appointment
   DollarSign, 
   Users, 
   ShoppingBag,
   User,
   HandHeart,  // Icon for Sponsor
-  Home        // Icon for Foster
+  Home,       // Icon for Foster
 } from "lucide-react";
 import logo from "./logo.jpg";
 
@@ -19,6 +20,7 @@ const Nav = ({ collapsed, setCollapsed }) => {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Pets", path: "/pets", icon: Heart },
+    { name: "Appointment", path: "/appointmentview", icon: Calendar },
     { name: "Donation", path: "/donationform", icon: DollarSign },
     { name: "Sponsor", path: "/sponsor", icon: HandHeart },
     { name: "Adoption", path: "/adoptionViewPage", icon: Users },
@@ -65,7 +67,7 @@ const Nav = ({ collapsed, setCollapsed }) => {
       </div>
 
       {/* Navigation Section */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -115,7 +117,7 @@ const Nav = ({ collapsed, setCollapsed }) => {
       {/* User Profile Section */}
       <div className="p-4 border-t border-gray-700">
         <Link
-          to="/profile"
+          to="/userprofile"
           className="group flex items-center px-3 py-3 rounded-xl hover:bg-gradient-to-r hover:from-pink-600/20 hover:to-purple-600/20 transition-all duration-300 relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-pink-600/10 to-purple-600/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -129,7 +131,7 @@ const Nav = ({ collapsed, setCollapsed }) => {
           {!collapsed && (
             <div className="relative flex flex-col">
               <span className="font-medium text-gray-200 group-hover:text-white transition-colors duration-300">
-                <Link to="/userprofile">My Profile</Link>
+                My Profile
               </span>
               <span className="text-xs text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
                 View & Edit

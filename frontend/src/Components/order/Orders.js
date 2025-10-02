@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import AdminNav from "../Nav/NavAdmin";
+
 
 const API_BASE = "http://localhost:5000/orders";
 
 function Orders() {
+  const [collapsed, setCollapsed] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all"); // all, pending, accepted, completed, cancelled
@@ -82,6 +85,9 @@ function Orders() {
 
   if (loading) {
     return (
+      <div className="min-h-screen bg-gray-50">
+              <AdminNav collapsed={collapsed} setCollapsed={setCollapsed} />
+              <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
       <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="text-center">
@@ -89,10 +95,15 @@ function Orders() {
           </div>
         </div>
       </div>
+      </div>
+      </div>
     );
   }
 
   return (
+    <div className="min-h-screen bg-gray-50">
+            <AdminNav collapsed={collapsed} setCollapsed={setCollapsed} />
+            <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
     <div className="w-full bg-[#F5F5F5] min-h-screen py-8">
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
@@ -223,6 +234,8 @@ function Orders() {
           )}
         </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

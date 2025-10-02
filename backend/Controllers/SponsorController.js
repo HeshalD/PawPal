@@ -1,6 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const Sponsor = require("../Models/SponsorModel");
+const { sendEmail } = require("../utils/mailer");
 
 const refreshExpiredStatuses = async () => {
   const now = new Date();
@@ -103,6 +104,25 @@ const createSponsor = async (req, res, next) => {
       durationMonths: savedSponsor.durationMonths
     });
     
+    // Send confirmation email to sponsor on submission
+    try {
+      await sendEmail({
+        to: savedSponsor.email,
+        subject: "We received your sponsorship request",
+        html: `
+          <p>Hi ${savedSponsor.sponsorName},</p>
+          <p>Thank you for your sponsorship request to PawPal. Our team will review it shortly.</p>
+          <p><strong>Amount:</strong> Rs. ${Number(savedSponsor.sponsorAmount || 0).toLocaleString()}<br/>
+             <strong>Duration:</strong> ${savedSponsor.durationMonths === 0.001 ? '1 minute (test)' : savedSponsor.durationMonths + ' months'}</p>
+          <p>We will notify you by email once it's approved.</p>
+          <p>— PawPal Team</p>
+        `,
+        text: `Hi ${savedSponsor.sponsorName},\nThank you for your sponsorship request to PawPal. We will notify you once it's approved.`,
+      });
+    } catch (e) {
+      console.warn('Sponsor submission email failed:', e?.message || e);
+    }
+
     return res.status(201).json({ sponsor: savedSponsor });
   } catch (err) {
     console.error('Create sponsor error:', err);
@@ -241,6 +261,26 @@ const approveSponsor = async (req, res, next) => {
     sponsor.endDate = endDate;
     sponsor.updatedAt = Date.now();
     await sponsor.save();
+
+    // Send approval email
+    try {
+      await sendEmail({
+        to: sponsor.email,
+        subject: "Your sponsorship has been approved",
+        html: `
+          <p>Hi ${sponsor.sponsorName},</p>
+          <p>Great news! Your sponsorship has been approved and is now active.</p>
+          <p><strong>Start:</strong> ${new Date(sponsor.startDate).toLocaleDateString()}<br/>
+             <strong>End:</strong> ${new Date(sponsor.endDate).toLocaleDateString()}<br/>
+             <strong>Amount:</strong> Rs. ${Number(sponsor.sponsorAmount || 0).toLocaleString()}</p>
+          <p>Thank you for supporting PawPal.</p>
+          <p>— PawPal Team</p>
+        `,
+        text: `Hi ${sponsor.sponsorName}, Your sponsorship has been approved and is now active. Thank you!`,
+      });
+    } catch (e) {
+      console.warn('Sponsor approval email failed:', e?.message || e);
+    }
 
     return res.status(200).json({ sponsor });
   } catch (err) {

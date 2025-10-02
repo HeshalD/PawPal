@@ -299,7 +299,7 @@ function DisplayPet() {
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => navigate(`/pet-profile/${pet._id}`)}
+                            onClick={() => navigate(`/adminpetprofile/${pet._id}`)}
                             className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
                             title="View Details"
                           >

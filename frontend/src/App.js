@@ -17,6 +17,8 @@ import AddPet from "./Pages/AddPet";
 import UpdatePet from "./Pages/UpdatePet";
 import UserProfile from "./Pages/UserProfile";
 import AdminDashboard from "./Pages/AdminDashboard";
+import AppointmentForm from "./Pages/AppoinmentForm";
+import AppointmentView from "./Pages/AppoinmentView"; 
 
 // Components imports
 import AdoptionDetails from "./Components/AdoptionDetails/AdoptionDetails";
@@ -42,6 +44,16 @@ import OrderConfirmationModal from "./Components/order/OrderConfirmationModal";
 import AdminPetView from "./Pages/AdminPetview";  
 import AdminAddPet from "./Pages/AdminAddPet";
 import AdminUpdatePet from "./Pages/AdminUpdatePet";
+import VetPetView from "./Pages/VetpetView";
+import UserPetProfile from "./Pages/UserPetProfile";
+import AdminPetProfile from "./Pages/AdminPetProfile";
+
+//Vilani's Routes
+import AppointmentBooking from './Pages/AppoinmentForm';
+import AppointmentDashboard from './Pages/AppoinmentView';  
+import AdminAppointmentView from './Pages/AdminAppoinmetView';
+import AdminHealthRec from './Pages/AdminHealthRec';
+
 
 
 
@@ -57,7 +69,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/addpet" element={<AddPet />} />
-        <Route path="/pets/:id" element={<UpdatePet />} />
+        <Route path="/updatepet/:id" element={<UpdatePet />} />
         
 
         {/* Dashboard routes */}
@@ -75,6 +87,12 @@ function App() {
         <Route path="/adminpets" element={<AdminPetView />} />
         <Route path="/adminaddpet" element={<AdminAddPet />} />
         <Route path="/adminupdatepet/:id" element={<AdminUpdatePet />} />
+        <Route path="/appointmentview" element={<AppointmentView />} />
+        <Route path="/appointmentform" element={<AppointmentForm />} />
+        <Route path="/adminAppoinmentView" element={<AdminAppointmentView />} />
+        <Route path="/vetpetview" element={<VetPetView />} />
+        <Route path="/userpetprofile/:id" element={<UserPetProfile />} />
+        <Route path="/adminpetprofile/:id" element={<AdminPetProfile />} />
         
 
         {/* Component routes */}
@@ -94,6 +112,12 @@ function App() {
         <Route path="/donationsomething" element={<DonationForm />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orderconfirm" element={<OrderConfirmationModal />} />
+
+        {/*Vilani's pages */}
+        <Route path="/appointmentBooking" element={<AppointmentBooking/>}/>
+        <Route path="/appointmentDashboard" element={<AppointmentDashboard/>}/>
+        <Route path="/adminAppointmentView" element={<AdminAppointmentView/>}/>
+        <Route path="/adminHealthRec/:id" element={<AdminHealthRec/>}/>
       </Routes>
       </CartProvider>
     

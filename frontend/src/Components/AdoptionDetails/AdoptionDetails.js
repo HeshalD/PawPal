@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 
 // Note: This is the URL for your actual implementation
-const API_URL = 'http://localhost:5001/adoptions/add';
+const API_URL = 'http://localhost:5000/adoptions/add';
 
 function AdoptionDetails() {
   const [formData, setFormData] = useState({
@@ -114,7 +114,7 @@ function AdoptionDetails() {
       formDataToSend.append('selectedPets', JSON.stringify(formData.selectedPets));
       formDataToSend.append('salarySheet', formData.salarySheet);
 
-      const response = await axios.post('http://localhost:5001/adoptions/add', formDataToSend, {
+      const response = await axios.post('http://localhost:5000/adoptions/add', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -14,17 +14,63 @@ function OrderModal({ item, isOpen, onClose, onOrder }) {
   const [submitting, setSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState(null);
+  const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
+ const handleChange = (e) => {
     const { name, value } = e.target;
-    setOrderDetails(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === "customerPhone") {
+      const numericValue = value.replace(/\D/g, "").slice(0, 10);
+      setOrderDetails(prev => ({ ...prev, [name]: numericValue }));
+    } else if (name === "quantity") {
+      const numValue = parseInt(value) || 1;
+      setOrderDetails(prev => ({ ...prev, [name]: numValue }));
+    } else {
+      setOrderDetails(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSubmit = async (e) => {
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Quantity validation
+    if (!orderDetails.quantity || orderDetails.quantity < 1) {
+      newErrors.quantity = "Quantity must be at least 1";
+    } else if (orderDetails.quantity > item.Quantity) {
+      newErrors.quantity = `Quantity cannot exceed available stock (${item.Quantity})`;
+    }
+
+    // Customer Name
+    if (!orderDetails.customerName || orderDetails.customerName.trim().length < 2) {
+      newErrors.customerName = "Name must be at least 2 characters";
+    }
+
+    // Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!orderDetails.customerEmail || !emailRegex.test(orderDetails.customerEmail)) {
+      newErrors.customerEmail = "Enter a valid email address";
+    }
+
+    // Phone validation
+   if (!orderDetails.customerPhone || !/^\d{10}$/.test(orderDetails.customerPhone)) {
+      newErrors.customerPhone = "Phone number must be exactly 10 digits";
+    }
+
+    // Delivery Address
+    if (!orderDetails.deliveryAddress || orderDetails.deliveryAddress.trim().length < 5) {
+      newErrors.deliveryAddress = "Delivery address must be at least 5 characters";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+ const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) return; // Stop if validation fails
+
     setSubmitting(true);
     
     const order = {
@@ -159,6 +205,7 @@ function OrderModal({ item, isOpen, onClose, onOrder }) {
                   name="customerPhone"
                   value={orderDetails.customerPhone}
                   onChange={handleChange}
+                  maxLength={10}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter phone number"
                   required

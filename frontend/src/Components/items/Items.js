@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import Item from "../item/Item"; // FIXED: Should be "./Item" not "./Items"
+import Item from "../item/Item";
 import { useNavigate } from "react-router-dom";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 import Nav from "../Nav/NavAdmin";
 import { Link } from "react-router-dom";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const URL = "http://localhost:5000/items";
 const ORDERS_URL = "http://localhost:5000/orders";
@@ -30,7 +30,7 @@ function Items() {
     const loadItems = async () => {
       try {
         const data = await fetchHandler();
-        console.log("Fetched items:", data); // Debug log
+        console.log("Fetched items:", data);
         setItem(data.items || []);
       } catch (error) {
         console.error("Failed to fetch items:", error);
@@ -58,37 +58,43 @@ function Items() {
       return;
     }
 
-    const doc = new jsPDF({ orientation: "landscape" });
-    const columns = ["ID", "Name", "Image", "Price", "Stock", "Unit", "Category"];
-    const rows = items.map((it) => [
-      it._id || "-",
-      it.Item_Name || "-",
-      it.image ? `http://localhost:5000${it.image}` : "No Image",
-      it.Price !== undefined ? `Rs. ${parseFloat(it.Price).toFixed(2)}` : "-",
-      it.Quantity !== undefined ? it.Quantity.toString() : "0",
-      it.Unit_of_Measure || "-",
-      it.Category || "-"
-    ]);
+    try {
+      const doc = new jsPDF({ orientation: "landscape" });
+      const columns = ["ID", "Name", "Image", "Price", "Stock", "Unit", "Category"];
+      const rows = items.map((it) => [
+        it._id || "-",
+        it.Item_Name || "-",
+        it.image ? `http://localhost:5000${it.image}` : "No Image",
+        it.Price !== undefined ? `Rs. ${parseFloat(it.Price).toFixed(2)}` : "-",
+        it.Quantity !== undefined ? it.Quantity.toString() : "0",
+        it.Unit_of_Measure || "-",
+        it.Category || "-"
+      ]);
 
-    doc.setFontSize(16);
-    doc.text("Inventory Report", 14, 18);
+      doc.setFontSize(16);
+      doc.text("Inventory Report", 14, 18);
 
-    doc.autoTable({
-      head: [columns],
-      body: rows,
-      startY: 22,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [102, 56, 230] },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
-      theme: "striped",
-      columnStyles: {
-        2: { cellWidth: 30 },
-        0: { cellWidth: 20 },
-      }
-    });
+      // Use autoTable as a function call
+      autoTable(doc, {
+        head: [columns],
+        body: rows,
+        startY: 22,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [102, 56, 230] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        theme: "striped",
+        columnStyles: {
+          2: { cellWidth: 30 },
+          0: { cellWidth: 20 },
+        }
+      });
 
-    const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-    doc.save(`inventory-report-${date}.pdf`);
+      const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      doc.save(`inventory-report-${date}.pdf`);
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      alert("Failed to generate PDF. Please check console for details.");
+    }
   };
 
   const mapToGroup = (rawCategory) => {
@@ -148,13 +154,13 @@ function Items() {
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-[#333333]">Products</h1>
               <div className="flex items-center gap-3">
-                <Link to ="/orders">
-                <button
-                  onClick={() => navigate('/orders')} 
-                  className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE] transition-colors"
-                >
-                  View Orders
-                </button>
+                <Link to="/orders">
+                  <button
+                    onClick={() => navigate('/orders')} 
+                    className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE] transition-colors"
+                  >
+                    View Orders
+                  </button>
                 </Link>
                 
                 <div className="hidden sm:flex items-center gap-2 bg-white border border-[#E6F4F3] rounded-full px-3 py-2 shadow-sm">

@@ -31,6 +31,38 @@ function ItemCreate() {
     }
   };
 
+  // Validation function
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.Item_Name || form.Item_Name.trim().length > 5) {
+      newErrors.Item_Name = "Item name must be at least 2 characters";
+    }
+
+    if (!form.Category) {
+      newErrors.Category = "Please select a category";
+    }
+
+    if (!form.Unit_of_Measure || form.Unit_of_Measure.trim() === "") {
+      newErrors.Unit_of_Measure = "Unit of measure is required";
+    }
+
+    if (!form.Quantity || isNaN(form.Quantity) || parseInt(form.Quantity) < 0) {
+      newErrors.Quantity = "Quantity must be a non-negative number";
+    }
+
+    if (!form.Price || isNaN(form.Price) || parseFloat(form.Price) <= 0) {
+      newErrors.Price = "Price must be greater than 0";
+    }
+
+    if (image && !image.type.startsWith("image/")) {
+      newErrors.Image = "Selected file must be an image";
+    }
+
+   
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -175,7 +207,7 @@ function ItemCreate() {
                 
                 <div>
                   <label className="block text-sm font-medium text-[#333333] mb-1">
-                    Price (Rs) *
+                    Unit Price (Rs) *
                   </label>
                   <input
                     type="number"

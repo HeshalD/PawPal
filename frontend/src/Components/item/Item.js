@@ -7,19 +7,17 @@ function Item({ item, onDelete }) {
 
   // Use status from backend if available, otherwise calculate locally
   const itemStatus = useMemo(() => {
-    if (status) {
-      return status;
-    }
+    
     // Fallback calculation if status not provided by backend
     const stock = Quantity || 0;
     if (stock === 0) {
       return { label: "Out of Stock", color: "bg-red-100 text-red-700" };
-    } else if (stock < 5) {
+    } else if (stock < 30) {
       return { label: "Low Stock", color: "bg-yellow-100 text-yellow-700" };
     } else {
       return { label: "Active", color: "bg-green-100 text-green-700" };
     }
-  }, [status, Quantity]);
+  }, [Quantity]);
 
   const handleDeleteClick = () => {
     const ok = window.confirm("Are you sure you want to delete this item?");
@@ -55,7 +53,7 @@ function Item({ item, onDelete }) {
         </td>
         <td className="py-3 px-6 align-middle">
           <div className="inline-flex gap-2">
-            <button onClick={() => navigate(`/items/${_id}/edit`)} className="bg-[#4CB5AE] hover:bg-[#3aa39c] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-colors">Edit</button>
+            <button onClick={() => navigate(`/items/${_id}/edit`)} className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#6638E6] hover:to-[#E69AAE] text-white text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm transition-all">Edit</button>
             <button onClick={handleDeleteClick} className="bg-white border border-[#fee2e2] text-[#b91c1c] hover:bg-[#fff5f5] text-sm font-semibold py-1.5 px-3 rounded-md shadow-sm">Delete</button>
           </div>
         </td>

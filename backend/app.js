@@ -1,4 +1,3 @@
-
 //password - lJv2dSasOC6LPFG1
 const express = require("express");
 const mongoose = require("mongoose");
@@ -15,16 +14,12 @@ const fosterRoutes = require("./Routes/FosterRoutes");
 const sponsorRoutes = require("./Routes/SponsorRoute");
 const Sponsor = require("./Models/SponsorModel");
 const donationRoutes = require("./Routes/DonationRoute");
-const healthRecordRoutes = require('./Routes/healthRecordRoutes');
-const doctorRoutes = require('./Routes/doctorRoutes');
-const appointmentRoutes = require('./Routes/appointmentRoutes');
-const chatbotRoutes = require('./Routes/chatbotRoutes');
 
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
 
 const app = express();
-const cors = require ("cors");
+const cors = require("cors");
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -39,7 +34,8 @@ app.use((req, res, next) => {
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
   );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  // ✅ Fixed: Removed spaces after commas
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
@@ -58,18 +54,14 @@ app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
 app.use("/items", inventoryRouter);
 app.use("/orders", orderRouter);
-app.use('/health-records', healthRecordRoutes);
-app.use('/doctor-availability', doctorRoutes);
-app.use('/appointments', appointmentRoutes);
-app.use('/chatbot', chatbotRoutes);
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
-  .then(() => console.log("Connected to MongoDB"))
+  .then(() => console.log("✅ Connected to MongoDB"))
   .then(() => {
-    app.listen(5000, () => console.log("Server started on port 5000"));
+    app.listen(5000, () => console.log("🚀 Server started on port 5000"));
   })
-  .catch((err) => console.log("MongoDB connection error:", err));
+  .catch((err) => console.log("❌ MongoDB connection error:", err));
 
 // Register -----------------------------
 require("./Models/RegisterModel");
@@ -86,7 +78,7 @@ app.post("/register", async (req, res) => {
       confirmpassword,
       age,
     });
-    res.send({ status: "ok" });  // ✅ fixed
+    res.send({ status: "ok" });
   } catch (err) {
     console.error(err);
     res.send({ status: "err" });
@@ -95,15 +87,15 @@ app.post("/register", async (req, res) => {
 
 // Login ----------------------------------
 app.post("/login", async (req, res) => {
-  const { email, password } = req.body;  // ✅ match frontend fields
+  const { email, password } = req.body;
   try {
-    const user = await User.findOne({ email: email });  // ✅ search by email  
+    const user = await User.findOne({ email: email });
     if (!user) {
       return res.json({ err: "User not found" });
     }
 
-    if (user.password === password) {  // ✅ check password
-      return res.json({ status: "ok", user }); // return user info too
+    if (user.password === password) {
+      return res.json({ status: "ok", user });
     } else {
       return res.json({ err: "Incorrect Password" });
     }
@@ -125,19 +117,20 @@ app.post("/registerpet", async (req, res) => {
       breed,
       age,
     });
-    res.send({ status: "ok" });  // ✅ fixed
+    res.send({ status: "ok" });
   } catch (err) {
     console.error(err);
     res.send({ status: "err" });
   }
+}); // ✅ Fixed: Properly closed the function
 
+// ✅ Fixed: Moved uploads directory creation outside the function
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-
-
+// ✅ Fixed: Start expiry job
 const startExpiryJob = () => {
   setInterval(async () => {
     try {
@@ -155,13 +148,4 @@ const startExpiryJob = () => {
   }, 30 * 1000); // every 30s
 };
 
-
-
-
-});
-
-
-
-
-
-
+startExpiryJob(); // ✅ Call the function

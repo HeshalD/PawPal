@@ -211,7 +211,7 @@ export default function AdoptionSubmission() {
                     Edit Details
                   </button>
                   <Link
-                    to="/mainhome"
+                    to="/adoptionViewPage"
                     className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-lg font-medium"
                   >
                     Back to Home

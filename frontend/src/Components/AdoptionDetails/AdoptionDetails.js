@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Nav from '../Nav/Nav';
 
-// Note: This is the URL for your actual implementation
 const API_URL = 'http://localhost:5000/adoptions/add';
+const PETS_API_URL = 'http://localhost:5000/pets';
 
 function AdoptionDetails() {
   const [collapsed, setCollapsed] = useState(false);
@@ -24,25 +24,45 @@ function AdoptionDetails() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const [submittedAdoption, setSubmittedAdoption] = useState(null);
+  
+  // New states for pets from database
+  const [pets, setPets] = useState([]);
+  const [loadingPets, setLoadingPets] = useState(true);
+  const [petsError, setPetsError] = useState('');
 
-  // Sample pet list (later can be loaded from DB)
-  const pets = [
-    { id: 'P001', name: 'Bella', breed: 'Labrador' },
-    { id: 'P002', name: 'Max', breed: 'German Shepherd' },
-    { id: 'P003', name: 'Milo', breed: 'Persian Cat' },
-    { id: 'P004', name: 'Lucy', breed: 'Beagle' },
-  ];
+  // Fetch pets from database on component mount
+  useEffect(() => {
+    fetchPets();
+  }, []);
+
+  const fetchPets = async () => {
+    try {
+      setLoadingPets(true);
+      setPetsError('');
+      const response = await axios.get(PETS_API_URL);
+      
+      // Filter only available pets (not already adopted)
+      const availablePets = response.data.pets?.filter(
+        pet => pet.status === 'available' || !pet.status
+      ) || response.data || [];
+      
+      setPets(availablePets);
+      setLoadingPets(false);
+    } catch (error) {
+      console.error('Error fetching pets:', error);
+      setPetsError('Failed to load pets. Please refresh the page.');
+      setLoadingPets(false);
+    }
+  };
 
   // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Numbers-only restriction
     if (['age', 'salary', 'phone'].includes(name)) {
       if (value && !/^\d*$/.test(value)) return;
     }
 
-    // Letters-only restriction
     if (name === 'fullName') {
       if (value && !/^[a-zA-Z\s]*$/.test(value)) return;
     }
@@ -129,7 +149,6 @@ function AdoptionDetails() {
       setSubmittedAdoption(created || null);
       setSubmitMessage('✅ Adoption request submitted successfully!');
       if (created && created._id) {
-        // Navigate user to view/edit their submission
         navigate(`/adoption/submitted/${created._id}`);
       }
       setFormData({
@@ -167,22 +186,24 @@ function AdoptionDetails() {
       <style jsx>{`
         .custom-purple-hover:hover { background-color: #6638E6 !important; }
         .custom-pink-hover:hover { background-color: #E6738F  !important; }
-        .custom-highlight-hover:hover { background-color: #E69AAE !important; }
         .form-input { transition: all 0.3s ease; border: 2px solid #e5e7eb; }
         .form-input:focus { outline: none !important; border-color: #6638E6 !important; box-shadow: 0 0 0 3px rgba(102, 56, 230, 0.1) !important; }
         .section-divider { background: linear-gradient(90deg, #6638E6 0%, #E6738F 100%); height: 2px; border-radius: 1px; }
         .gradient-bg { background: linear-gradient(135deg, #6638E6 0%, #E6738F 100%); }
         .spinner { border: 2px solid #ffffff; border-top: 2px solid transparent; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .pet-card { transition: all 0.3s ease; border: 2px solid #e5e7eb; }
-        .pet-card:hover { border-color: #E6738F; background-color: #fef7f7; }
-        .pet-card.selected { border-color: #6638E6; background-color: #f3f0ff; }
+        .pet-card { transition: all 0.3s ease; border: 2px solid #e5e7eb; background: white; }
+        .pet-card:hover { border-color: #E6738F; background-color: #fef7f7; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .pet-card.selected { border-color: #6638E6; background-color: #f3f0ff; box-shadow: 0 4px 12px rgba(102, 56, 230, 0.2); }
+        .pet-image { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
         .file-upload-area { border: 2px dashed #e5e7eb; transition: all 0.3s ease; cursor: pointer; }
         .file-upload-area:hover { border-color: #6638E6; background-color: #f3f0ff; }
         .file-upload-area.has-file { border-color: #10b981; background-color: #f0fdf4; }
         .error-text { color: #dc2626; font-size: 0.875rem; }
         .success-message { background-color: #f0fdf4; border-color: #10b981; color: #047857; }
         .error-message { background-color: #fef2f2; border-color: #dc2626; color: #dc2626; }
+        .loading-skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s ease-in-out infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
       `}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-white py-8 px-4">
@@ -211,44 +232,87 @@ function AdoptionDetails() {
                     </div>
                     <h3 className="text-xl font-semibold text-gray-800">Select Pets to Adopt</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {pets.map((pet) => {
-                      const petValue = `${pet.name} (ID: ${pet.id}, Breed: ${pet.breed})`;
-                      const isSelected = formData.selectedPets.includes(petValue);
-                      return (
-                        <div
-                          key={pet.id}
-                          className={`pet-card p-4 rounded-xl cursor-pointer ${isSelected ? 'selected' : ''}`}
-                          onClick={() => {
-                            const event = { target: { value: petValue, checked: !isSelected } };
-                            handlePetSelection(event);
-                          }}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              value={petValue}
-                              checked={isSelected}
-                              onChange={handlePetSelection}
-                              className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                            <div className="flex-1">
-                              <div className="font-semibold text-gray-800">{pet.name}</div>
-                              <div className="text-sm text-gray-600">{pet.breed}</div>
-                              <div className="text-xs text-gray-500">ID: {pet.id}</div>
+
+                  {/* Loading State */}
+                  {loadingPets && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="pet-card p-4 rounded-xl">
+                          <div className="loading-skeleton h-32 rounded-lg mb-3"></div>
+                          <div className="loading-skeleton h-4 rounded mb-2"></div>
+                          <div className="loading-skeleton h-3 rounded w-2/3"></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {petsError && (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                      <p className="text-red-600">{petsError}</p>
+                      <button
+                        onClick={fetchPets}
+                        className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Pets Display */}
+                  {!loadingPets && !petsError && pets.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <p className="text-lg">No pets available for adoption at the moment.</p>
+                      <p className="text-sm mt-2">Please check back later.</p>
+                    </div>
+                  )}
+
+                  {!loadingPets && !petsError && pets.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {pets.map((pet) => {
+                        const petValue = `${pet.name} (ID: ${pet._id}, Breed: ${pet.breed})`;
+                        const isSelected = formData.selectedPets.includes(petValue);
+                        const petImage = pet.image || pet.imageUrl || '/placeholder-pet.jpg';
+                        
+                        return (
+                          <div
+                            key={pet._id}
+                            className={`pet-card p-4 rounded-xl cursor-pointer ${isSelected ? 'selected' : ''}`}
+                            onClick={() => {
+                              const event = { target: { value: petValue, checked: !isSelected } };
+                              handlePetSelection(event);
+                            }}
+                          >
+                            
+                            
+                            {/* Pet Info */}
+                            <div className="flex items-start space-x-3">
+                              <input
+                                type="checkbox"
+                                value={petValue}
+                                checked={isSelected}
+                                onChange={handlePetSelection}
+                                className="w-5 h-5 mt-1 text-purple-600 rounded focus:ring-purple-500"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div className="flex-1">
+                                <div className="font-semibold text-gray-800 text-lg">{pet.name}</div>
+                                <div className="text-sm text-gray-600 mb-1">{pet.breed}</div>
+                                {pet.age && <div className="text-xs text-gray-500">Age: {pet.age}</div>}
+                                {pet.gender && <div className="text-xs text-gray-500">Gender: {pet.gender}</div>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {errors.selectedPets && <div className="error-text">{errors.selectedPets}</div>}
                 </div>
 
                 <div className="section-divider"></div>
 
-                {/* Personal Info */}
+                {/* Personal Info - Rest remains the same */}
                 <div className="space-y-6">
                   <div className="flex items-center space-x-3 mb-6">
                     <div className="w-8 h-8 gradient-bg rounded-full flex items-center justify-center">
@@ -342,14 +406,14 @@ function AdoptionDetails() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Salary *</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">Rs </span>
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">Rs</span>
                       <input
                         type="number"
                         name="salary"
                         value={formData.salary}
                         onChange={handleChange}
-                        placeholder=" Minimum 50,000"
-                        className="form-input w-full p-4 pl-8 rounded-xl text-gray-800"
+                        placeholder="Minimum 50,000"
+                        className="form-input w-full p-4 pl-12 rounded-xl text-gray-800"
                       />
                     </div>
                     {errors.salary && <div className="error-text mt-1">{errors.salary}</div>}
@@ -403,7 +467,7 @@ function AdoptionDetails() {
                     type="button"
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="w-full gradient-bg custom-purple-hover text-white py-4 px-8 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+                    className="w-full gradient-bg custom-purple-hover text-white py-4 px-8 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {isSubmitting ? <div className="spinner mx-auto"></div> : 'Submit Adoption Request'}
                   </button>
@@ -417,14 +481,6 @@ function AdoptionDetails() {
               </div>
             </div>    
           </div>
-
-          {/* Optional display of submitted adoption */}
-          {submittedAdoption && (
-            <div className="mt-10 p-6 bg-white rounded-2xl shadow-xl">
-              <h2 className="text-xl font-bold mb-2">Submitted Adoption:</h2>
-              <pre className="text-sm text-gray-700">{JSON.stringify(submittedAdoption, null, 2)}</pre>
-            </div>
-          )}
         </div>
       </div>
     </>

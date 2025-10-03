@@ -185,7 +185,7 @@ export default function FosterSubmission() {
                       Edit Details
                     </button>
                   )}
-                  <Link to="/mainhome" className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-lg font-medium">
+                  <Link to="/fosterViewPage" className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-lg font-medium">
                     Back to Home
                   </Link>
                 </div>

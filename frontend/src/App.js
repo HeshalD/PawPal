@@ -105,7 +105,6 @@ function App() {
         <Route path="/fosterDisplay" element={<FosterDetailsDisplay />} />
         <Route path="/fosterViewPage" element={<FosterViewPage />} />
         <Route path="/adoptionViewPage" element={<AdoptionViewPage/>} />
-        <Route path="/fosterViewPage" element={<FosterViewPage/>} />
         <Route path="/adoption/submitted/:id" element={<AdoptionSubmission />} />
         <Route path="/foster/submitted/:id" element={<FosterSubmission />} />
         <Route path="/donationform" element={<DonorForm />} />

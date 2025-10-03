@@ -69,11 +69,11 @@ app.use("/appointments", appointmentRoutes); // ✅ Add this line
 
 // MongoDB connection
 mongoose.connect("mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB")
-  .then(() => console.log("✅ Connected to MongoDB"))
+  .then(() => console.log(" Connected to MongoDB"))
   .then(() => {
-    app.listen(5000, () => console.log("🚀 Server started on port 5000"));
+    app.listen(5000, () => console.log(" Server started on port 5000"));
   })
-  .catch((err) => console.log("❌ MongoDB connection error:", err));
+  .catch((err) => console.log(" MongoDB connection error:", err));
 
 // Register -----------------------------
 require("./Models/RegisterModel");

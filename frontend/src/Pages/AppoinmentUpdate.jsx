@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
 
-function AppointmentForm() {
+function AppointmentUpdate() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [appointment, setAppointment] = useState({
     petName: '',
     ownerName: '',
@@ -14,13 +15,12 @@ function AppointmentForm() {
     timeSlot: ''
   });
 
-  // Validation helpers
-  const isNonEmptyName = (value) => /^[A-Za-z ]{2,}$/.test(value.trim());
+  // Validation helpers (mirroring AppoinmentForm.js)
+  const isNonEmptyName = (value) => /^[A-Za-z ]{2,}$/.test((value || '').trim());
   const isValidDateNotPast = (value) => {
     if (!value) return false;
     const selected = new Date(value);
     const today = new Date();
-    // Zero out time for date-only comparison
     selected.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     return selected >= today;
@@ -34,6 +34,28 @@ function AppointmentForm() {
     return totalMinutes >= minMinutes && totalMinutes <= maxMinutes;
   };
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/appointments/${id}`);
+        const a = res.data;
+        setAppointment({
+          petName: a.petName || '',
+          ownerName: a.ownerName || '',
+          date: a.date ? new Date(a.date).toISOString().split('T')[0] : '',
+          timeSlot: a.timeSlot || ''
+        });
+      } catch (e) {
+        console.error('Failed to load appointment', e);
+        alert('Failed to load appointment');
+        navigate('/appointmentview');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [id, navigate]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAppointment((prev) => ({ ...prev, [name]: value }));
@@ -41,14 +63,13 @@ function AppointmentForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Client-side validations
+    // Client-side validations (same rules as create form)
     if (!isNonEmptyName(appointment.petName)) {
-      alert('Please enter a valid Pet Name (letters and spaces, min 2 characters).');
+      alert("Please enter a valid Pet Name (letters and spaces, min 2 characters).");
       return;
     }
     if (!isNonEmptyName(appointment.ownerName)) {
-      alert('Please enter a valid Owner Name (letters and spaces, min 2 characters).');
+      alert("Please enter a valid Owner Name (letters and spaces, min 2 characters).");
       return;
     }
     if (!isValidDateNotPast(appointment.date)) {
@@ -59,69 +80,50 @@ function AppointmentForm() {
       alert('Time Slot must be between 09:00 and 18:00.');
       return;
     }
-
-    setLoading(true);
-
+    setSaving(true);
     try {
-      const ownerEmail = localStorage.getItem('loggedInUserEmail');
-      // ✅ Use /api/appointments to match your backend
-      const response = await axios.post('http://localhost:5000/api/appointments', {
+      await axios.put(`http://localhost:5000/appointments/${id}`, {
         petName: appointment.petName,
         ownerName: appointment.ownerName,
-        ownerEmail: ownerEmail || '',
         date: appointment.date,
         timeSlot: appointment.timeSlot
       });
-
-      if (response.data) {
-        const emailOk = response.data?.email?.ok;
-        const emailSimulated = response.data?.email?.simulated;
-        const emailMsg = emailOk
-          ? (emailSimulated ? 'Email simulated (SMTP not configured).' : 'Confirmation email sent.')
-          : 'Failed to send confirmation email.';
-        alert(`Appointment booked successfully!\n${emailMsg}`);
-        // Reset form
-        setAppointment({
-          petName: '',
-          ownerName: '',
-          date: '',
-          timeSlot: ''
-        });
-        // ✅ Navigate AFTER successful submission
-        navigate('/appointmentview');
-      }
+      alert('Appointment updated successfully!');
+      navigate('/appointmentview');
     } catch (error) {
-      console.error('Appointment booking error:', error);
-      if (error.response?.status === 400) {
-        alert('Please fill all required fields correctly.');
-      } else if (error.response?.status === 409) {
-        alert('This time slot is already booked. Please choose another time.');
-      } else {
-        alert('Failed to book appointment. Please try again later.');
-      }
+      console.error('Update error:', error);
+      alert('Failed to update appointment. Please try again.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-purple-600 font-medium">Loading Appointment...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header Section */}
         <div className="text-center">
           <div className="mx-auto h-20 w-20 rounded-full bg-gradient-to-br from-[#6638E6] to-[#E6738F] flex items-center justify-center mb-6 shadow-lg">
             <Heart className="h-10 w-10 text-white" />
           </div>
           <h2 className="text-4xl font-bold bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent mb-2">
-            Book Appointment
+            Update Appointment
           </h2>
-          <p className="text-gray-600">Schedule your pet's consultation with our vets</p>
+          <p className="text-gray-600">Modify your appointment details</p>
         </div>
 
-        {/* Form Section */}
         <div className="bg-white shadow-2xl rounded-2xl border border-gray-100 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Pet Name Field */}
             <div>
               <label htmlFor="petName" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -141,13 +143,12 @@ function AppointmentForm() {
                   pattern="^[A-Za-z ]{2,}$"
                   title="Use letters and spaces only, at least 2 characters"
                   required
-                  disabled={loading}
+                  disabled={saving}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Owner Name Field */}
             <div>
               <label htmlFor="ownerName" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -167,7 +168,7 @@ function AppointmentForm() {
                   pattern="^[A-Za-z ]{2,}$"
                   title="Use letters and spaces only, at least 2 characters"
                   required
-                  disabled={loading}
+                  disabled={saving}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
@@ -175,7 +176,6 @@ function AppointmentForm() {
 
             
 
-            {/* Date Field */}
             <div>
               <label htmlFor="date" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -193,13 +193,12 @@ function AppointmentForm() {
                   onChange={handleInputChange}
                   min={new Date().toISOString().split('T')[0]}
                   required
-                  disabled={loading}
+                  disabled={saving}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Time Slot Field */}
             <div>
               <label htmlFor="timeSlot" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -218,48 +217,24 @@ function AppointmentForm() {
                   min="09:00"
                   max="18:00"
                   required
-                  disabled={loading}
+                  disabled={saving}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
 
-            {/* Submit Button - ✅ REMOVED Link wrapper */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#5530CC] hover:to-[#E69AAE] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6638E6] transform hover:scale-[1.02] transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Booking Appointment...
-                </>
-              ) : (
-                'Book Appointment'
-              )}
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </form>
-
-          {/* Footer Links */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Need help?{' '}
-              <a 
-                href="/contact" 
-                className="font-semibold bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent hover:from-[#5530CC] hover:to-[#E69AAE] transition duration-200"
-              >
-                Contact support
-              </a>
-            </p>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export default AppointmentForm;
+export default AppointmentUpdate;

@@ -47,6 +47,8 @@ import AdminUpdatePet from "./Pages/AdminUpdatePet";
 import VetPetView from "./Pages/VetpetView";
 import UserPetProfile from "./Pages/UserPetProfile";
 import AdminPetProfile from "./Pages/AdminPetProfile";
+import AdminAllAppointments from "./Pages/AdminAllAppointments";
+import AppointmentUpdate from "./Pages/AppoinmentUpdate";
 
 //Vilani's Routes
 import AppointmentBooking from './Pages/AppoinmentForm';
@@ -89,6 +91,7 @@ function App() {
         <Route path="/adminupdatepet/:id" element={<AdminUpdatePet />} />
         <Route path="/appointmentview" element={<AppointmentView />} />
         <Route path="/appointmentform" element={<AppointmentForm />} />
+        <Route path="/appointments/:id/edit" element={<AppointmentUpdate />} />
         <Route path="/adminAppoinmentView" element={<AdminAppointmentView />} />
         <Route path="/vetpetview" element={<VetPetView />} />
         <Route path="/userpetprofile/:id" element={<UserPetProfile />} />
@@ -121,6 +124,7 @@ function App() {
         <Route path="/appointmentBooking" element={<AppointmentBooking/>}/>
         <Route path="/appointmentDashboard" element={<AppointmentDashboard/>}/>
         <Route path="/adminAppointmentView" element={<AdminAppointmentView/>}/>
+        <Route path="/adminAllAppointments" element={<AdminAllAppointments/>}/>
         <Route path="/adminHealthRec/:id" element={<AdminHealthRec/>}/>
       </Routes>
       </CartProvider>

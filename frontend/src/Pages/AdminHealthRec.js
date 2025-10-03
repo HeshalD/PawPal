@@ -20,6 +20,75 @@ export default function PetMedicalForm() {
 
   const [loading, setLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [errors, setErrors] = useState({});
+
+  const isValidEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const hasDigits = (text) => /\d/.test(text || '');
+  const isAlphaName = (text) => /^[A-Za-z][A-Za-z '\-]*$/.test((text || '').trim());
+
+  const validateField = (name, value, currentData = formData) => {
+    let error = '';
+    const trimmed = typeof value === 'string' ? value.trim() : value;
+
+    if (name === 'ownerName') {
+      if (!trimmed) error = 'Owner name is required.';
+      else if (trimmed.length < 2) error = 'Owner name must be at least 2 characters.';
+      else if (hasDigits(trimmed)) error = 'Owner name cannot contain numbers.';
+      else if (!isAlphaName(trimmed)) error = 'Owner name can include letters, spaces, hyphens, and apostrophes only.';
+    }
+
+    if (name === 'ownerEmail') {
+      if (!trimmed) error = 'Email is required.';
+      else if (!isValidEmail(trimmed)) error = 'Enter a valid email address.';
+    }
+
+    if (name === 'petType') {
+      if (!trimmed) error = 'Pet type is required.';
+    }
+
+    if (name === 'diagnosis') {
+      if (!trimmed) error = 'Diagnosis is required.';
+      else if (trimmed.length < 5) error = 'Diagnosis must be at least 5 characters.';
+    }
+
+    if (name === 'treatment') {
+      if (!trimmed) error = 'Treatment is required.';
+      else if (trimmed.length < 5) error = 'Treatment must be at least 5 characters.';
+    }
+
+    if (name === 'visitDate') {
+      if (!trimmed) error = 'Visit date is required.';
+    }
+
+    if (name === 'nextVaccinationDate') {
+      const visit = currentData.visitDate;
+      if (trimmed && visit && new Date(trimmed) < new Date(visit)) {
+        error = 'Next vaccination must be on or after visit date.';
+      }
+    }
+
+    if (name === 'petName') {
+      if (!trimmed) error = 'Pet name is missing for this record.';
+      else if (hasDigits(trimmed)) error = 'Pet name cannot contain numbers.';
+      else if (!isAlphaName(trimmed)) error = 'Pet name can include letters, spaces, hyphens, and apostrophes only.';
+    }
+
+    return error;
+  };
+
+  const validateAll = (data = formData) => {
+    const newErrors = {};
+    Object.keys(data).forEach((key) => {
+      const maybeError = validateField(key, data[key], data);
+      if (maybeError) newErrors[key] = maybeError;
+    });
+    // Custom cross-field validation already handled in validateField
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     const fetchPet = async () => {
@@ -60,15 +129,27 @@ export default function PetMedicalForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      const fieldError = validateField(name, value, next);
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: fieldError }));
+      // If nextVaccinationDate changes, also re-validate against visitDate and vice versa
+      if (name === 'visitDate' && next.nextVaccinationDate) {
+        const crossError = validateField('nextVaccinationDate', next.nextVaccinationDate, next);
+        setErrors((prevErrors) => ({ ...prevErrors, nextVaccinationDate: crossError }));
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    const isValid = validateAll();
+    if (!isValid) {
+      setLoading(false);
+      return;
+    }
     
     const recordData = {
       petId: id,
@@ -168,10 +249,13 @@ export default function PetMedicalForm() {
                   name="petName"
                   value={formData.petName}
                   readOnly
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-100 border-2 border-gray-200 text-gray-700 cursor-not-allowed"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-100 border-2 ${errors.petName ? 'border-red-400' : 'border-gray-200'} text-gray-700 cursor-not-allowed`}
                   placeholder="Pet name"
                 />
               </div>
+              {errors.petName && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.petName}</p>
+              )}
               <p className="text-xs text-gray-500 mt-1 ml-1">This field is auto-filled and cannot be edited</p>
             </div>
 
@@ -186,11 +270,16 @@ export default function PetMedicalForm() {
                   name="ownerName"
                   value={formData.ownerName}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all"
+                  pattern="[A-Za-z][A-Za-z '\-]*"
+                  inputMode="text"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.ownerName ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white transition-all`}
                   placeholder="Enter owner name"
                   required
                 />
               </div>
+              {errors.ownerName && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.ownerName}</p>
+              )}
             </div>
 
             <div>
@@ -204,11 +293,14 @@ export default function PetMedicalForm() {
                   name="ownerEmail"
                   value={formData.ownerEmail}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.ownerEmail ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white transition-all`}
                   placeholder="Enter owner email address"
                   required
                 />
               </div>
+              {errors.ownerEmail && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.ownerEmail}</p>
+              )}
             </div>
 
             <div>
@@ -221,7 +313,7 @@ export default function PetMedicalForm() {
                   name="petType"
                   value={formData.petType}
                   onChange={handleChange}
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 focus:outline-none focus:border-purple-400 focus:bg-white transition-all appearance-none"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.petType ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 focus:outline-none focus:bg-white transition-all appearance-none`}
                   required
                 >
                   <option value="">Select pet type</option>
@@ -233,6 +325,9 @@ export default function PetMedicalForm() {
                   <option value="Other">Other</option>
                 </select>
               </div>
+              {errors.petType && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.petType}</p>
+              )}
             </div>
 
             <div>
@@ -246,11 +341,14 @@ export default function PetMedicalForm() {
                   value={formData.diagnosis}
                   onChange={handleChange}
                   rows="3"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all resize-none"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.diagnosis ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white transition-all resize-none`}
                   placeholder="Enter diagnosis details"
                   required
                 />
               </div>
+              {errors.diagnosis && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.diagnosis}</p>
+              )}
             </div>
 
             <div>
@@ -264,11 +362,14 @@ export default function PetMedicalForm() {
                   value={formData.treatment}
                   onChange={handleChange}
                   rows="3"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-white transition-all resize-none"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.treatment ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 placeholder-gray-400 focus:outline-none focus:bg-white transition-all resize-none`}
                   placeholder="Enter treatment plan"
                   required
                 />
               </div>
+              {errors.treatment && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.treatment}</p>
+              )}
             </div>
 
             <div>
@@ -300,10 +401,13 @@ export default function PetMedicalForm() {
                     name="visitDate"
                     value={formData.visitDate}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 focus:outline-none focus:border-purple-400 focus:bg-white transition-all"
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.visitDate ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 focus:outline-none focus:bg-white transition-all`}
                     required
                   />
                 </div>
+                {errors.visitDate && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.visitDate}</p>
+                )}
               </div>
 
               <div>
@@ -317,9 +421,12 @@ export default function PetMedicalForm() {
                     name="nextVaccinationDate"
                     value={formData.nextVaccinationDate}
                     onChange={handleChange}
-                    className="w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 border-transparent text-gray-800 focus:outline-none focus:border-purple-400 focus:bg-white transition-all"
+                    className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.nextVaccinationDate ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 focus:outline-none focus:bg-white transition-all`}
                   />
                 </div>
+                {errors.nextVaccinationDate && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.nextVaccinationDate}</p>
+                )}
               </div>
             </div>
 

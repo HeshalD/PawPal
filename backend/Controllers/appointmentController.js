@@ -1,11 +1,33 @@
 const Appointment = require('../Models/Appointment');
+const { sendEmail } = require('../utils/mailer');
 
 // Book new appointment
 exports.bookAppointment = async (req, res) => {
   try {
     const appointment = new Appointment(req.body);
     await appointment.save();
-    res.status(201).json(appointment);
+    // Send email notification to the logged-in email (ownerEmail) and report result
+    let emailResult = { ok: false };
+    try {
+      const to = appointment.ownerEmail;
+      const subject = 'Your PawPal appointment is booked';
+      const dateStr = new Date(appointment.date).toDateString();
+      const text = `Hi ${appointment.ownerName},\n\nYour appointment for ${appointment.petName} is booked.\nDate: ${dateStr}\nTime: ${appointment.timeSlot}\nStatus: ${appointment.status}\n\nThank you for choosing PawPal.`;
+      const html = `
+        <p>Hi ${appointment.ownerName},</p>
+        <p>Your appointment for <strong>${appointment.petName}</strong> is booked.</p>
+        <ul>
+          <li><strong>Date:</strong> ${dateStr}</li>
+          <li><strong>Time:</strong> ${appointment.timeSlot}</li>
+          <li><strong>Status:</strong> ${appointment.status}</li>
+        </ul>
+        <p>Thank you for choosing <strong>PawPal</strong>.</p>
+      `;
+      emailResult = await sendEmail({ to, subject, text, html });
+    } catch (e) {
+      emailResult = { ok: false, error: e?.message || 'Email send failed' };
+    }
+    res.status(201).json({ appointment, email: emailResult });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -18,6 +40,51 @@ exports.getAppointments = async (req, res) => {
     res.json(appointments);
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Get appointments by owner email
+exports.getAppointmentsByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ message: 'Email query parameter is required' });
+    }
+
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const appointments = await Appointment.find({ ownerEmail: normalizedEmail }).sort({ date: 1 });
+    res.json(appointments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Get single appointment by ID
+exports.getAppointmentById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const appointment = await Appointment.findById(id);
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    res.json(appointment);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Update an appointment by ID
+exports.updateAppointment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = req.body;
+    const appointment = await Appointment.findByIdAndUpdate(id, update, { new: true, runValidators: true });
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+    res.json({ message: 'Appointment updated successfully', appointment });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
   }
 };
 

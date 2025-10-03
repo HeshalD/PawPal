@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Clock, User, Heart, Search, Download, RefreshCw, Plus } from 'lucide-react';
-import {Link} from 'react-router-dom';
+import { Calendar, Clock, User, Heart, Search, Download, RefreshCw, Plus, Edit, Trash2 } from 'lucide-react';
+import {Link, useNavigate} from 'react-router-dom';
 import Nav from '../Components/Nav/Nav';
 
 export default function AppointmentDashboard() {
@@ -11,12 +11,18 @@ export default function AppointmentDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const navigate = useNavigate();
 
   const loadAppointments = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/appointments');
+      const isAdmin = localStorage.getItem('isAdmin') === 'true';
+      const currentUserEmail = localStorage.getItem('loggedInUserEmail') || '';
+      const url = isAdmin
+        ? 'http://localhost:5000/appointments'
+        : `http://localhost:5000/appointments/by-email?email=${encodeURIComponent(currentUserEmail)}`;
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -24,8 +30,6 @@ export default function AppointmentDashboard() {
       
       const data = await response.json();
       console.log('Fetched appointments:', data);
-      
-      // Handle both array and object with appointments property
       const appointmentsData = Array.isArray(data) ? data : (data.appointments || []);
       setAppointments(appointmentsData);
     } catch (e) {
@@ -115,6 +119,10 @@ export default function AppointmentDashboard() {
       console.error('Cancel error:', e);
       setError(`Cancel failed: ${e.message}`);
     }
+  };
+
+  const editAppointment = (id) => {
+    navigate(`/appointments/${id}/edit`);
   };
 
   // Download report
@@ -346,17 +354,6 @@ export default function AppointmentDashboard() {
                         </div>
                       </div>
 
-                      {/* Middle Section - Doctor */}
-                      <div className="flex items-center space-x-3 flex-1">
-                        <div className="bg-purple-100 p-3 rounded-full">
-                          <User className="w-6 h-6 text-purple-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wider">Doctor</p>
-                          <p className="text-sm font-medium text-gray-900">Dr. {appointment.doctorName}</p>
-                        </div>
-                      </div>
-
                       {/* Date & Time Section */}
                       <div className="flex items-center space-x-3 flex-1">
                         <div className="bg-blue-100 p-3 rounded-full">
@@ -383,6 +380,20 @@ export default function AppointmentDashboard() {
                         }`}>
                           {isUpcoming ? 'Upcoming' : 'Past'}
                         </span>
+                        <button
+                          onClick={() => editAppointment(appointment._id)}
+                          className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all duration-200"
+                          title="Edit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => cancelAppointment(appointment._id)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>

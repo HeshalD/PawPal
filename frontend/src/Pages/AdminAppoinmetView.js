@@ -49,8 +49,7 @@ export default function AdminAppointmentView() {
     if (searchTerm) {
       filtered = filtered.filter(item => 
         item.petName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.doctorName?.toLowerCase().includes(searchTerm.toLowerCase())
+        item.ownerName?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
@@ -295,9 +294,7 @@ export default function AdminAppointmentView() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Owner
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Doctor
-                      </th>
+                      
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date & Time
                       </th>
@@ -342,9 +339,7 @@ export default function AdminAppointmentView() {
                                 <span className="text-sm text-gray-900">{appointment.ownerName}</span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              Dr. {appointment.doctorName}
-                            </td>
+                            
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm text-gray-900">
                                 {appointmentDate.toLocaleDateString('en-US', { 

@@ -1,7 +1,7 @@
 // routes/healthRecordRoutes.js
 const express = require('express');
 const router = express.Router();
-const healthRecordController = require('../controllers/healthRecordController');
+const healthRecordController = require('../Controllers/healthRecordController');
 
 router.get('/', healthRecordController.getAllRecords);
 router.get('/:id', healthRecordController.getRecordById);

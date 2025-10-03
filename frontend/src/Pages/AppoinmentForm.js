@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
 
 function AppointmentForm() {
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [appointment, setAppointment] = useState({
@@ -105,6 +106,7 @@ function AppointmentForm() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}

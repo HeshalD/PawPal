@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import Nav from "../Nav/NavAdmin";
 import { 
   Search, 
   Edit3, 
@@ -26,6 +27,7 @@ import {
 const URL = "http://localhost:5000/fosters";
 
 export default function FosterDetailsDisplay() {
+  const [collapsed, setCollapsed] = useState(false);
   const [fosters, setFosters] = useState([]);
   const [filteredFosters, setFilteredFosters] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -220,16 +222,24 @@ export default function FosterDetailsDisplay() {
 
   if (isLoading) {
     return (
+      <div className="min-h-screen bg-white flex">
+        <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+        <div className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
       <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100 flex items-center justify-center">
         <div className="bg-white p-8 rounded-2xl shadow-xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#E6738F' }}></div>
           <p className="text-gray-600 text-center">Loading foster requests...</p>
         </div>
       </div>
+        </div>
+      </div>
     );
   }
 
   return (
+    <div className="min-h-screen bg-white flex">
+            <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+            <div className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
     <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
@@ -608,6 +618,8 @@ export default function FosterDetailsDisplay() {
           )}
         </div>
       </div>
+    </div>
+            </div>
     </div>
   );
 }

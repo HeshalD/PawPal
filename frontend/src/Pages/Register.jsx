@@ -15,6 +15,7 @@ function Register() {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -43,18 +44,17 @@ function Register() {
     else if (user.age <= 0) newErrors.age = "Age must be positive";
 
     // Password validation
-if (!user.password) newErrors.password = "Password is required";
-else if (user.password.length < 6)
-  newErrors.password = "Password must be at least 6 characters";
-else if (!/[A-Z]/.test(user.password))
-  newErrors.password = "Password must contain at least one uppercase letter";
-else if (!/[!@#$%^&*(),.?":{}|<>]/.test(user.password))
-  newErrors.password = "Password must contain at least one special character";
+    if (!user.password) newErrors.password = "Password is required";
+    else if (user.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
+    else if (!/[A-Z]/.test(user.password))
+      newErrors.password = "Password must contain at least one uppercase letter";
+    else if (!/[!@#$%^&*(),.?":{}|<>]/.test(user.password))
+      newErrors.password = "Password must contain at least one special character";
 
-// Confirm password validation
-if (!user.confirmpassword) newErrors.confirmpassword = "Confirm password is required";
-else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Passwords do not match";
-
+    // Confirm password validation
+    if (!user.confirmpassword) newErrors.confirmpassword = "Confirm password is required";
+    else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Passwords do not match";
 
     // Terms validation
     if (!user.terms) newErrors.terms = "You must accept terms and conditions";
@@ -63,32 +63,53 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validate()) return;
 
-    sendRequest()
-      .then(() => {
-        alert("Register Success");
+    setLoading(true);
+
+    try {
+      const response = await sendRequest();
+      
+      console.log("Registration response:", response); // Debug log
+      
+      if (response && response.status === "ok") {
+        alert("Registration successful! Please login with your credentials.");
         history("/login");
-      })
-      .catch((err) => {
+      } else {
+        alert(response.message || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Registration error:", err);
+      
+      // Handle different error scenarios
+      if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else if (err.response?.status === 400) {
+        alert("User with this email already exists or invalid data provided.");
+      } else if (err.message) {
         alert(err.message);
-      });
+      } else {
+        alert("Registration failed. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendRequest = async () => {
-    return await axios
-      .post("http://localhost:5000/register", {
-        Fname: String(user.Fname),
-        Lname: String(user.Lname),
-        email: String(user.email),
-        password: String(user.password),
-        confirmpassword: String(user.confirmpassword),
-        age: Number(user.age),
-      })
-      .then((res) => res.data);
+    const response = await axios.post("http://localhost:5000/register", {
+      Fname: String(user.Fname).trim(),
+      Lname: String(user.Lname).trim(),
+      email: String(user.email).toLowerCase().trim(),
+      password: String(user.password),
+      confirmpassword: String(user.confirmpassword),
+      age: Number(user.age),
+    });
+    
+    return response.data;
   };
 
   return (
@@ -124,7 +145,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                     value={user.Fname}
                     onChange={handleInputChange}
                     placeholder="First Name"
-                    className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                    disabled={loading}
+                    className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                       errors.Fname ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                     }`}
                   />
@@ -141,7 +163,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                     value={user.Lname}
                     onChange={handleInputChange}
                     placeholder="Last Name"
-                    className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                    disabled={loading}
+                    className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                       errors.Lname ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                     }`}
                   />
@@ -160,7 +183,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                   value={user.email}
                   onChange={handleInputChange}
                   placeholder="Enter your email"
-                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                  disabled={loading}
+                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                   }`}
                 />
@@ -178,7 +202,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                   value={user.age}
                   onChange={handleInputChange}
                   placeholder="Enter your age"
-                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                  disabled={loading}
+                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.age ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                   }`}
                 />
@@ -196,7 +221,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                   value={user.password}
                   onChange={handleInputChange}
                   placeholder="Enter your password"
-                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                  disabled={loading}
+                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                   }`}
                 />
@@ -214,7 +240,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                   value={user.confirmpassword}
                   onChange={handleInputChange}
                   placeholder="Confirm your password"
-                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 ${
+                  disabled={loading}
+                  className={`block w-full pl-3 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition duration-200 placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
                     errors.confirmpassword ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#6638E6]"
                   }`}
                 />
@@ -230,7 +257,8 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
                     type="checkbox"
                     checked={user.terms}
                     onChange={handleInputChange}
-                    className="w-4 h-4 text-[#6638E6] bg-gray-100 border-gray-300 rounded focus:ring-[#6638E6] focus:ring-2"
+                    disabled={loading}
+                    className="w-4 h-4 text-[#6638E6] bg-gray-100 border-gray-300 rounded focus:ring-[#6638E6] focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="ml-3 text-sm">
@@ -251,9 +279,20 @@ else if (user.password !== user.confirmpassword) newErrors.confirmpassword = "Pa
               {/* Register Button */}
               <button
                 type="submit"
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#5530CC] hover:to-[#E69AAE] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6638E6] transform hover:scale-[1.02] transition duration-200"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#5530CC] hover:to-[#E69AAE] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#6638E6] transform hover:scale-[1.02] transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
-                Create Account
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating Account...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
               </button>
             </form>
 

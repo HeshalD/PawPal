@@ -13,7 +13,7 @@ export default function AdoptionSubmission() {
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState("");   
 
   useEffect(() => {
     const fetchOne = async () => {

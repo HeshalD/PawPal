@@ -1,171 +1,61 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import Nav from "../Nav/NavAdmin";
 import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
 
-const URL = "http://localhost:5000/adoptions";
-
-const fetchHandler = async () => {
-  return await axios.get(URL).then((res) => res.data);
-};
-
 function AdoptionDetailsDisplay() {
-  const [adoption, setAdoption] = useState([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [adoption, setAdoption] = useState([
+    {
+      _id: "1",
+      fullName: "Sarah Johnson",
+      email: "sarah.j@email.com",
+      phone: "555-0123",
+      age: 28,
+      address: "123 Main St, Springfield",
+      salary: 45000,
+      selectedPets: ["Max", "Luna"],
+      status: "pending",
+      submittedAt: "2024-03-15",
+      adminNotes: ""
+    },
+    {
+      _id: "2",
+      fullName: "Michael Chen",
+      email: "m.chen@email.com",
+      phone: "555-0456",
+      age: 35,
+      address: "456 Oak Ave, Riverside",
+      salary: 62000,
+      selectedPets: ["Buddy"],
+      status: "approved",
+      submittedAt: "2024-03-14",
+      adminNotes: "Application approved by admin"
+    },
+    {
+      _id: "3",
+      fullName: "Emily Davis",
+      email: "emily.d@email.com",
+      phone: "555-0789",
+      age: 42,
+      address: "789 Pine Rd, Lakeside",
+      salary: 55000,
+      selectedPets: ["Charlie", "Bella"],
+      status: "completed",
+      submittedAt: "2024-03-10",
+      adminNotes: "Adoption process completed successfully"
+    }
+  ]);
   const [filteredAdoptions, setFilteredAdoptions] = useState([]);
-  const [selectedPdf, setSelectedPdf] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
   useEffect(() => {
-    fetchHandler().then((data) => {
-      setAdoption(data.adoptions);
-      setFilteredAdoptions(data.adoptions);
-      setIsLoading(false);
-    });
+    setFilteredAdoptions(adoption);
   }, []);
 
-  // PDF Download Function
-  const downloadPdfReport = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.width;
-    
-    // Header
-    doc.setFontSize(20);
-    doc.setTextColor(79, 70, 229);
-    doc.text('Paw Pal Adoption Records Report', pageWidth / 2, 20, { align: 'center' });
-    
-    // Report metadata
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
-    doc.text(`Total Records: ${filteredAdoptions.length}`, 14, 40);
-    doc.text(`Filter: ${statusFilter === 'all' ? 'All Status' : statusFilter}`, 14, 45);
-    
-    // Summary Statistics
-    doc.setFontSize(14);
-    doc.setTextColor(0);
-    doc.text('Summary Statistics', 14, 55);
-    
-    const summaryData = [
-      ['Total Applications', adoption.length.toString()],
-      ['Pending', adoption.filter(item => item.status === 'pending').length.toString()],
-      ['Approved', adoption.filter(item => item.status === 'approved').length.toString()],
-      ['Rejected', adoption.filter(item => item.status === 'rejected').length.toString()],
-      ['Completed', adoption.filter(item => item.status === 'completed').length.toString()]
-    ];
-    
-    autoTable(doc, {
-      startY: 60,
-      head: [['Status', 'Count']],
-      body: summaryData,
-      theme: 'grid',
-      headStyles: { fillColor: [79, 70, 229] },
-      margin: { left: 14, right: 14 }
-    });
-    
-    let currentY = doc.lastAutoTable.finalY + 10;
-    
-    // Adoption Records Table
-    if (filteredAdoptions.length > 0) {
-      doc.setFontSize(12);
-      doc.text('Adoption Applications', 14, currentY);
-      
-      const tableData = filteredAdoptions.map((item, index) => [
-        (index + 1).toString(),
-        item.fullName,
-        item.email,
-        item.phone,
-        `${item.age} years`,
-        `Rs. ${item.salary?.toLocaleString() || 'N/A'}`,
-        item.selectedPets?.join(', ') || 'None',
-        (item.status || 'pending').toUpperCase(),
-        item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'N/A'
-      ]);
-      
-      autoTable(doc, {
-        startY: currentY + 5,
-        head: [['#', 'Name', 'Email', 'Phone', 'Age', 'Salary', 'Pets', 'Status', 'Date']],
-        body: tableData,
-        theme: 'striped',
-        headStyles: { fillColor: [79, 70, 229] },
-        styles: { fontSize: 7 },
-        margin: { left: 14, right: 14 }
-      });
-      
-      currentY = doc.lastAutoTable.finalY + 10;
-      
-      // Detailed Information
-      if (currentY > 250) {
-        doc.addPage();
-        currentY = 20;
-      }
-      
-      doc.setFontSize(12);
-      doc.text('Detailed Application Information', 14, currentY);
-      currentY += 10;
-      
-      filteredAdoptions.forEach((item, index) => {
-        if (currentY > 250) {
-          doc.addPage();
-          currentY = 20;
-        }
-        
-        doc.setFontSize(10);
-        doc.setFont(undefined, 'bold');
-        doc.text(`Application #${index + 1}: ${item.fullName}`, 14, currentY);
-        doc.setFont(undefined, 'normal');
-        currentY += 7;
-        
-        const detailData = [
-          ['Email', item.email],
-          ['Phone', item.phone],
-          ['Age', `${item.age} years`],
-          ['Address', item.address],
-          ['Salary', `Rs. ${item.salary?.toLocaleString() || 'N/A'}`],
-          ['Selected Pets', item.selectedPets?.join(', ') || 'None'],
-          ['Status', (item.status || 'pending').toUpperCase()],
-          ['Admin Notes', item.adminNotes || 'None']
-        ];
-        
-        autoTable(doc, {
-          startY: currentY,
-          body: detailData,
-          theme: 'plain',
-          styles: { fontSize: 8 },
-          margin: { left: 20, right: 14 },
-          columnStyles: {
-            0: { cellWidth: 40, fontStyle: 'bold' },
-            1: { cellWidth: 130 }
-          }
-        });
-        
-        currentY = doc.lastAutoTable.finalY + 8;
-      });
-    }
-    
-    // Footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Page ${i} of ${pageCount}`,
-        pageWidth / 2,
-        doc.internal.pageSize.height - 10,
-        { align: 'center' }
-      );
-    }
-    
-    doc.save(`adoption-records-${new Date().toISOString().split('T')[0]}.pdf`);
-  };
-
-  // Status utility functions
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -231,54 +121,26 @@ function AdoptionDetailsDisplay() {
     setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const saveEdit = async (id) => {
-    try {
-      const payload = {
-        ...editData,
-        age: editData.age === "" ? undefined : parseInt(editData.age, 10),
-        salary: editData.salary === "" ? undefined : parseInt(editData.salary, 10),
-        selectedPets: typeof editData.selectedPets === "string"
-          ? editData.selectedPets.split(",").map((s) => s.trim()).filter(Boolean)
-          : editData.selectedPets,
-      };
-      
-      await axios.put(`${URL}/${id}`, payload);
-      setAdoption((prev) =>
-        prev.map((it) => (it._id === id ? { ...it, ...payload } : it))
-      );
-      setEditingId(null);
-      setEditData({});
-    } catch (error) {
-      console.error("Error updating record:", error);
-      alert("Failed to update record. Please try again.");
-    }
+  const saveEdit = (id) => {
+    const payload = {
+      ...editData,
+      age: editData.age === "" ? undefined : parseInt(editData.age, 10),
+      salary: editData.salary === "" ? undefined : parseInt(editData.salary, 10),
+      selectedPets: typeof editData.selectedPets === "string"
+        ? editData.selectedPets.split(",").map((s) => s.trim()).filter(Boolean)
+        : editData.selectedPets,
+    };
+    
+    setAdoption((prev) =>
+      prev.map((it) => (it._id === id ? { ...it, ...payload } : it))
+    );
+    setEditingId(null);
+    setEditData({});
   };
 
-  const handlePdfView = (pdfPath) => {
-    const fullPdfUrl = `http://localhost:5000/${pdfPath}`;
-    setSelectedPdf(fullPdfUrl);
-  };
-
-  const closePdfViewer = () => setSelectedPdf(null);
-
-  const downloadPdf = (pdfPath, fileName) => {
-    const fullPdfUrl = `http://localhost:5000/${pdfPath}`;
-    const link = document.createElement("a");
-    link.href = fullPdfUrl;
-    link.download = fileName || "salary-sheet.pdf";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (window.confirm("Are you sure you want to delete this adoption record?")) {
-      try {
-        await axios.delete(`${URL}/${id}`);
-        setAdoption(adoption.filter((item) => item._id !== id));
-      } catch (error) {
-        console.error("Error deleting record:", error);
-      }
+      setAdoption(adoption.filter((item) => item._id !== id));
     }
   };
 
@@ -287,27 +149,17 @@ function AdoptionDetailsDisplay() {
     if (item) startEdit(item);
   };
 
-  const updateStatus = async (id, newStatus, adminNotes = '') => {
+  const updateStatus = (id, newStatus, adminNotes = '') => {
     setUpdatingStatus(id);
-    try {
-      await axios.put(`${URL}/status/${id}`, {
-        status: newStatus,
-        adminNotes: adminNotes
-      });
-      
+    setTimeout(() => {
       setAdoption(prev => 
         prev.map(item => 
           item._id === id ? { ...item, status: newStatus, adminNotes: adminNotes, updatedAt: new Date() } : item
         )
       );
-      
       alert(`Application status updated to ${newStatus.toUpperCase()} successfully!`);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status. Please try again.');
-    } finally {
       setUpdatingStatus(null);
-    }
+    }, 500);
   };
 
   const handleApprove = (id) => {
@@ -329,25 +181,21 @@ function AdoptionDetailsDisplay() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-2xl shadow-xl">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-center">Loading adoption records...</p>
-        </div>
-      </div>
-    );
-  }
+  const downloadPdfReport = () => {
+    alert('PDF report generation would happen here in production!');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-white flex">
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
+    <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border-2" style={{borderColor: '#E69AAE'}}>
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-                <Users className="text-indigo-600" size={32} />
+                <Users style={{color: '#6638E6'}} size={32} />
                 Adoption Management Dashboard
               </h1>
               <p className="text-gray-600">Manage and view pet adoption applications</p>
@@ -355,7 +203,10 @@ function AdoptionDetailsDisplay() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={downloadPdfReport}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                style={{backgroundColor: '#6638E6'}}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5527CC'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6638E6'}
               >
                 <Download size={20} />
                 Download PDF Report
@@ -373,7 +224,16 @@ function AdoptionDetailsDisplay() {
                 placeholder="Search by name, email, or pet..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 shadow-sm"
+                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl border-2 transition-all duration-200 shadow-sm"
+                style={{borderColor: '#E69AAE'}}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#6638E6';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#E69AAE';
+                  e.currentTarget.style.boxShadow = '';
+                }}
               />
             </div>
           </div>
@@ -382,7 +242,16 @@ function AdoptionDetailsDisplay() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-4 bg-white rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 shadow-sm"
+              className="w-full px-4 py-4 bg-white rounded-xl border-2 transition-all duration-200 shadow-sm"
+              style={{borderColor: '#E69AAE'}}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = '#6638E6';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = '#E69AAE';
+                e.currentTarget.style.boxShadow = '';
+              }}
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -392,14 +261,14 @@ function AdoptionDetailsDisplay() {
             </select>
           </div>
           
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="rounded-xl p-6 text-white shadow-lg" style={{background: 'linear-gradient(to right, #6638E6, #E6738F)'}}>
             <div className="text-3xl font-bold">{filteredAdoptions.length}</div>
-            <div className="text-indigo-100">Applications</div>
+            <div style={{color: '#FFE5EC'}}>Applications</div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-yellow-200">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-yellow-200">
             <div className="flex items-center gap-2 text-yellow-600 mb-2">
               <Clock size={20} />
               <span className="font-semibold">Pending</span>
@@ -408,7 +277,7 @@ function AdoptionDetailsDisplay() {
               {adoption.filter(item => item.status === 'pending').length}
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-green-200">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-green-200">
             <div className="flex items-center gap-2 text-green-600 mb-2">
               <CheckCircle size={20} />
               <span className="font-semibold">Approved</span>
@@ -417,7 +286,7 @@ function AdoptionDetailsDisplay() {
               {adoption.filter(item => item.status === 'approved').length}
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-red-200">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-red-200">
             <div className="flex items-center gap-2 text-red-600 mb-2">
               <XCircle size={20} />
               <span className="font-semibold">Rejected</span>
@@ -426,7 +295,7 @@ function AdoptionDetailsDisplay() {
               {adoption.filter(item => item.status === 'rejected').length}
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-blue-200">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-blue-200">
             <div className="flex items-center gap-2 text-blue-600 mb-2">
               <AlertCircle size={20} />
               <span className="font-semibold">Completed</span>
@@ -439,7 +308,7 @@ function AdoptionDetailsDisplay() {
 
         <div className="space-y-6">
           {filteredAdoptions.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+            <div className="bg-white rounded-2xl shadow-xl p-12 text-center border-2" style={{borderColor: '#E69AAE'}}>
               <Users className="mx-auto text-gray-400 mb-4" size={64} />
               <h3 className="text-xl font-semibold text-gray-600 mb-2">No Records Found</h3>
               <p className="text-gray-500">
@@ -450,15 +319,16 @@ function AdoptionDetailsDisplay() {
             filteredAdoptions.map((item, index) => (
               <div
                 key={item._id}
-                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300"
+                className="bg-white rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 border-2"
+                style={{borderColor: '#E69AAE'}}
               >
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+                <div className="p-6 text-white" style={{background: 'linear-gradient(to right, #6638E6, #E6738F)'}}>
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         <h3 className="text-xl font-bold">Application #{index + 1}</h3>
-                        <p className="text-indigo-100">Submitted by {item.fullName}</p>
-                        <p className="text-indigo-200 text-sm">
+                        <p style={{color: '#FFE5EC'}}>Submitted by {item.fullName}</p>
+                        <p className="text-sm" style={{color: '#FFD4E0'}}>
                           {item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : 'Date not available'}
                         </p>
                       </div>
@@ -470,21 +340,28 @@ function AdoptionDetailsDisplay() {
                       </div>
                     </div>
                     
-                    <div className="flex wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {editingId !== item._id && (
                         <>
                           <button
                             onClick={() => handleUpdate(item._id)}
+                            className="backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
+                            style={{backgroundColor: 'rgba(255, 255, 255, 0.2)'}}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'}
                           >
                             <Edit3 size={14} />
-                            
+                            Edit
                           </button>
                           
                           {item.status !== 'approved' && (
                             <button
                               onClick={() => handleApprove(item._id)}
                               disabled={updatingStatus === item._id}
-                              className="bg-green-500/20 hover:bg-green-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              className="backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              style={{backgroundColor: 'rgba(34, 197, 94, 0.2)'}}
+                              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.3)')}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(34, 197, 94, 0.2)'}
                             >
                               <CheckCircle size={14} />
                               {updatingStatus === item._id ? 'Updating...' : 'Approve'}
@@ -495,7 +372,10 @@ function AdoptionDetailsDisplay() {
                             <button
                               onClick={() => handleReject(item._id)}
                               disabled={updatingStatus === item._id}
-                              className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              className="backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              style={{backgroundColor: 'rgba(239, 68, 68, 0.2)'}}
+                              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)')}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
                             >
                               <XCircle size={14} />
                               Reject
@@ -506,7 +386,10 @@ function AdoptionDetailsDisplay() {
                             <button
                               onClick={() => handleComplete(item._id)}
                               disabled={updatingStatus === item._id}
-                              className="bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              className="backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm disabled:opacity-50"
+                              style={{backgroundColor: 'rgba(59, 130, 246, 0.2)'}}
+                              onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.3)')}
+                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)'}
                             >
                               <AlertCircle size={14} />
                               Complete
@@ -517,7 +400,10 @@ function AdoptionDetailsDisplay() {
                       
                       <button
                         onClick={() => handleDelete(item._id)}
-                        className="bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
+                        className="backdrop-blur-sm text-white px-3 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200 text-sm"
+                        style={{backgroundColor: 'rgba(239, 68, 68, 0.2)'}}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.3)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'}
                       >
                         <Trash2 size={14} />
                         Delete
@@ -539,7 +425,16 @@ function AdoptionDetailsDisplay() {
                             name="fullName"
                             value={editData.fullName}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                         <div>
@@ -551,7 +446,16 @@ function AdoptionDetailsDisplay() {
                             name="email"
                             value={editData.email}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                         <div>
@@ -564,7 +468,16 @@ function AdoptionDetailsDisplay() {
                             name="age"
                             value={editData.age}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                         <div>
@@ -576,7 +489,16 @@ function AdoptionDetailsDisplay() {
                             name="phone"
                             value={editData.phone}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                       </div>
@@ -590,7 +512,16 @@ function AdoptionDetailsDisplay() {
                           value={editData.address}
                           onChange={onEditChange}
                           rows={3}
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 resize-none"
+                          className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200 resize-none"
+                          style={{borderColor: '#E69AAE'}}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = '#6638E6';
+                            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = '#E69AAE';
+                            e.currentTarget.style.boxShadow = '';
+                          }}
                         />
                       </div>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -604,7 +535,16 @@ function AdoptionDetailsDisplay() {
                             name="salary"
                             value={editData.salary}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                         <div>
@@ -615,7 +555,16 @@ function AdoptionDetailsDisplay() {
                             name="selectedPets"
                             value={editData.selectedPets}
                             onChange={onEditChange}
-                            className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200"
+                            className="w-full px-4 py-3 border-2 rounded-lg transition-all duration-200"
+                            style={{borderColor: '#E69AAE'}}
+                            onFocus={(e) => {
+                              e.currentTarget.style.borderColor = '#6638E6';
+                              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(102, 56, 230, 0.1)';
+                            }}
+                            onBlur={(e) => {
+                              e.currentTarget.style.borderColor = '#E69AAE';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
                           />
                         </div>
                       </div>
@@ -640,117 +589,72 @@ function AdoptionDetailsDisplay() {
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Users className="text-indigo-600" size={20} />
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <Users style={{color: '#6638E6'}} size={20} />
                             <div>
                               <div className="font-semibold text-gray-800">{item.fullName}</div>
                               <div className="text-sm text-gray-600">Full Name</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Mail className="text-indigo-600" size={20} />
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <Mail style={{color: '#6638E6'}} size={20} />
                             <div>
                               <div className="font-semibold text-gray-800">{item.email}</div>
                               <div className="text-sm text-gray-600">Email Address</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Calendar className="text-indigo-600" size={20} />
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <Calendar style={{color: '#6638E6'}} size={20} />
                             <div>
-                              <div className="font-semibold text-gray-800">{item.age} years old</div>
+                              <div className="font-semibold text-gray-800">{item.age} years</div>
                               <div className="text-sm text-gray-600">Age</div>
                             </div>
                           </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                            <Phone className="text-indigo-600" size={20} />
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <Phone style={{color: '#6638E6'}} size={20} />
                             <div>
                               <div className="font-semibold text-gray-800">{item.phone}</div>
                               <div className="text-sm text-gray-600">Phone Number</div>
                             </div>
                           </div>
-                          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                            <MapPin className="text-indigo-600 mt-1" size={20} />
+                        </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <MapPin style={{color: '#6638E6'}} size={20} />
                             <div>
                               <div className="font-semibold text-gray-800">{item.address}</div>
                               <div className="text-sm text-gray-600">Address</div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                            <DollarSign className="text-green-600" size={20} />
+                          <div className="flex items-center gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <DollarSign style={{color: '#6638E6'}} size={20} />
                             <div>
-                              <div className="font-semibold text-gray-800">
-                                Rs {item.salary?.toLocaleString()}
-                              </div>
+                              <div className="font-semibold text-gray-800">Rs. {item.salary?.toLocaleString()}</div>
                               <div className="text-sm text-gray-600">Monthly Salary</div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-blue-50 rounded-lg p-6">
-                        <h4 className="font-semibold text-gray-800 mb-3">Selected Pets for Adoption</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {item.selectedPets && item.selectedPets.length > 0 ? (
-                            item.selectedPets.map((pet, petIndex) => (
-                              <div key={petIndex} className="bg-white p-3 rounded-lg shadow-sm border border-blue-200">
-                                <div className="font-medium text-gray-800">{pet}</div>
+                          <div className="flex items-start gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                            <Users style={{color: '#6638E6'}} size={20} className="mt-1" />
+                            <div>
+                              <div className="font-semibold text-gray-800">
+                                {item.selectedPets && item.selectedPets.length > 0 
+                                  ? item.selectedPets.join(', ') 
+                                  : 'None'}
                               </div>
-                            ))
-                          ) : (
-                            <div className="col-span-full text-gray-500 text-center py-4">
-                              No pets selected for adoption
+                              <div className="text-sm text-gray-600">Selected Pets</div>
+                            </div>
+                          </div>
+                          {item.adminNotes && (
+                            <div className="flex items-start gap-3 p-4 rounded-lg border" style={{backgroundColor: '#FFE5EC', borderColor: '#E69AAE'}}>
+                              <FileText style={{color: '#6638E6'}} size={20} className="mt-1" />
+                              <div>
+                                <div className="font-semibold text-gray-800">{item.adminNotes}</div>
+                                <div className="text-sm text-gray-600">Admin Notes</div>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
-
-                      <div className="bg-yellow-50 rounded-lg p-6">
-                        <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                          <FileText className="text-yellow-600" size={20} />
-                          Salary Sheet Document
-                        </h4>
-                        {item.salarySheet ? (
-                          <div className="flex flex-wrap gap-3">
-                            <button
-                              onClick={() => handlePdfView(item.salarySheet)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
-                            >
-                              <Eye size={16} />
-                              View PDF
-                            </button>
-                            <button
-                              onClick={() =>
-                                downloadPdf(item.salarySheet, `salary-sheet-${item.fullName}.pdf`)
-                              }
-                              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all duration-200"
-                            >
-                              <Download size={16} />
-                              Download
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="text-amber-700 bg-amber-100 p-3 rounded-lg">
-                            No salary sheet has been uploaded for this application
-                          </div>
-                        )}
-                      </div>
-
-                      {item.adminNotes && (
-                        <div className="bg-gray-50 rounded-lg p-6">
-                          <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                            <FileText className="text-gray-600" size={20} />
-                            Admin Notes
-                          </h4>
-                          <div className="text-gray-700 bg-white p-3 rounded-lg border border-gray-200">
-                            {item.adminNotes}
-                          </div>
-                          <div className="text-sm text-gray-500 mt-2">
-                            Last updated: {item.updatedAt ? new Date(item.updatedAt).toLocaleString() : 'Not available'}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -759,30 +663,9 @@ function AdoptionDetailsDisplay() {
           )}
         </div>
       </div>
-
-      {selectedPdf && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-800">Salary Sheet Document</h3>
-              <button
-                onClick={closePdfViewer}
-                className="bg-gray-100 hover:bg-gray-200 p-2 rounded-lg transition-all duration-200"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-6">
-              <iframe
-                src={selectedPdf}
-                className="w-full h-96 border-none rounded-lg"
-                title="Salary Sheet PDF"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+      </div>
+    </div>  
   );
 }
 

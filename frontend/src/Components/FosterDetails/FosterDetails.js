@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Nav from '../Nav/Nav';
 
 const URL = "http://localhost:5000/fosters";
 
 export default function FosterDetails() {
+  const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -113,7 +115,7 @@ export default function FosterDetails() {
           experience: "No",
           homeEnvironment: "",
           notes: ""
-        });
+        });     
       }
     } catch (err) {
       console.error(err);
@@ -124,6 +126,11 @@ export default function FosterDetails() {
   };
 
   return (
+    <div className="min-h-screen bg-white flex">
+        <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+        <div className={`flex-1 transition-all duration-300 ${
+          collapsed ? 'ml-16' : 'ml-64'
+        } p-6`}>
     <>
       <style jsx>{`
         .custom-purple-hover:hover { background-color: #6638E6 !important; }
@@ -362,5 +369,7 @@ export default function FosterDetails() {
         </div>
       </div>
     </>
+        </div>
+    </div>
   );
 }

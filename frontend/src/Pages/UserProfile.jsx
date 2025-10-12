@@ -14,23 +14,55 @@ function UserProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const currentUserData = localStorage.getItem('currentUser');
-        const userId = localStorage.getItem('loggedInUserId');
-
-        if (currentUserData) {
-          setUser(JSON.parse(currentUserData));
-        } else if (userId) {
-          const response = await axios.get(`http://localhost:5000/users/${userId}`);
-          setUser(response.data.users || response.data.user || response.data);
-        } else {
+        // Check for authentication token
+        const authToken = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('userData');
+        
+        if (!authToken) {
           alert("Please login to view your profile");
           navigate("/login");
+          return;
+        }
+
+        // If user data exists in localStorage, use it
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          setLoading(false);
+        } else {
+          // Fetch from backend if not in localStorage
+          try {
+            const response = await axios.get("http://localhost:5000/user/profile", {
+              headers: {
+                Authorization: `Bearer ${authToken}`
+              }
+            });
+            
+            if (response.data.status === "ok" && response.data.user) {
+              setUser(response.data.user);
+              // Save to localStorage for future use
+              localStorage.setItem('userData', JSON.stringify(response.data.user));
+            } else {
+              throw new Error("Failed to load profile");
+            }
+          } catch (error) {
+            console.error("Error fetching profile:", error);
+            
+            // If token is invalid/expired, redirect to login
+            if (error.response?.status === 401) {
+              localStorage.clear();
+              alert("Session expired. Please login again.");
+              navigate("/login");
+            } else {
+              alert("Error loading profile. Please try again.");
+            }
+          }
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error loading profile:", error);
         alert("Error loading profile");
         navigate("/login");
-      } finally {
         setLoading(false);
       }
     };
@@ -38,12 +70,21 @@ function UserProfile() {
     fetchUserData();
   }, [navigate]);
 
-  // Logout handler - clears localStorage and redirects to login
+  // Logout handler - clears all authentication data
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to logout?")) {
+      // Clear all localStorage items
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('isAdmin');
+      
+      // Also clear old keys for backward compatibility
       localStorage.removeItem('currentUser');
       localStorage.removeItem('loggedInUserId');
       localStorage.removeItem('loggedInUserEmail');
+      localStorage.removeItem('userToken');
+      
       alert("Logged out successfully");
       navigate("/login");
     }
@@ -54,18 +95,29 @@ function UserProfile() {
     if (window.confirm("⚠️ WARNING: This will permanently delete your account and all associated data. This action cannot be undone. Are you absolutely sure?")) {
       setDeleteLoading(true);
       try {
-        await axios.delete(`http://localhost:5000/users/${id}`);
+        const authToken = localStorage.getItem('authToken');
+        
+        await axios.delete(`http://localhost:5000/users/${id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`
+          }
+        });
         
         // Clear all localStorage
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('loggedInUserId');
-        localStorage.removeItem('loggedInUserEmail');
+        localStorage.clear();
         
         alert("Account deleted successfully");
         navigate("/login");
       } catch (error) {
         console.error("Error deleting user:", error);
-        alert("Failed to delete account. Please try again.");
+        
+        if (error.response?.status === 401) {
+          alert("Session expired. Please login again.");
+          localStorage.clear();
+          navigate("/login");
+        } else {
+          alert("Failed to delete account. Please try again.");
+        }
         setDeleteLoading(false);
       }
     }

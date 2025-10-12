@@ -1,17 +1,16 @@
 import axios from 'axios';
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
-    const history = useNavigate();
+  const history = useNavigate();
   const [user, setUser] = useState({
     email: "",
     password: "",
   });
   const [loading, setLoading] = useState(false);
 
-  // Hardcoded admin credentials
+  // Hardcoded admin credentials (consider moving to backend)
   const adminCredentials = {
     'admin@vet.gmail.com': 'vet@pawpal',
     'admin@dataentry.gmail.com': 'dataEntry@pawpal',
@@ -25,19 +24,16 @@ function Login() {
     setUser((prevUser) => ({ ...prevUser, [name]: value }));
   };
 
-  // Check if credentials match admin login
   const checkAdminLogin = (email, password) => {
     const normalizedEmail = email.toLowerCase().trim();
     return adminCredentials[normalizedEmail] === password;
   };
 
-  // Check if email is admin email
   const isAdminEmail = (email) => {
     const normalizedEmail = email.toLowerCase().trim();
     return Object.keys(adminCredentials).includes(normalizedEmail);
   };
 
-  // Get admin role from email
   const getAdminRole = (email) => {
     const normalizedEmail = email.toLowerCase().trim();
     if (normalizedEmail === 'admin@vet.gmail.com') return 'Veterinarian';
@@ -53,85 +49,72 @@ function Login() {
     setLoading(true);
     
     try {
-        // First check if it's an admin login
-        if (isAdminEmail(user.email)) {
-            if (checkAdminLogin(user.email, user.password)) {
-                // Admin login successful
-                const adminData = {
-                    _id: `admin_${user.email.split('@')[1].split('.')[0]}`,
-                    email: user.email.toLowerCase(),
-                    role: getAdminRole(user.email),
-                    isAdmin: true,
-                    name: getAdminRole(user.email)
-                };
+      // Check for admin login
+      if (isAdminEmail(user.email)) {
+        if (checkAdminLogin(user.email, user.password)) {
+          const adminData = {
+            _id: `admin_${user.email.split('@')[1].split('.')[0]}`,
+            email: user.email.toLowerCase(),
+            role: getAdminRole(user.email),
+            isAdmin: true,
+            name: getAdminRole(user.email)
+          };
 
-                // Store admin data in localStorage
-                localStorage.setItem('loggedInUserId', adminData._id);
-                localStorage.setItem('loggedInUserEmail', adminData.email);
-                localStorage.setItem('userToken', 'admin_authenticated');
-                localStorage.setItem('userRole', adminData.role);
-                localStorage.setItem('isAdmin', 'true');
-                localStorage.setItem('currentUser', JSON.stringify(adminData));
-                
-                alert(`Admin Login Success! Welcome ${adminData.role}!`);
-                history("/admin");
-                return;
-            } else {
-                alert("Invalid admin credentials. Please check your email and password.");
-                setLoading(false);
-                return;
-            }
-        }
-
-        // Regular user login - proceed with backend API call
-        const response = await sendRequest();
-        
-        if (response.status === "ok" && response.user) {
-            // Store user data in localStorage for profile access
-            localStorage.setItem('loggedInUserId', response.user._id);
-            localStorage.setItem('loggedInUserEmail', response.user.email);
-            localStorage.setItem('userToken', response.token || 'authenticated');
-            localStorage.setItem('isAdmin', 'false');
-            localStorage.setItem('userRole', 'User');
-            
-            // Store full user data for immediate access
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
-            
-            alert("Login Success! Welcome back!");
-            history("/dashboard");
+          // Store admin data
+          localStorage.setItem('authToken', 'admin_authenticated');
+          localStorage.setItem('userData', JSON.stringify(adminData));
+          localStorage.setItem('userRole', adminData.role);
+          localStorage.setItem('isAdmin', 'true');
+          
+          alert(`Admin Login Success! Welcome ${adminData.role}!`);
+          history("/admin");
+          return;
         } else {
-            alert("Invalid credentials. Please check your email and password.");
+          alert("Invalid admin credentials");
+          setLoading(false);
+          return;
         }
-    } catch (err) {
-        console.error("Login error:", err);
-        if (err.response?.status === 401) {
-            alert("Invalid credentials. Please check your email and password.");
-        } else if (err.response?.status === 404) {
-            alert("User not found. Please register first.");
-        } else {
-            alert("Login failed. Please try again later.");
-        }
-    } finally {
-        setLoading(false);
-    }
-  };
+      }
 
-  const sendRequest = async () => {
-    return await axios
-      .post("http://localhost:5000/login", {
-        email: String(user.email),
-        password: String(user.password),
-      })
-      .then((res) => res.data)
-      .catch((error) => {
-        throw error;
+      // Regular user login with JWT
+      const response = await axios.post("http://localhost:5000/login", {
+        email: user.email.trim(),
+        password: user.password,
       });
+      
+      if (response.data.status === "ok" && response.data.token) {
+        // Store JWT token securely
+        localStorage.setItem('authToken', response.data.token);
+        localStorage.setItem('userData', JSON.stringify(response.data.user));
+        localStorage.setItem('userRole', 'User');
+        localStorage.setItem('isAdmin', 'false');
+        
+        // Set default Authorization header for future requests
+        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
+        alert("Login Success! Welcome back!");
+        history("/dashboard");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      
+      if (err.response?.status === 401) {
+        alert("Invalid credentials. Please check your email and password.");
+      } else if (err.response?.status === 404) {
+        alert("User not found. Please register first.");
+      } else if (err.response?.data?.message) {
+        alert(err.response.data.message);
+      } else {
+        alert("Login failed. Please try again later.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {/* Header Section */}
         <div className="text-center">
           <div className="mx-auto h-16 w-16 rounded-full bg-gradient-to-br from-[#6638E6] to-[#E6738F] flex items-center justify-center mb-6 shadow-lg">
             <svg className="h-8 w-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,10 +127,8 @@ function Login() {
           <p className="text-gray-600">Sign in to your PetCare account</p>
         </div>
 
-        {/* Form Section */}
         <div className="bg-white shadow-2xl rounded-2xl border border-gray-100 p-8 backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -173,7 +154,6 @@ function Login() {
               </div>
             </div>
 
-            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
                 <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
@@ -199,7 +179,6 @@ function Login() {
               </div>
             </div>
 
-            {/* Admin Login Helper */}
             {isAdminEmail(user.email) && (
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-center">
@@ -213,8 +192,6 @@ function Login() {
               </div>
             )}
 
-            {/* Login Button */}
-            
             <button
               type="submit"
               disabled={loading}
@@ -239,7 +216,6 @@ function Login() {
             </button>
           </form>
 
-          {/* Footer Links */}
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 mb-4">
               Don't have an account?{' '}
@@ -250,13 +226,11 @@ function Login() {
                 Sign up here
               </a>
             </p>
-
-
-            </div>
           </div>
         </div>
       </div>
-  )
+    </div>
+  );
 }
 
-export default Login
+export default Login;

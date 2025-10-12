@@ -18,8 +18,7 @@ export default function AdminAppointmentView() {
     setLoading(true);
     setError(null);
     try {
-      // ✅ FIXED: Changed from '/appointments' to '/api/appointments'
-      const response = await fetch('http://localhost:5000/api/appointments');
+      const response = await fetch('http://localhost:5000/appointments');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -65,7 +64,7 @@ export default function AdminAppointmentView() {
     try {
       console.log('Accepting appointment:', id);
       
-      const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+      const response = await fetch(`http://localhost:5000/appointments/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +102,7 @@ export default function AdminAppointmentView() {
     try {
       console.log('Deleting appointment:', id);
       
-      const response = await fetch(`http://localhost:5000/api/appointments/${id}`, {
+      const response = await fetch(`http://localhost:5000/appointments/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

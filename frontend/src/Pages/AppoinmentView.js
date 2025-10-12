@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import axiosInstance from '../config/axiosConfig';
+
 import { Calendar, Clock, User, Heart, Search, Download, RefreshCw, Plus, Edit, Trash2 } from 'lucide-react';
 import {Link, useNavigate} from 'react-router-dom';
 import Nav from '../Components/Nav/Nav';
@@ -14,21 +16,19 @@ export default function AppointmentDashboard() {
   const navigate = useNavigate();
 
   const loadAppointments = async () => {
+
     setLoading(true);
     setError(null);
     try {
       const isAdmin = localStorage.getItem('isAdmin') === 'true';
-      const currentUserEmail = localStorage.getItem('loggedInUserEmail') || '';
+      const currentUser = JSON.parse(localStorage.getItem('userData') || '{}');
+      const currentUserEmail = currentUser?.email || '';
       const url = isAdmin
-        ? 'http://localhost:5000/appointments'
-        : `http://localhost:5000/appointments/by-email?email=${encodeURIComponent(currentUserEmail)}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+        ? '/appointments'
+        : `/api/appointments/by-email?email=${encodeURIComponent(currentUserEmail)}`;
+      const response = await axiosInstance.get(url);
+      const data = response.data;
+
       console.log('Fetched appointments:', data);
       const appointmentsData = Array.isArray(data) ? data : (data.appointments || []);
       setAppointments(appointmentsData);
@@ -100,19 +100,15 @@ export default function AppointmentDashboard() {
 
   // Cancel appointment
   const cancelAppointment = async (id) => {
+
     if (!window.confirm('Are you sure you want to cancel this appointment?')) {
       return;
     }
     
     try {
-      const response = await fetch(`http://localhost:5000/appointments/${id}`, {
-        method: 'DELETE'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      const isAdmin = localStorage.getItem('isAdmin') === 'true';
+      const endpoint = isAdmin ? `/appointments/${id}` : `/api/appointments/${id}`;
+      await axiosInstance.delete(endpoint);
       await loadAppointments();
       alert('Appointment cancelled successfully!');
     } catch (e) {

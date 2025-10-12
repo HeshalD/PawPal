@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../config/axiosConfig';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
 
 function AppointmentUpdate() {
@@ -37,7 +37,7 @@ function AppointmentUpdate() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/appointments/${id}`);
+        const res = await axiosInstance.get(`/api/appointments/${id}`);
         const a = res.data;
         setAppointment({
           petName: a.petName || '',
@@ -82,7 +82,7 @@ function AppointmentUpdate() {
     }
     setSaving(true);
     try {
-      await axios.put(`http://localhost:5000/appointments/${id}`, {
+      await axiosInstance.put(`/api/appointments/${id}`, {
         petName: appointment.petName,
         ownerName: appointment.ownerName,
         date: appointment.date,

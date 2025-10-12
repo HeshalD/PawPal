@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../config/axiosConfig';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
 
 function AppointmentForm() {
@@ -64,9 +64,10 @@ function AppointmentForm() {
     setLoading(true);
 
     try {
-      const ownerEmail = localStorage.getItem('loggedInUserEmail');
-      // ✅ Use /api/appointments to match your backend
-      const response = await axios.post('http://localhost:5000/api/appointments', {
+      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+      const ownerEmail = userData?.email || '';
+      // Use axiosInstance (injects JWT) to protected endpoint
+      const response = await axiosInstance.post('/api/appointments', {
         petName: appointment.petName,
         ownerName: appointment.ownerName,
         ownerEmail: ownerEmail || '',

@@ -15,7 +15,8 @@ export default function PetMedicalForm() {
     treatment: '',
     vaccination: '',
     visitDate: new Date().toISOString().split('T')[0],
-    nextVaccinationDate: ''
+    nextVaccinationDate: '',
+    healthStatus: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -76,6 +77,10 @@ export default function PetMedicalForm() {
       else if (!isAlphaName(trimmed)) error = 'Pet name can include letters, spaces, hyphens, and apostrophes only.';
     }
 
+    if (name === 'healthStatus') {
+      if (!trimmed) error = 'Health status is required.';
+    }
+
     return error;
   };
 
@@ -85,7 +90,6 @@ export default function PetMedicalForm() {
       const maybeError = validateField(key, data[key], data);
       if (maybeError) newErrors[key] = maybeError;
     });
-    // Custom cross-field validation already handled in validateField
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -133,7 +137,6 @@ export default function PetMedicalForm() {
       const next = { ...prev, [name]: value };
       const fieldError = validateField(name, value, next);
       setErrors((prevErrors) => ({ ...prevErrors, [name]: fieldError }));
-      // If nextVaccinationDate changes, also re-validate against visitDate and vice versa
       if (name === 'visitDate' && next.nextVaccinationDate) {
         const crossError = validateField('nextVaccinationDate', next.nextVaccinationDate, next);
         setErrors((prevErrors) => ({ ...prevErrors, nextVaccinationDate: crossError }));
@@ -162,6 +165,7 @@ export default function PetMedicalForm() {
       vaccination: formData.vaccination,
       visitDate: formData.visitDate,
       nextVaccinationDate: formData.nextVaccinationDate,
+      healthStatus: formData.healthStatus,
     };
 
     console.log("Submitting health record:", recordData);
@@ -387,6 +391,44 @@ export default function PetMedicalForm() {
                   placeholder="Enter vaccination details (optional)"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-purple-600 font-semibold mb-3 text-sm">
+                Health Status <span className="text-red-500">*</span>
+              </label>
+              <div className="flex flex-wrap gap-4">
+                {['Healthy', 'Normal', 'Weak'].map((status) => (
+                  <label
+                    key={status}
+                    className={`flex items-center px-6 py-3 rounded-xl border-2 cursor-pointer transition-all ${
+                      formData.healthStatus === status
+                        ? 'border-purple-500 bg-purple-50'
+                        : errors.healthStatus
+                        ? 'border-red-400 bg-gray-50'
+                        : 'border-gray-200 bg-gray-50 hover:border-purple-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="healthStatus"
+                      value={status}
+                      checked={formData.healthStatus === status}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                      required
+                    />
+                    <span className={`ml-3 font-medium ${
+                      formData.healthStatus === status ? 'text-purple-700' : 'text-gray-700'
+                    }`}>
+                      {status}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              {errors.healthStatus && (
+                <p className="text-red-500 text-xs mt-2 ml-1">{errors.healthStatus}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

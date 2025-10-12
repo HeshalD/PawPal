@@ -8,8 +8,16 @@ export const apiClient = axios.create({
 
 export const toImageUrl = (webPath) => {
   if (!webPath) return null;
-  if (webPath.startsWith('http://') || webPath.startsWith('https://')) return webPath;
-  return API_BASE_URL + webPath;
+  const p = String(webPath);
+  if (p.startsWith('http://') || p.startsWith('https://')) return p;
+  // Ensure it is served from /uploads on the backend
+  let normalized = p.trim();
+  if (!normalized.startsWith('/')) normalized = '/' + normalized;
+  if (!normalized.startsWith('/uploads/')) {
+    // Handle older stored paths like '/sponsor_ads/...' or '/somefolder/file.png'
+    normalized = '/uploads' + normalized;
+  }
+  return API_BASE_URL + normalized;
 };
 
 export const SponsorsAPI = {

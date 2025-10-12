@@ -1,8 +1,37 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import logo from "../Components/Nav/logo.jpg"; // your logo path
+import { SponsorsAPI, toImageUrl } from "../services/api";
 
 function HomePage() {
+  const [ads, setAds] = React.useState([]);
+  const [currentAd, setCurrentAd] = React.useState(0);
+  const [loadingAds, setLoadingAds] = React.useState(false);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        setLoadingAds(true);
+        const { data } = await SponsorsAPI.homepageActiveAds();
+        if (isMounted) setAds(data.sponsors || []);
+      } catch (_) {
+        if (isMounted) setAds([]);
+      } finally {
+        if (isMounted) setLoadingAds(false);
+      }
+    };
+    load();
+    return () => { isMounted = false; };
+  }, []);
+
+  React.useEffect(() => {
+    if (!ads || ads.length <= 1) return;
+    const t = setInterval(() => {
+      setCurrentAd((i) => (i + 1) % ads.length);
+    }, 5000);
+    return () => clearInterval(t);
+  }, [ads]);
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden bg-white">
 
@@ -79,6 +108,38 @@ function HomePage() {
                 At Pawpal, we understand that pets are not just animals – they're beloved family members who deserve the highest standard of care, love, and attention throughout their lives.
               </p>
             </div>
+
+            {/* Main Sponsor Ad Banner */}
+            {(ads && ads.length > 0) && (
+              <div className="mb-16">
+                <div className="mx-auto rounded-2xl overflow-hidden shadow-2xl border border-pink-100 bg-white w-full">
+                  <div className="relative mx-auto w-[300px] h-[100px] sm:w-[600px] sm:h-[200px] md:w-[900px] md:h-[300px] lg:w-[1200px] lg:h-[400px]">
+                    <img
+                      src={toImageUrl(ads[currentAd]?.adImagePath)}
+                      alt={(ads[currentAd]?.companyName || ads[currentAd]?.sponsorName || "Sponsor Ad") + " banner"}
+                      className="w-full h-full object-contain bg-white"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3 text-left">
+                      <div className="text-white font-semibold text-base">
+                        {ads[currentAd]?.companyName || ads[currentAd]?.sponsorName}
+                      </div>
+                    </div>
+                  </div>
+                  {ads.length > 1 && (
+                    <div className="flex items-center justify-center gap-2 py-3 bg-white">
+                      {ads.map((_, i) => (
+                        <span
+                          key={i}
+                          onClick={() => setCurrentAd(i)}
+                          className={`h-2.5 w-2.5 rounded-full cursor-pointer ${i === currentAd ? 'bg-pink-600' : 'bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {loadingAds && <div className="text-gray-500 mt-2 text-center">Loading ads...</div>}
+              </div>
+            )}
 
             {/* Content Grid */}
             <div className="grid lg:grid-cols-2 gap-12 items-center mb-20">

@@ -29,6 +29,7 @@ const healthRecordRoutes = require('./Routes/healthRecordRoutes');
 const doctorRoutes = require('./Routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const chatbotRoutes = require('./Routes/chatbotRoutes');
+const aiChatRouter = require('./Routes/chatbot');
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
 
@@ -99,6 +100,7 @@ app.use('/health-records', healthRecordRoutes);
 app.use('/doctor-availability', doctorRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/chatbot', chatbotRoutes);
+app.use('/chatbot/ai', aiChatRouter);
 app.use('/api/appointments', verifyToken, appointmentRoutes);
 
 // User Model

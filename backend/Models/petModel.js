@@ -14,6 +14,11 @@ const petSchema = new Schema({
         type: String,
         required: true
     },
+    healthStatus: {
+        type: String,
+        enum: ['Healthy', 'Normal', 'Weak'],
+        default: 'Normal'
+    },
     petId: {
         type: String,
         required: true,

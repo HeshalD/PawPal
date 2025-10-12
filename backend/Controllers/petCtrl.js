@@ -16,13 +16,13 @@ const getAllPets = async (req, res, next) => {
 
 //Create pet profile
 const addPet = async (req, res, next) => {
-    const { name, age, breed } = req.body;
+    const { name, age, breed, healthStatus } = req.body;
 
     let pet;
     try {
         // Auto-generate unique Pet ID
         const petId = "PET-" + Math.floor(Math.random() * 1000000);
-        pet = new Pet({ name, age, breed, petId });
+        pet = new Pet({ name, age, breed, petId, healthStatus });
         await pet.save();
     } catch (err) {
         console.log(err);
@@ -52,11 +52,16 @@ const getPetById = async (req, res, next) => {
 //Update pet details
 const updatePet = async (req, res, next) => {
     const id = req.params.id;
-    const { name, age, breed } = req.body;
+    const { name, age, breed, healthStatus } = req.body;
 
     let pet;
     try {
-        pet = await Pet.findByIdAndUpdate(id, { name, age, breed }, { new: true });
+        const update = {};
+        if (name !== undefined) update.name = name;
+        if (age !== undefined) update.age = age;
+        if (breed !== undefined) update.breed = breed;
+        if (healthStatus !== undefined) update.healthStatus = healthStatus;
+        pet = await Pet.findByIdAndUpdate(id, update, { new: true });
     } catch (err) {
         console.log(err);
     }

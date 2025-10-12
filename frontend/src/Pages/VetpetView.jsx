@@ -30,6 +30,18 @@ function VetPetView() {
     fetchPets();
   }, []);
 
+  // Update pet health status
+  const updateHealthStatus = async (id, status) => {
+    try {
+      await axios.put(`http://localhost:5000/pets/${id}`, { healthStatus: status });
+      setPets(prev => prev.map(p => p._id === id ? { ...p, healthStatus: status } : p));
+      setFilteredPets(prev => prev.map(p => p._id === id ? { ...p, healthStatus: status } : p));
+    } catch (error) {
+      console.error('Error updating health status:', error);
+      alert('Failed to update health status. Please try again.');
+    }
+  };
+
   // Search functionality
   useEffect(() => {
     if (searchTerm) {
@@ -167,6 +179,9 @@ function VetPetView() {
                     Age
                   </th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 uppercase text-sm">
+                    Health
+                  </th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 uppercase text-sm">
                     Action
                   </th>
                 </tr>
@@ -174,7 +189,7 @@ function VetPetView() {
               <tbody>
                 {filteredPets.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="text-center py-12">
+                    <td colSpan="5" className="text-center py-12">
                       <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                       <h3 className="text-xl font-semibold text-gray-500 mb-2">No Pets Found</h3>
                       <p className="text-gray-400">Try adjusting your search criteria</p>
@@ -213,6 +228,18 @@ function VetPetView() {
                         </span>
                       </td>
 
+                      {/* Health */}
+                      <td className="py-4 px-6">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          pet.healthStatus === 'Healthy' ? 'bg-green-100 text-green-800' :
+                          pet.healthStatus === 'Normal' ? 'bg-blue-100 text-blue-800' :
+                          pet.healthStatus === 'Weak' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {pet.healthStatus || 'Unknown'}
+                        </span>
+                      </td>
+
                       {/* Action */}
                       <td className="py-4 px-6">
                         <button
@@ -222,6 +249,26 @@ function VetPetView() {
                           <Edit className="w-4 h-4" />
                           Update
                         </button>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <button
+                            onClick={() => updateHealthStatus(pet._id, 'Healthy')}
+                            className="px-3 py-1 text-xs rounded border border-green-500 text-green-700 hover:bg-green-50"
+                          >
+                            Healthy
+                          </button>
+                          <button
+                            onClick={() => updateHealthStatus(pet._id, 'Normal')}
+                            className="px-3 py-1 text-xs rounded border border-blue-500 text-blue-700 hover:bg-blue-50"
+                          >
+                            Normal
+                          </button>
+                          <button
+                            onClick={() => updateHealthStatus(pet._id, 'Weak')}
+                            className="px-3 py-1 text-xs rounded border border-red-500 text-red-700 hover:bg-red-50"
+                          >
+                            Weak
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

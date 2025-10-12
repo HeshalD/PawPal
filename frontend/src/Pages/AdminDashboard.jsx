@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Nav from '../Components/Nav/NavAdmin';
+
 import { 
   Users, 
   Heart, 
@@ -18,6 +19,8 @@ import {
   Download,
   Activity
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function AdminDashboard() {
   const [collapsed, setCollapsed] = useState(false);
@@ -64,7 +67,7 @@ function AdminDashboard() {
         if (response.status === 'fulfilled') {
           const data = response.value.data;
           
-          // ✅ Better data extraction logic
+          // Try multiple possible data structures for inventory
           if (endpointName === 'inventory') {
             // Try multiple possible data structures for inventory
             dataMap[endpointName] = data.items || data.inventory || data.data || data || [];
@@ -117,7 +120,7 @@ function AdminDashboard() {
       const completedOrders = orders.filter(o => o.status === 'completed' || o.status === 'delivered').length;
       const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'processing').length;
 
-      // ✅ Calculate inventory stats - improved field detection
+      // Calculate inventory stats - improved field detection
       const lowStockItems = inventory.filter(i => {
         const qty = i.quantity || i.stock || i.stockQuantity || 0;
         return qty < 10 && qty > 0;
@@ -277,6 +280,88 @@ function AdminDashboard() {
     };
   };
 
+  const downloadPdf = () => {
+    const doc = new jsPDF('p', 'pt');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Title
+    doc.setFontSize(20);
+    doc.setTextColor(60, 60, 60);
+    doc.text('PawPal Admin Dashboard Report', pageWidth / 2, 40, { align: 'center' });
+
+    // Meta
+    doc.setFontSize(10);
+    doc.setTextColor(110);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 60);
+
+    // Summary (key stats)
+    const s = dashboardData.stats || {};
+    const summary = [
+      ['Total Pets', String(s.totalPets || 0)],
+      ['Available Pets', String(s.availablePets || 0)],
+      ['Adopted Pets', String(s.adoptedPets || 0)],
+      ['Total Donations', `Rs. ${(s.totalDonations || 0).toLocaleString()}`],
+      ['Completed Donations', String(s.completedDonationCount || 0)],
+      ['Pending Donations', String(s.pendingDonationCount || 0)],
+      ['Completed Amount', `Rs. ${(s.completedAmount || 0).toLocaleString()}`],
+      ['Pending Amount', `Rs. ${(s.pendingAmount || 0).toLocaleString()}`],
+      ['Adoptions Approved', String(s.totalAdoptions || 0)],
+      ['Adoption Pending', String(s.pendingAdoptionReq || 0)],
+      ['Sponsors Total', String(s.totalSponsors || 0)],
+      ['Sponsors Active', String(s.activeSponsors || 0)],
+      ['Sponsors Pending', String(s.pendingSponsors || 0)],
+      ['Fosters Total', String(s.totalFosters || 0)],
+      ['Fosters Active', String(s.activeFosters || 0)],
+      ['Fosters Pending', String(s.pendingFosters || 0)],
+      ['Orders Total', String(s.shopOrders || 0)],
+      ['Orders Completed', String(s.completedOrders || 0)],
+      ['Orders Pending', String(s.pendingOrders || 0)],
+      ['Orders Revenue', `Rs. ${(s.totalOrderAmount || 0).toLocaleString()}`],
+      ['Inventory Items', String(s.inventoryItems || 0)],
+      ['In Stock', String(s.inStockItems || 0)],
+      ['Low Stock', String(s.lowStockItems || 0)],
+      ['Out of Stock', String(s.outOfStockItems || 0)],
+      ['Users Total', String(s.totalUsers || 0)],
+      ['Active Users', String(s.activeUsers || 0)],
+      ['New Users (This Month)', String(s.newUsersThisMonth || 0)],
+    ];
+
+    autoTable(doc, {
+      startY: 80,
+      head: [['Metric', 'Value']],
+      body: summary,
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241] },
+      styles: { fontSize: 9, cellPadding: 6 },
+      margin: { left: 40, right: 40 },
+    });
+
+    let y = doc.lastAutoTable.finalY + 20;
+
+    // Recent activities table
+    const activities = dashboardData.recentActivities || [];
+    autoTable(doc, {
+      startY: y,
+      head: [['Action', 'Details', 'When']],
+      body: activities.map(a => [a.action || '-', a.details || '-', a.time || '-']),
+      theme: 'striped',
+      headStyles: { fillColor: [236, 72, 153] },
+      styles: { fontSize: 9, cellPadding: 6 },
+      columnStyles: { 1: { cellWidth: pageWidth - 40 - 40 - 150 } },
+      margin: { left: 40, right: 40 },
+      didDrawPage: (data) => {
+        // Footer page numbers
+        const str = `Page ${doc.internal.getNumberOfPages()}`;
+        doc.setFontSize(8);
+        doc.setTextColor(130);
+        doc.text(str, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      },
+    });
+
+    doc.save(`admin-dashboard-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   useEffect(() => {
     fetchDashboardData();
     if (autoRefresh) {
@@ -285,21 +370,7 @@ function AdminDashboard() {
     }
   }, [autoRefresh]);
 
-  const handleExport = () => {
-    const blob = new Blob([JSON.stringify({
-      exportDate: new Date().toISOString(),
-      stats: dashboardData.stats,
-      recentActivities: dashboardData.recentActivities
-    }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `dashboard-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
+  
 
   if (loading && !dashboardData.stats.totalPets) {
     return (
@@ -449,12 +520,13 @@ function AdminDashboard() {
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                   <span>Refresh</span>
                 </button>
-                <button 
-                  onClick={handleExport}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700"
+                
+                <button
+                  onClick={downloadPdf}
+                  className="flex items-center space-x-2 px-4 py-2 bg-white border-2 border-purple-600 text-purple-700 rounded-lg hover:bg-purple-50"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Export</span>
+                  <span>Download PDF</span>
                 </button>
               </div>
             </div>

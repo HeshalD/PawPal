@@ -5,6 +5,8 @@ import { Calendar, Clock, User, Heart, Search, Download, RefreshCw, Plus, Edit, 
 import {Link, useNavigate} from 'react-router-dom';
 import Nav from '../Components/Nav/Nav';
 import HealthcareChatbot from '../Components/HealthcareChatbot/HealthcareChatbot';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 export default function AppointmentDashboard() {
   const [collapsed, setCollapsed] = useState(false);
@@ -122,18 +124,63 @@ export default function AppointmentDashboard() {
     navigate(`/appointments/${id}/edit`);
   };
 
-  // Download report
+  // Download PDF report reflecting the UI details
   const downloadReport = () => {
-    const csvContent = generateCSVReport();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `appointments-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const doc = new jsPDF('p', 'pt');
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+
+      // Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      const title = 'My Appointments Report';
+      const titleWidth = doc.getTextWidth(title);
+      doc.text(title, (pageWidth - titleWidth) / 2, 50);
+
+      // Meta
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 80);
+      doc.text(`Total: ${stats.total} | Upcoming: ${stats.upcoming} | Today: ${stats.today} | Past: ${stats.past}`, margin, 98);
+
+      // Table data (removed Doctor column)
+      const rows = filteredAppointments.map((apt) => {
+        const appointmentDate = new Date(apt.date);
+        const status = appointmentDate >= new Date() ? 'Upcoming' : 'Past';
+        return [
+          apt.petName || '-',
+          apt.ownerName || '-',
+          appointmentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+          apt.timeSlot || '-',
+          status,
+        ];
+      });
+
+      autoTable(doc, {
+        head: [['Pet Name', 'Owner Name', 'Date', 'Time Slot', 'Status']],
+        body: rows,
+        startY: 120,
+        styles: { fontSize: 10, cellPadding: 6 },
+        headStyles: { fillColor: [124, 58, 237] }, // purple header
+        alternateRowStyles: { fillColor: [245, 243, 255] },
+        columnStyles: {
+          // Fit to page width (A4 portrait, margins 40 -> 515pt usable): 150+150+100+65+50 = 515
+          0: { cellWidth: 150 }, // Pet Name
+          1: { cellWidth: 150 }, // Owner Name
+          2: { cellWidth: 100 }, // Date
+          3: { cellWidth: 65 },  // Time Slot
+          4: { cellWidth: 50 },  // Status
+        },
+        margin: { left: margin, right: margin },
+      });
+
+      doc.save(`appointments-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (e) {
+      console.error('PDF generation failed:', e);
+      alert('Failed to generate PDF.');
+    }
   };
 
   const generateCSVReport = () => {

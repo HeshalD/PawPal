@@ -10,6 +10,11 @@ function UserProfile() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const lastLoginAt = localStorage.getItem('lastLoginAt');
+  const currentLoginAt = localStorage.getItem('currentLoginAt');
+  const formatDT = (iso) => {
+    try { return iso ? new Date(iso).toLocaleString() : null; } catch { return iso; }
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -293,7 +298,6 @@ function UserProfile() {
                   <Edit className="w-5 h-5 mr-2" />
                   Update Profile
                 </Link>
-                
                 <button
                   onClick={() => deleteHandler(user._id)}
                   disabled={deleteLoading}
@@ -314,46 +318,21 @@ function UserProfile() {
               </div>
             </div>
           </div>
-
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Stats Card */}
             <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden transform hover:shadow-3xl transition duration-300">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
                 <h4 className="text-xl font-bold text-white flex items-center">
-                  <Calendar className="w-6 h-6 mr-2" />
-                  Account Stats
+                  <Clock className="w-6 h-6 mr-2" />
+                  Last Login
                 </h4>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200 hover:shadow-md transition duration-300">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-purple-200 rounded-lg flex items-center justify-center mr-3">
-                      <Calendar className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <span className="text-gray-700 font-medium">Member Since</span>
-                  </div>
-                  <span className="font-bold text-purple-600 text-lg">
-                    {getAccountAge()}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 hover:shadow-md transition duration-300">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center mr-3">
-                      <Clock className="w-5 h-5 text-green-600" />
-                    </div>
-                    <span className="text-gray-700 font-medium">Account Status</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                    <span className="font-bold text-green-600 text-lg">Active</span>
-                  </div>
+              <div className="p-6">
+                <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
+                  <div className="text-sm text-gray-600 mb-1">Previous login date & time</div>
+                  <div className="text-lg font-bold text-indigo-700">{formatDT(lastLoginAt) || 'First login on this device'}</div>
                 </div>
               </div>
             </div>
-
-            {/* Quick Actions */}
             <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden transform hover:shadow-3xl transition duration-300">
               <div className="bg-gradient-to-r from-pink-600 to-purple-600 px-6 py-5">
                 <h4 className="text-xl font-bold text-white flex items-center">
@@ -371,7 +350,6 @@ function UserProfile() {
                   </div>
                   <span className="font-semibold text-gray-800 text-lg">View My Pets</span>
                 </Link>
-                
                 <Link
                   to="/dashboard"
                   className="flex items-center w-full p-4 text-left bg-gradient-to-r from-pink-50 to-purple-50 hover:from-pink-100 hover:to-purple-100 rounded-xl border-2 border-pink-200 hover:border-pink-400 transition duration-300 group"

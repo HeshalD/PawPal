@@ -65,6 +65,10 @@ function Login() {
           localStorage.setItem('userData', JSON.stringify(adminData));
           localStorage.setItem('userRole', adminData.role);
           localStorage.setItem('isAdmin', 'true');
+          const now = new Date().toISOString();
+          const prev = localStorage.getItem('currentLoginAt');
+          if (prev) localStorage.setItem('lastLoginAt', prev);
+          localStorage.setItem('currentLoginAt', now);
           
           alert(`Admin Login Success! Welcome ${adminData.role}!`);
           history("/admin");
@@ -88,6 +92,10 @@ function Login() {
         localStorage.setItem('userData', JSON.stringify(response.data.user));
         localStorage.setItem('userRole', 'User');
         localStorage.setItem('isAdmin', 'false');
+        const now = new Date().toISOString();
+        const prev = localStorage.getItem('currentLoginAt');
+        if (prev) localStorage.setItem('lastLoginAt', prev);
+        localStorage.setItem('currentLoginAt', now);
         
         // Set default Authorization header for future requests
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;

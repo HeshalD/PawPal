@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Duleepa:lJv2dSasOC6LPFG1@cluster0.o9fdduy.mongodb.net/pawpalDB";
 const JWT_SECRET = process.env.JWT_SECRET || "temporary-dev-secret-CHANGE-IN-PRODUCTION";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
+const EXPIRY_JOB_INTERVAL_MS = parseInt(process.env.EXPIRY_JOB_INTERVAL_MS || `${5 * 60 * 1000}`, 10);
 
 // Route imports
 const userRouter = require("./Routes/userRoute");
@@ -302,22 +303,38 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Sponsor expiry job
+// Sponsor expiry job (runs only when DB is connected)
 const startExpiryJob = () => {
   setInterval(async () => {
+    // 1 = connected, 2 = connecting, 0 = disconnected, 3 = disconnecting
+    if (mongoose.connection.readyState !== 1) {
+      // Skip quietly when DB isn't connected to avoid noisy errors
+      return;
+    }
     try {
       const now = new Date();
       const result = await Sponsor.updateMany(
         { status: "active", endDate: { $lte: now } },
         { status: "past", updatedAt: Date.now() }
       );
-      if (result.modifiedCount) {
+      if (result?.modifiedCount) {
         console.log(`✅ Expired sponsorships: ${result.modifiedCount}`);
       }
     } catch (e) {
-      console.error("❌ Expiry job error:", e.message);
+      // Reduce noisy DNS/connection logs
+      const msg = String(e?.message || e);
+      if (
+        msg.includes('ECONNRESET') ||
+        msg.includes('ENOTFOUND') ||
+        msg.includes('Topology is closed') ||
+        msg.includes('server selection timed out')
+      ) {
+        console.warn('⚠️ Skipping expiry job due to temporary DB connectivity issue');
+      } else {
+        console.error('❌ Expiry job error:', msg);
+      }
     }
-  }, 30 * 1000);
+  }, EXPIRY_JOB_INTERVAL_MS);
 };
 
 // MongoDB connection and server start

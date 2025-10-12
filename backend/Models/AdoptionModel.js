@@ -3,60 +3,32 @@ const Schema = mongoose.Schema;
 
 const adoptionSchema = new Schema({
     fullName:{
-        type:String,//dataType
-        required:true,//validate
-    },
+        type:String,required:true, },
     email:{
-        type:String,//dataType
-        required:true,//validate
-    },
+        type:String,required:true, },
     age:{
-        type:Number,//dataType
-        required:true,//validate
-    },
+        type:Number,required:true, },
     phone:{
-        type:String,//dataType
-        required:true,//validate
-    },
+        type:String,required:true, },
     address:{
-        type:String,//dataType
-        required:true,//validate
-    },
+        type:String,required:true, },
     salary:{
-        type:Number,//dataType
-        required:true,//validate
-    },
+        type:Number,required:true,},
     selectedPets:{
-        type:[String],//array of strings
-        required:true,//validate
-    },
+        type:[String],required:true, },
     salarySheet:{
-        type:String,//file path
-        required:true,//validate
-    },
+        type:String,required:true, },
     status:{
-        type:String,//application status
-        enum:['pending', 'approved', 'rejected', 'completed'],//allowed values
-        default:'pending',//default status
-        required:true,//validate
-    },
+        type:String,enum:['pending', 'approved', 'rejected', 'completed'],
+        default:'pending',required:true, },
     submittedAt:{
-        type:Date,//submission date
-        default:Date.now,//current date
-        required:true,//validate
-    },
+        type:Date,default:Date.now,
+        required:true, },
     updatedAt:{
-        type:Date,//last update date
-        default:Date.now,//current date
-        required:true,//validate
-    },
+        type:Date,default:Date.now,required:true, },
     adminNotes:{
-        type:String,//admin comments
-        default:'',//empty by default
-    }
+        type:String,default:'', }
 });
-
-
 
 
 module.exports = mongoose.model(

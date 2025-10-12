@@ -10,7 +10,14 @@ const HealthRecordSchema = new mongoose.Schema({
   treatment: { type: String, required: true },
   vaccination: { type: String },
   visitDate: { type: Date, default: Date.now },
-  nextVaccinationDate: { type: Date } // new field
+  nextVaccinationDate: { type: Date },
+  
+  // New field for pet health status (radio button)
+  healthStatus: { 
+    type: String, 
+    enum: ['Healthy', 'Normal', 'Weak'], 
+    required: true 
+  }
 });
 
 module.exports = mongoose.model('HealthRecord', HealthRecordSchema);

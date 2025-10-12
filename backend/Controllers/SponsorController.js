@@ -16,14 +16,28 @@ const toWebPath = (absolutePath) => {
   const uploadsRoot = path.join(__dirname, "..", "uploads");
   const relativeFromUploads = path.relative(uploadsRoot, absolutePath);
   const webSafe = relativeFromUploads.split(path.sep).join("/");
-  return "/" + webSafe;
+  return "/uploads/" + webSafe.replace(/^\/+/, "");
 };
 
 const toDiskPath = (webPath) => {
   if (!webPath) return null;
   const uploadsRoot = path.join(__dirname, "..", "uploads");
-  const trimmed = webPath.replace(/^\//, "");
-  return path.join(uploadsRoot, trimmed);
+  let p = String(webPath).trim();
+  // Normalize to remove any origin and ensure path pieces only
+  try {
+    // Strip protocol/host if a full URL was stored by mistake
+    if (/^https?:\/\//i.test(p)) {
+      const u = new URL(p);
+      p = u.pathname || p;
+    }
+  } catch {}
+  // Remove leading slashes
+  p = p.replace(/^\/+/, "");
+  // Strip optional 'uploads/' prefix to avoid double-joining
+  if (p.startsWith('uploads/')) {
+    p = p.substring('uploads/'.length);
+  }
+  return path.join(uploadsRoot, p);
 };
 
 const validateSponsorPayload = (body) => {

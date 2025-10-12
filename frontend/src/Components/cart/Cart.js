@@ -18,6 +18,17 @@ const Cart = ({ isOpen, onClose }) => {
   
   const navigate = useNavigate();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponPercent, setCouponPercent] = useState(0);
+  const [couponError, setCouponError] = useState("");
+
+  const resetCoupon = () => {
+    setCouponApplied(false);
+    setCouponPercent(0);
+    setCouponCode("");
+    setCouponError("");
+  };
 
   const handleQuantityChange = (itemId, newQuantity) => {
     if (newQuantity <= 0) {
@@ -36,12 +47,75 @@ const Cart = ({ isOpen, onClose }) => {
     setShowCheckout(false);
   };
 
+  const handleCloseCart = () => {
+    resetCoupon();
+    onClose();
+  };
+
+  // Reset coupon when cart becomes empty
+  React.useEffect(() => {
+    if (items.length === 0) {
+      resetCoupon();
+    }
+  }, [items.length]);
+
+  React.useEffect(() => {
+    if (!isOpen) {
+      resetCoupon();
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const subtotal = getTotalPrice();
+  const discount = couponApplied ? subtotal * (couponPercent / 100) : 0;
+  const grandTotal = Math.max(0, subtotal - discount);
+
+  const applyCoupon = async () => {
+    const code = (couponCode || "").trim().toUpperCase();
+    if (!code) { setCouponError("Enter a coupon code"); return; }
+    try {
+      const res = await fetch('http://localhost:5000/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      });
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        throw new Error('Coupon API did not return JSON');
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Invalid coupon');
+      const pct = Number(data.discountPercent ?? data.discount ?? 0);
+      if (!pct || pct <= 0) throw new Error('Invalid discount');
+      setCouponPercent(pct);
+      setCouponApplied(true);
+      setCouponError("");
+      setCouponCode("");
+    } catch (err) {
+      // Fallback: check localStorage coupons
+      try {
+        const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+        const match = (local || []).find(c => (c.code||'').toUpperCase() === code);
+        const pct = Number(match?.discountPercent || match?.discount || 0);
+        if (pct > 0) {
+          setCouponPercent(pct);
+          setCouponApplied(true);
+          setCouponError("");
+          setCouponCode("");
+          return;
+        }
+      } catch {}
+      setCouponApplied(false);
+      setCouponPercent(0);
+      setCouponError('Invalid coupon or server unavailable');
+    }
+  };
 
   return (
     <>
       {/* Cart Overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose}></div>
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={handleCloseCart}></div>
       
       {/* Cart Sidebar */}
       <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl z-50 flex flex-col">
@@ -51,7 +125,7 @@ const Cart = ({ isOpen, onClose }) => {
             Shopping Cart ({getTotalItems()})
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleCloseCart}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,13 +226,45 @@ const Cart = ({ isOpen, onClose }) => {
 
         {/* Cart Footer */}
         {items.length > 0 && (
-          <div className="border-t border-gray-200 p-6">
-            {/* Total */}
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-lg font-semibold text-gray-900">Total:</span>
-              <span className="text-xl font-bold text-[#6638E6]">
-                Rs. {getTotalPrice().toFixed(2)}
-              </span>
+          <div className="border-t border-gray-200 p-6 space-y-4">
+            {/* Coupon */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Have a coupon?</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Enter code (e.g., PAWPAL10)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
+                  disabled={couponApplied}
+                />
+                <button
+                  onClick={applyCoupon}
+                  disabled={couponApplied}
+                  className="px-4 py-2 rounded-md font-medium text-white bg-[#6638E6] hover:bg-[#5a2fce] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {couponApplied ? 'Applied' : 'Apply'}
+                </button>
+              </div>
+              {couponError && <p className="text-xs text-red-600 mt-1">{couponError}</p>}
+              {couponApplied && <p className="text-xs text-green-600 mt-1">{couponPercent}% discount applied.</p>}
+            </div>
+
+            {/* Totals */}
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-900">Rs. {subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Discount</span>
+                <span className="text-green-700">- Rs. {discount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-lg font-semibold text-gray-900">Total</span>
+                <span className="text-xl font-bold text-[#6638E6]">Rs. {grandTotal.toFixed(2)}</span>
+              </div>
             </div>
 
             {/* Action Buttons */}
@@ -169,7 +275,6 @@ const Cart = ({ isOpen, onClose }) => {
               >
                 Proceed to Checkout
               </button>
-              
               <div className="flex space-x-3">
                 <button
                   onClick={clearCart}
@@ -178,7 +283,7 @@ const Cart = ({ isOpen, onClose }) => {
                   Clear Cart
                 </button>
                 <button
-                  onClick={onClose}
+                  onClick={handleCloseCart}
                   className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-md font-medium hover:bg-gray-200 transition-colors"
                 >
                   Continue Shopping
@@ -193,12 +298,13 @@ const Cart = ({ isOpen, onClose }) => {
       {showCheckout && (
         <CheckoutModal
           items={items}
-          totalPrice={getTotalPrice()}
+          totalPrice={grandTotal}
           onClose={handleCloseCheckout}
           onOrderComplete={() => {
             clearCart();
             setShowCheckout(false);
             onClose();
+            resetCoupon();
           }}
         />
       )}
@@ -219,12 +325,16 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
   const [orderId, setOrderId] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    if (fieldErrors[e.target.name]) {
+      setFieldErrors(prev => ({ ...prev, [e.target.name]: undefined }));
+    }
   };
 
   const generateOrderId = () => {
@@ -235,6 +345,28 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Validate inputs
+    const errs = {};
+    if (!formData.customerName || formData.customerName.trim().length < 2) {
+      errs.customerName = 'Full name must be at least 2 characters';
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(formData.customerEmail)) {
+      errs.customerEmail = 'Enter a valid email address';
+    }
+    const phoneDigits = (formData.customerPhone || '').replace(/\D/g, '');
+    if (phoneDigits.length !== 10) {
+      errs.customerPhone = 'Phone number must be exactly 10 digits';
+    }
+    if (!formData.deliveryAddress || formData.deliveryAddress.trim().length < 5) {
+      errs.deliveryAddress = 'Address must be at least 5 characters';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -246,7 +378,7 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
           itemName: item.Item_Name,
           itemPrice: item.Price,
           quantity: item.quantity,
-          itemTotal: item.Price * item.quantity
+          itemTotal: (Number.parseFloat(item.Price) || 0) * item.quantity
         })),
         totalAmount: totalPrice
       };
@@ -311,13 +443,32 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
               {items.map((item) => (
                 <div key={item._id} className="flex justify-between text-sm">
                   <span>{item.Item_Name} x {item.quantity}</span>
-                  <span>Rs. {(item.Price * item.quantity).toFixed(2)}</span>
+                  <span>Rs. {(((Number.parseFloat(item.Price) || 0) * item.quantity)).toFixed(2)}</span>
                 </div>
               ))}
-              <div className="border-t pt-2 flex justify-between font-semibold">
-                <span>Total:</span>
-                <span>Rs. {totalPrice.toFixed(2)}</span>
-              </div>
+              {(() => {
+                const subtotalModal = items.reduce((t, it) => t + ((Number.parseFloat(it.Price) || 0) * it.quantity), 0);
+                const discountModal = Math.max(0, subtotalModal - totalPrice);
+                const discountPct = subtotalModal > 0 ? Math.round((discountModal / subtotalModal) * 100) : 0;
+                return (
+                  <>
+                    <div className="border-t pt-2 flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="text-gray-900">Rs. {subtotalModal.toFixed(2)}</span>
+                    </div>
+                    {discountModal > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Discount{discountPct ? ` (${discountPct}%)` : ''}</span>
+                        <span className="text-green-700">- Rs. {discountModal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 border-t font-semibold">
+                      <span>Total</span>
+                      <span>Rs. {totalPrice.toFixed(2)}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -335,6 +486,7 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
               />
+              {fieldErrors.customerName && <p className="text-xs text-red-600 mt-1">{fieldErrors.customerName}</p>}
             </div>
 
             <div>
@@ -349,6 +501,7 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
               />
+              {fieldErrors.customerEmail && <p className="text-xs text-red-600 mt-1">{fieldErrors.customerEmail}</p>}
             </div>
 
             <div>
@@ -363,6 +516,7 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
               />
+              {fieldErrors.customerPhone && <p className="text-xs text-red-600 mt-1">{fieldErrors.customerPhone}</p>}
             </div>
 
             <div>
@@ -377,6 +531,7 @@ const CheckoutModal = ({ items, totalPrice, onClose, onOrderComplete }) => {
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
               />
+              {fieldErrors.deliveryAddress && <p className="text-xs text-red-600 mt-1">{fieldErrors.deliveryAddress}</p>}
             </div>
 
             <div>

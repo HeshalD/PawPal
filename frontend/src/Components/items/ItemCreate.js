@@ -19,10 +19,14 @@ function ItemCreate() {
     Price: "",
   });
   const [image, setImage] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleImageChange = (e) => {
@@ -35,39 +39,53 @@ function ItemCreate() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!form.Item_Name || form.Item_Name.trim().length > 5) {
+    // Item name: at least 2 characters
+    if (!form.Item_Name || form.Item_Name.trim().length < 2) {
       newErrors.Item_Name = "Item name must be at least 2 characters";
     }
 
+    // Category required
     if (!form.Category) {
       newErrors.Category = "Please select a category";
     }
 
+    // Unit of measure required
     if (!form.Unit_of_Measure || form.Unit_of_Measure.trim() === "") {
       newErrors.Unit_of_Measure = "Unit of measure is required";
     }
 
-    if (!form.Quantity || isNaN(form.Quantity) || parseInt(form.Quantity) < 0) {
-      newErrors.Quantity = "Quantity must be a non-negative number";
+    // Quantity must be a non-negative integer
+    const qty = Number(form.Quantity);
+    if (!Number.isFinite(qty) || qty < 0 || !Number.isInteger(qty)) {
+      newErrors.Quantity = "Quantity must be a non-negative integer";
     }
 
-    if (!form.Price || isNaN(form.Price) || parseFloat(form.Price) <= 0) {
+    // Price must be greater than 0
+    const price = Number(form.Price);
+    if (!Number.isFinite(price) || price <= 0) {
       newErrors.Price = "Price must be greater than 0";
     }
 
+    // Image type validation
     if (image && !image.type.startsWith("image/")) {
       newErrors.Image = "Selected file must be an image";
     }
 
-   
+    return newErrors;
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Prevent multiple submissions
     if (saving) return;
+    
+    // Validate before submit
+    const errs = validateForm();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
     
     setSaving(true);
     setError("");
@@ -134,6 +152,9 @@ function ItemCreate() {
                     required
                     disabled={saving}
                   />
+                  {fieldErrors.Item_Name && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Item_Name}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -154,6 +175,9 @@ function ItemCreate() {
                     <option value="Accessories">Accessories</option>
                     <option value="Other">Other</option>
                   </select>
+                  {fieldErrors.Category && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Category}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -185,6 +209,9 @@ function ItemCreate() {
                     required
                     disabled={saving}
                   />
+                  {fieldErrors.Unit_of_Measure && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Unit_of_Measure}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -203,6 +230,9 @@ function ItemCreate() {
                     required
                     disabled={saving}
                   />
+                  {fieldErrors.Quantity && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Quantity}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -221,6 +251,9 @@ function ItemCreate() {
                     required
                     disabled={saving}
                   />
+                  {fieldErrors.Price && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Price}</p>
+                  )}
                 </div>
 
                 <div>
@@ -237,6 +270,9 @@ function ItemCreate() {
                   />
                   {image && (
                     <p className="text-sm text-gray-600 mt-1">Selected: {image.name}</p>
+                  )}
+                  {fieldErrors.Image && (
+                    <p className="text-xs text-red-600 mt-1">{fieldErrors.Image}</p>
                   )}
                 </div>
 

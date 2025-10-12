@@ -19,6 +19,13 @@ function Item({ item, onDelete }) {
     }
   }, [Quantity]);
 
+  const displayId = useMemo(() => {
+    const cat = (Category || "GEN").toString().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "GEN";
+    const nm = (Item_Name || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+    const suffix = (_id || "").toString().slice(-4).toUpperCase();
+    return `PP-${cat}${nm ? `-${nm}` : ""}-${suffix || "XXXX"}`;
+  }, [_id, Category, Item_Name]);
+
   const handleDeleteClick = () => {
     const ok = window.confirm("Are you sure you want to delete this item?");
     if (!ok) return;
@@ -43,7 +50,7 @@ function Item({ item, onDelete }) {
             </div>
           </div>
         </td>
-        <td className="py-3 px-6 align-middle whitespace-nowrap text-[#333333]">#{_id?.slice(-6)}</td>
+        <td className="py-3 px-6 align-middle whitespace-nowrap text-[#333333]">{displayId}</td>
         <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Price !== undefined ? `Rs. ${parseFloat(Price).toFixed(2)}` : '-'}</td>
         <td className="py-3 px-6 align-middle text-[#0f172a] whitespace-nowrap">{Quantity ?? 0}</td>
         <td className="py-3 px-6 align-middle text-[#334155] whitespace-nowrap">{Unit_of_Measure}</td>

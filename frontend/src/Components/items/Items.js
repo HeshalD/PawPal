@@ -14,6 +14,18 @@ const fetchHandler = async () => {
   return await axios.get(URL).then((res) => res.data);
 };
 
+// Build a human-friendly ID consistent with list view
+const makeDisplayId = (it) => {
+  try {
+    const cat = (it?.Category || "GEN").toString().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3) || "GEN";
+    const nm = (it?.Item_Name || "").toString().toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 3);
+    const suffix = (it?._id || "").toString().slice(-4).toUpperCase();
+    return `PP-${cat}${nm ? `-${nm}` : ""}-${suffix || "XXXX"}`;
+  } catch {
+    return it?._id || "-";
+  }
+};
+
 function Items() {
   const [items, setItem] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,6 +37,9 @@ function Items() {
   const [collapsed, setCollapsed] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
   const LOW_STOCK_THRESHOLD = 30;
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponForm, setCouponForm] = useState({ code: "", discountPercent: "" });
+  const [coupons, setCoupons] = useState([]);
   const navigate = useNavigate();
 
   // Fetch items on component mount
@@ -64,7 +79,7 @@ function Items() {
       const doc = new jsPDF({ orientation: "landscape" });
       const columns = ["ID", "Name", "Image", "Price", "Stock", "Unit", "Category"];
       const rows = items.map((it) => [
-        it._id || "-",
+        makeDisplayId(it) || "-",
         it.Item_Name || "-",
         it.image ? `http://localhost:5000${it.image}` : "No Image",
         it.Price !== undefined ? `Rs. ${parseFloat(it.Price).toFixed(2)}` : "-",
@@ -124,6 +139,64 @@ function Items() {
     setCurrentPage(1);
   }, [filteredItems.length, items.length]);
 
+  const fetchCoupons = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/coupons');
+      if (!res.ok) throw new Error('Failed to fetch coupons');
+      const data = await res.json();
+      const backendCoupons = Array.isArray(data.coupons) ? data.coupons : (Array.isArray(data) ? data : []);
+      // merge with local coupons
+      const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+      const merged = [...backendCoupons, ...local.filter(lc => !backendCoupons.find(bc => (bc.code||'').toUpperCase() === (lc.code||'').toUpperCase()))];
+      setCoupons(merged);
+    } catch (err) {
+      console.error('Coupons fetch error:', err);
+      const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+      setCoupons(local);
+    }
+  };
+
+  const deleteCoupon = async (coupon) => {
+    const code = (coupon?.code || '').toUpperCase();
+    if (!code) return;
+    const confirmed = window.confirm(`Remove coupon ${code}?`);
+    if (!confirmed) return;
+    try {
+      if (coupon?._id) {
+        const res = await fetch(`http://localhost:5000/coupons/${coupon._id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          // try by code if server supports it
+          await fetch('http://localhost:5000/coupons', { method: 'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
+        }
+      } else {
+        await fetch('http://localhost:5000/coupons', { method: 'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code }) });
+      }
+      // Always remove from localStorage too to avoid merge re-adding it
+      try {
+        const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+        const updated = local.filter(c => (c.code || '').toUpperCase() !== code);
+        localStorage.setItem('pp_coupons', JSON.stringify(updated));
+      } catch {}
+      await fetchCoupons();
+    } catch (err) {
+      // Fallback: remove from localStorage
+      try {
+        const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+        const updated = local.filter(c => (c.code || '').toUpperCase() !== code);
+        localStorage.setItem('pp_coupons', JSON.stringify(updated));
+        await fetchCoupons();
+      } catch(e) {
+        console.error('Failed to remove coupon locally', e);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (showCouponModal) {
+      fetchCoupons();
+    }
+  }, [showCouponModal]);
+
   const sortedItems = useMemo(() => {
     const base = [...filteredItems];
     if (sortMode === "category-asc" || sortMode === "category-desc") {
@@ -160,6 +233,12 @@ function Items() {
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-3xl font-bold text-[#333333]">Products</h1>
               <div className="relative flex items-center gap-3">
+                <button 
+                  onClick={() => setShowCouponModal(true)}
+                  className="bg-white border border-[#E6F4F3] text-[#333333] font-medium px-4 py-2 rounded-md shadow-sm hover:bg-[#E69AAE] transition-colors"
+                >
+                  Manage Coupons
+                </button>
                 <Link to="/orders">
                   <button
                     onClick={() => navigate('/orders')} 
@@ -279,7 +358,105 @@ function Items() {
               </div>
             </div>
 
-            
+            {showCouponModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-black/40" onClick={() => setShowCouponModal(false)} />
+                <div className="relative bg-white rounded-2xl shadow-2xl border border-[#E6F4F3] w-full max-w-lg">
+                  <div className="px-5 py-4 border-b border-[#E6F4F3] flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-[#0f172a]">Manage Coupons</h3>
+                    <button onClick={() => setShowCouponModal(false)} className="p-1 rounded-md hover:bg-[#F5F5F5]">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-[#64748b]"><path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.714 4.715a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.715a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/></svg>
+                    </button>
+                  </div>
+                  <div className="p-5 space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-[#475569] mb-1">Coupon Code</label>
+                        <input
+                          value={couponForm.code}
+                          onChange={(e)=>setCouponForm((f)=>({...f, code: e.target.value.toUpperCase()}))}
+                          placeholder="PAWPAL10"
+                          className="w-full px-3 py-2 border border-[#E6F4F3] rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-[#475569] mb-1">Discount (%)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="90"
+                          value={couponForm.discountPercent}
+                          onChange={(e)=>setCouponForm((f)=>({...f, discountPercent: e.target.value}))}
+                          placeholder="10"
+                          className="w-full px-3 py-2 border border-[#E6F4F3] rounded-md focus:ring-2 focus:ring-[#6638E6] focus:border-transparent outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button onClick={()=>setShowCouponModal(false)} className="px-4 py-2 rounded-md border border-[#E6F4F3]">Close</button>
+                      <button
+                        onClick={async()=>{
+                          const payload={ code:(couponForm.code||'').trim().toUpperCase(), discountPercent: Number(couponForm.discountPercent)||0 };
+                          if(!payload.code || !payload.discountPercent){ return; }
+                          try{
+                            const res = await fetch('http://localhost:5000/coupons',{ method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ...payload, discount: payload.discountPercent })});
+                            if(!res.ok){ const j=await res.json().catch(()=>({message:'Failed'})); throw new Error(j.message||'Failed to create coupon'); }
+                            await fetchCoupons();
+                            setCouponForm({code:'', discountPercent:''});
+                            setShowCouponModal(false);
+                          }catch(err){ 
+                            console.error('Backend create failed, saving locally:', err);
+                            // fallback to localStorage
+                            try {
+                              const local = JSON.parse(localStorage.getItem('pp_coupons') || '[]');
+                              const exists = local.find(c => (c.code||'').toUpperCase() === payload.code);
+                              const updated = exists 
+                                ? local.map(c => ((c.code||'').toUpperCase()===payload.code? { ...c, discountPercent: payload.discountPercent }: c))
+                                : [...local, { code: payload.code, discountPercent: payload.discountPercent }];
+                              localStorage.setItem('pp_coupons', JSON.stringify(updated));
+                              await fetchCoupons();
+                              setCouponForm({code:'', discountPercent:''});
+                              setShowCouponModal(false);
+                            } catch (e) {
+                              console.error('Failed to save coupon locally');
+                            }
+                          }
+                        }}
+                        className="px-4 py-2 rounded-md text-white bg-[#6638E6] hover:bg-[#5a2fce]"
+                      >Create</button>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-[#0f172a] mb-2">Existing Coupons</div>
+                      <div className="max-h-48 overflow-auto border border-[#E6F4F3] rounded-md">
+                        {coupons.length>0 ? (
+                          <ul className="divide-y divide-[#E6F4F3]">
+                            {coupons.map((c)=>(
+                              <li key={c._id||c.code} className="px-3 py-2 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium text-[#0f172a]">{c.code}</span>
+                                  <span className="text-[#64748b] text-sm">{c.discountPercent}%</span>
+                                </div>
+                                <button
+                                  onClick={() => deleteCoupon(c)}
+                                  title="Remove coupon"
+                                  className="p-1.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-1 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7"/>
+                                  </svg>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <div className="px-3 py-4 text-sm text-[#64748b]">No coupons yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="overflow-x-auto bg-white shadow-lg rounded-lg border border-[#E6F4F3]">
               <div className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] text-white px-6 py-3 rounded-t-lg">

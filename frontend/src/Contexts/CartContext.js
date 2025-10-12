@@ -123,11 +123,15 @@ export const CartProvider = ({ children }) => {
   };
 
   const getTotalPrice = () => {
-    return state.items.reduce((total, item) => total + (item.Price * item.quantity), 0);
+    return state.items.reduce((total, item) => {
+      const price = Number.parseFloat(item.Price) || 0;
+      return total + (price * item.quantity);
+    }, 0);
   };
 
   const getItemTotal = (item) => {
-    return item.Price * item.quantity;
+    const price = Number.parseFloat(item.Price) || 0;
+    return price * item.quantity;
   };
 
   const isInCart = (itemId) => {

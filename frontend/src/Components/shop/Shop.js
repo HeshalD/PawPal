@@ -319,7 +319,7 @@ function Shop() {
 
                     <div className="flex items-center justify-between text-sm text-[#64706f] mb-4">
                       <span>Stock: {item.Quantity || 0}</span>
-                      <span>ID: {item._id?.slice(-6) || "N/A"}</span>
+                      <span></span>
                     </div>
 
                     <button

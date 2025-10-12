@@ -27,83 +27,127 @@ function OrderConfirmationModal({ order, isOpen, onClose }) {
 
   const downloadOrderPDF = () => {
     try {
-      const doc = new jsPDF();
-      
-      // Set up the document
-      doc.setFontSize(20);
-      doc.text("PawPal - Order Confirmation", 20, 20);
-      
-      // Add order details
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const M = 40; // margin
+      let y = M;
+
+      // Title
+      doc.setFontSize(18);
+      doc.text('PawPal - Order Summary', M, y);
+      y += 10;
+      doc.setLineWidth(0.5);
+      doc.line(M, y, pageW - M, y);
+      y += 16;
+
+      // Order meta
       doc.setFontSize(12);
-      const orderId = order.orderId || order._id || 'N/A';
-      doc.text(`Order ID: ${orderId}`, 20, 40);
-      doc.text(`Order Date: ${new Date(order.orderDate || new Date()).toLocaleDateString()}`, 20, 50);
-      doc.text(`Status: ${(order.status || 'pending')?.charAt(0).toUpperCase() + (order.status || 'pending')?.slice(1)}`, 20, 60);
-      
-      // Customer information
-      doc.setFontSize(14);
-      doc.text("Customer Information", 20, 80);
+      const orderId = (order.orderId || order._id || 'N/A').toString();
+      doc.text(`Order ID: ${orderId}`, M, y); y += 16;
+      doc.text(`Order Date: ${new Date(order.orderDate || new Date()).toLocaleString()}`, M, y); y += 16;
+      const status = (order.status || 'pending');
+      doc.text(`Status: ${status.charAt(0).toUpperCase()}${status.slice(1)}`, M, y); y += 16;
+      doc.text(`Generated On: ${new Date().toLocaleString()}`, M, y); y += 24;
+
+      // Customer Information
+      doc.setFontSize(13);
+      doc.text('Customer Information', M, y); y += 8;
+      doc.line(M, y, pageW - M, y); y += 14;
       doc.setFontSize(12);
-      doc.text(`Name: ${order.customerName || 'N/A'}`, 20, 95);
-      doc.text(`Email: ${order.customerEmail || 'N/A'}`, 20, 105);
-      doc.text(`Phone: ${order.customerPhone || 'N/A'}`, 20, 115);
-      
-      // Handle long addresses by splitting them
-      const address = order.deliveryAddress || 'N/A';
-      const addressLines = doc.splitTextToSize(`Address: ${address}`, 170);
-      doc.text(addressLines, 20, 125);
-      
-      // Items information
-      doc.setFontSize(14);
-      doc.text("Order Items", 20, 145 + (addressLines.length - 1) * 5);
+      doc.text(`Name: ${order.customerName || 'N/A'}`, M, y); y += 16;
+      doc.text(`Email: ${order.customerEmail || 'N/A'}`, M, y); y += 16;
+      doc.text(`Phone: ${order.customerPhone || 'N/A'}`, M, y); y += 16;
+      const addrLines = doc.splitTextToSize(order.deliveryAddress || 'N/A', pageW - M*2 - 60);
+      doc.text('Address:', M, y);
+      doc.text(addrLines, M + 60, y);
+      y += (addrLines.length * 12) + 16;
+
+      // Items Table (simple)
+      doc.setFontSize(13);
+      doc.text('Items', M, y); y += 8;
+      doc.line(M, y, pageW - M, y); y += 12;
+
+      // Table header
+      const colX = { name: M, qty: pageW - M - 220, unit: pageW - M - 140, total: pageW - M - 60 };
       doc.setFontSize(12);
-      
-      let yPosition = 160 + (addressLines.length - 1) * 5;
-      
-      // Handle both single item and multiple items
-      if (order.items && Array.isArray(order.items)) {
-        // Multiple items (from cart)
-        order.items.forEach((item, index) => {
-          if (yPosition > 250) {
-            doc.addPage();
-            yPosition = 20;
-          }
-          doc.text(`${index + 1}. ${item.itemName || 'N/A'}`, 20, yPosition);
-          doc.text(`   Quantity: ${item.quantity || 0}`, 30, yPosition + 8);
-          doc.text(`   Price: Rs. ${parseFloat(item.itemPrice || 0).toFixed(2)} each`, 30, yPosition + 16);
-          doc.text(`   Total: Rs. ${parseFloat(item.itemTotal || 0).toFixed(2)}`, 30, yPosition + 24);
-          yPosition += 35;
-        });
-      } else {
-        // Single item (from individual order)
-        if (yPosition > 250) {
+      doc.text('Item', colX.name, y);
+      doc.text('Qty', colX.qty, y, { align: 'right' });
+      doc.text('Unit', colX.unit, y, { align: 'right' });
+      doc.text('Total', colX.total, y, { align: 'right' });
+      y += 8; doc.line(M, y, pageW - M, y); y += 12;
+
+      // Rows
+      const items = Array.isArray(order.items)
+        ? order.items
+        : [{ itemName: order.itemName, itemPrice: order.itemPrice, quantity: order.quantity, itemTotal: order.totalAmount }];
+
+      const ensureSpace = (rowHeight = 18) => {
+        if (y + rowHeight > pageH - M - 120) { // leave space for summary/footer
           doc.addPage();
-          yPosition = 20;
+          y = M;
         }
-        doc.text(`1. ${order.itemName || 'N/A'}`, 20, yPosition);
-        doc.text(`   Quantity: ${order.quantity || 0}`, 30, yPosition + 8);
-        doc.text(`   Price: Rs. ${parseFloat(order.itemPrice || 0).toFixed(2)} each`, 30, yPosition + 16);
-        doc.text(`   Total: Rs. ${parseFloat(order.totalAmount || 0).toFixed(2)}`, 30, yPosition + 24);
-        yPosition += 35;
+      };
+
+      items.forEach((it) => {
+        ensureSpace();
+        const name = (it.itemName || '-').toString();
+        const qty = parseInt(it.quantity || 0, 10) || 0;
+        const unit = Number.parseFloat(it.itemPrice) || 0;
+        const lineTotal = Number.parseFloat(it.itemTotal) || (unit * qty);
+        const nameLines = doc.splitTextToSize(name, colX.qty - colX.name - 10);
+        // Draw first line
+        doc.text(nameLines, colX.name, y);
+        doc.text(String(qty), colX.qty, y, { align: 'right' });
+        doc.text(`Rs. ${unit.toFixed(2)}`, colX.unit, y, { align: 'right' });
+        doc.text(`Rs. ${lineTotal.toFixed(2)}`, colX.total, y, { align: 'right' });
+        // Advance by lines
+        y += (nameLines.length * 12) + 6;
+        doc.setDrawColor(220);
+        doc.line(M, y, pageW - M, y);
+        doc.setDrawColor(0);
+        y += 6;
+      });
+
+      // Summary (right aligned)
+      const subtotal = items.reduce((t, it) => t + ((Number.parseFloat(it.itemPrice) || 0) * (parseInt(it.quantity || 0, 10) || 0)), 0);
+      const totalAmount = Number.parseFloat(order.totalAmount || 0) || 0;
+      const discount = Math.max(0, subtotal - totalAmount);
+      const labelX = pageW - M - 180;
+      const valueX = pageW - M;
+      y += 10;
+      doc.setFontSize(12);
+      doc.text('Subtotal', labelX, y, { align: 'right' });
+      doc.text(`Rs. ${subtotal.toFixed(2)}`, valueX, y, { align: 'right' });
+      y += 16;
+      if (discount > 0) {
+        doc.text('Discount', labelX, y, { align: 'right' });
+        doc.text(`- Rs. ${discount.toFixed(2)}`, valueX, y, { align: 'right' });
+        y += 16;
       }
-      
-      // Total amount
-      doc.setFontSize(14);
-      doc.text(`Total Amount: Rs. ${parseFloat(order.totalAmount || 0).toFixed(2)}`, 20, yPosition + 10);
-      
-      // Notes if any
+      doc.setLineWidth(0.5);
+      doc.line(labelX - 120, y, valueX, y); y += 12;
+      doc.setFontSize(13);
+      doc.text('Total', labelX, y, { align: 'right' });
+      doc.text(`Rs. ${totalAmount.toFixed(2)}`, valueX, y, { align: 'right' });
+      y += 24;
+
+      // Notes
       if (order.notes) {
         doc.setFontSize(12);
-        const notesLines = doc.splitTextToSize(`Notes: ${order.notes}`, 170);
-        doc.text(notesLines, 20, yPosition + 30);
+        doc.text('Notes', M, y); y += 8;
+        doc.line(M, y, pageW - M, y); y += 12;
+        const notesLines = doc.splitTextToSize(order.notes, pageW - M*2);
+        doc.text(notesLines, M, y);
+        y += (notesLines.length * 12) + 8;
       }
-      
+
       // Footer
       doc.setFontSize(10);
-      doc.text("Thank you for choosing PawPal!", 20, doc.internal.pageSize.height - 20);
-      doc.text("For any queries, contact us at support@pawpal.com", 20, doc.internal.pageSize.height - 10);
-      
-      // Save the PDF
+      doc.text('Thank you for choosing PawPal!', M, pageH - 28);
+      doc.text('For any queries, contact us at support@pawpal.com', M, pageH - 14);
+
       const fileName = `PawPal_Order_${orderId.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       doc.save(fileName);
     } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Nav from '../Components/Nav/NavAdmin';
+import logo from '../Components/Nav/logo.jpg';
 
 import { 
   Users, 
@@ -280,20 +281,60 @@ function AdminDashboard() {
     };
   };
 
-  const downloadPdf = () => {
+  // PDF helpers
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const date = new Date();
+    const dateStr = date.toLocaleDateString();
+    const timeStr = date.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 40, 30);
+    doc.text(`Date: ${dateStr}`, pageWidth - 40, 30, { align: 'right' });
+
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 70; // px in pt context approx
+      const imgH = 70;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 40, imgW, imgH);
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 40 + imgH + 20, { align: 'center' });
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.line(40, 40 + imgH + 28, pageWidth - 40, 40 + imgH + 28);
+      return 40 + imgH + 40; // y start after header
+    } catch {
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 60, { align: 'center' });
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(1);
+      doc.line(40, 70, pageWidth - 40, 70);
+      return 85;
+    }
+  };
+
+  const downloadPdf = async () => {
     const doc = new jsPDF('p', 'pt');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(60, 60, 60);
-    doc.text('PawPal Admin Dashboard Report', pageWidth / 2, 40, { align: 'center' });
-
-    // Meta
-    doc.setFontSize(10);
-    doc.setTextColor(110);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 60);
+    const startY = await addPdfHeader(doc, 'PawPal Admin Dashboard Report');
 
     // Summary (key stats)
     const s = dashboardData.stats || {};
@@ -328,7 +369,7 @@ function AdminDashboard() {
     ];
 
     autoTable(doc, {
-      startY: 80,
+      startY,
       head: [['Metric', 'Value']],
       body: summary,
       theme: 'grid',

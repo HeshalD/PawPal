@@ -7,6 +7,7 @@ import Nav from '../Components/Nav/Nav';
 import HealthcareChatbot from '../Components/HealthcareChatbot/HealthcareChatbot';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from '../Components/Nav/logo.jpg';
 
 export default function AppointmentDashboard() {
   const [collapsed, setCollapsed] = useState(false);
@@ -124,26 +125,70 @@ export default function AppointmentDashboard() {
     navigate(`/appointments/${id}/edit`);
   };
 
+  // PDF helpers
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 40;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, margin, 28);
+    doc.text(`Date: ${dateStr}`, pageWidth - margin, 28, { align: 'right' });
+
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 70; const imgH = 70;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 36, imgW, imgH);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 36 + imgH + 16, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(1);
+      doc.line(margin, 36 + imgH + 22, pageWidth - margin, 36 + imgH + 22);
+      return 36 + imgH + 34;
+    } catch {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 50, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(1);
+      doc.line(margin, 60, pageWidth - margin, 60);
+      return 74;
+    }
+  };
+
   // Download PDF report reflecting the UI details
-  const downloadReport = () => {
+  const downloadReport = async () => {
     try {
       const doc = new jsPDF('p', 'pt');
-
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
 
-      // Title
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      const title = 'My Appointments Report';
-      const titleWidth = doc.getTextWidth(title);
-      doc.text(title, (pageWidth - titleWidth) / 2, 50);
+      const startY = await addPdfHeader(doc, 'My Appointments Report');
 
-      // Meta
+      // Meta summary line
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.text(`Generated: ${new Date().toLocaleString()}`, margin, 80);
-      doc.text(`Total: ${stats.total} | Upcoming: ${stats.upcoming} | Today: ${stats.today} | Past: ${stats.past}`, margin, 98);
+      doc.text(`Total: ${stats.total} | Upcoming: ${stats.upcoming} | Today: ${stats.today} | Past: ${stats.past}`, margin, startY);
 
       // Table data (removed Doctor column)
       const rows = filteredAppointments.map((apt) => {
@@ -161,17 +206,16 @@ export default function AppointmentDashboard() {
       autoTable(doc, {
         head: [['Pet Name', 'Owner Name', 'Date', 'Time Slot', 'Status']],
         body: rows,
-        startY: 120,
+        startY: startY + 16,
         styles: { fontSize: 10, cellPadding: 6 },
-        headStyles: { fillColor: [124, 58, 237] }, // purple header
+        headStyles: { fillColor: [124, 58, 237] },
         alternateRowStyles: { fillColor: [245, 243, 255] },
         columnStyles: {
-          // Fit to page width (A4 portrait, margins 40 -> 515pt usable): 150+150+100+65+50 = 515
-          0: { cellWidth: 150 }, // Pet Name
-          1: { cellWidth: 150 }, // Owner Name
-          2: { cellWidth: 100 }, // Date
-          3: { cellWidth: 65 },  // Time Slot
-          4: { cellWidth: 50 },  // Status
+          0: { cellWidth: 150 },
+          1: { cellWidth: 150 },
+          2: { cellWidth: 100 },
+          3: { cellWidth: 65 },
+          4: { cellWidth: 50 },
         },
         margin: { left: margin, right: margin },
       });

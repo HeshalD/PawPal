@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import Nav from "../Nav/NavAdmin";
 import { Search, Edit3, Trash2, Download, Eye, Save, X, FileText, Users, Phone, Mail, MapPin, DollarSign, Calendar, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import logo from '../Nav/logo.jpg';
 
 function AdoptionDetailsDisplay() {
   const [collapsed, setCollapsed] = useState(false);
@@ -181,39 +184,141 @@ function AdoptionDetailsDisplay() {
     }
   };
 
-  const downloadPdfReport = () => {
-    alert('PDF report generation would happen here in production!');
+  const downloadPdfReport = async () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // helpers
+    const toDataURL = (url) => new Promise((resolve, reject) => {
+      fetch(url)
+        .then(res => res.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+        .catch(reject);
+    });
+
+    const addPdfHeader = async (doc, title) => {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString();
+      const timeStr = now.toLocaleTimeString();
+      doc.setFontSize(10);
+      doc.setTextColor(0);
+      doc.text(`Time: ${timeStr}`, 14, 14);
+      doc.text(`Date: ${dateStr}`, pageWidth - 14, 14, { align: 'right' });
+      try {
+        const imgData = await toDataURL(logo);
+        const imgW = 28, imgH = 28;
+        doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 16, imgW, imgH);
+        doc.setFontSize(16);
+        doc.setTextColor(0);
+        doc.text(title, pageWidth / 2, 16 + imgH + 8, { align: 'center' });
+        doc.setDrawColor(0,0,0);
+        doc.setLineWidth(0.5);
+        doc.line(14, 16 + imgH + 12, pageWidth - 14, 16 + imgH + 12);
+        return 16 + imgH + 18;
+      } catch {
+        doc.setFontSize(16);
+        doc.setTextColor(0);
+        doc.text(title, pageWidth / 2, 24, { align: 'center' });
+        doc.setDrawColor(0,0,0);
+        doc.setLineWidth(0.5);
+        doc.line(14, 30, pageWidth - 14, 30);
+        return 36;
+      }
+    };
+
+    const startY = await addPdfHeader(doc, 'PawPal Adoption Applications Report');
+
+    // Meta table
+    autoTable(doc, {
+      startY,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Applications', String(filteredAdoptions.length)],
+        ['Pending', String(adoption.filter(a => a.status === 'pending').length)],
+        ['Approved', String(adoption.filter(a => a.status === 'approved').length)],
+        ['Rejected', String(adoption.filter(a => a.status === 'rejected').length)],
+        ['Completed', String(adoption.filter(a => a.status === 'completed').length)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [102, 56, 230] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 }
+    });
+
+    const tableStart = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 8 : startY + 8;
+
+    // Applications table
+    const rows = filteredAdoptions.map((item, idx) => [
+      String(idx + 1),
+      item.fullName || '-',
+      item.email || '-',
+      item.phone || '-',
+      Array.isArray(item.selectedPets) ? item.selectedPets.join(', ') : '-',
+      item.status || '-',
+      item.submittedAt ? new Date(item.submittedAt).toLocaleDateString() : '-'
+    ]);
+
+    autoTable(doc, {
+      startY: tableStart,
+      head: [['#', 'Name', 'Email', 'Phone', 'Selected Pets', 'Status', 'Submitted']],
+      body: rows,
+      theme: 'striped',
+      headStyles: { fillColor: [230, 115, 143] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Footer page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+
+    doc.save(`adoption-applications-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
     <div className="min-h-screen bg-white flex">
       <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
       <div className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border-2" style={{borderColor: '#E69AAE'}}>
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-                <Users style={{color: '#6638E6'}} size={32} />
-                Adoption Management Dashboard
-              </h1>
-              <p className="text-gray-600">Manage and view pet adoption applications</p>
+        <div className="min-h-screen bg-white">
+          <div className="container mx-auto px-4 py-8">
+            <div className="bg-white rounded-2xl shadow-xl p-6 mb-8 border-2" style={{borderColor: '#E69AAE'}}>
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                    <Users style={{color: '#6638E6'}} size={32} />
+                    Adoption Management Dashboard
+                  </h1>
+                  <p className="text-gray-600">Manage and view pet adoption applications</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={downloadPdfReport}
+                    className="text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
+                    style={{backgroundColor: '#6638E6'}}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5527CC'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6638E6'}
+                  >
+                    <Download size={20} />
+                    Download PDF Report
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={downloadPdfReport}
-                className="text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 transition-all duration-200 shadow-lg hover:shadow-xl"
-                style={{backgroundColor: '#6638E6'}}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5527CC'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#6638E6'}
-              >
-                <Download size={20} />
-                Download PDF Report
-              </button>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 mb-8">
           <div className="lg:col-span-3">
@@ -664,8 +769,8 @@ function AdoptionDetailsDisplay() {
         </div>
       </div>
     </div>
-      </div>
-    </div>  
+    </div>
+    </div>
   );
 }
 

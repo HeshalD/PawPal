@@ -3,6 +3,7 @@ import { DonationsAPI } from '../../services/api';
 import Nav from '../Nav/NavAdmin';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from '../Nav/logo.jpg';
 
 const DonationManager = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -14,15 +15,15 @@ const DonationManager = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [filteredDonations, setFilteredDonations] = useState([]);
   
-  // ✅ Pagination states
+  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
 
-  // ✅ Auto-refresh toggle
+  // Auto-refresh toggle
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // ✅ Auto-refresh every 10 seconds (only if enabled)
+  // Auto-refresh every 10 seconds (only if enabled)
   useEffect(() => {
     fetchDonations();
     
@@ -87,7 +88,7 @@ const DonationManager = () => {
       const allResponse = await DonationsAPI.getAll();
       let newDonations = allResponse.data.donations || [];
       
-      // ✅ Sort by newest first (most recent donations at the top)
+      // Sort by newest first (most recent donations at the top)
       newDonations = newDonations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       
       // If it's an auto-refresh and we have new data, go to page 1
@@ -177,7 +178,7 @@ const DonationManager = () => {
 
   const summary = calculateSummary();
 
-  // ✅ Pagination calculations
+  // Pagination calculations
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
   const currentRecords = filteredDonations.slice(indexOfFirstRecord, indexOfLastRecord);
@@ -191,23 +192,77 @@ const DonationManager = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  const downloadReport = () => {
+  // PDF helpers
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.width;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 14, 14);
+    doc.text(`Date: ${dateStr}`, pageWidth - 14, 14, { align: 'right' });
+
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 28; const imgH = 28;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 16, imgW, imgH);
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 16 + imgH + 8, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 16 + imgH + 12, pageWidth - 14, 16 + imgH + 12);
+      return 16 + imgH + 18;
+    } catch {
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 24, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 30, pageWidth - 14, 30);
+      return 36;
+    }
+  };
+
+  const downloadReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
-    doc.setFontSize(20);
-    doc.setTextColor(147, 51, 234);
-    doc.text('PawPal Donation Report', pageWidth / 2, 20, { align: 'center' });
+    const startAfterHeaderY = await addPdfHeader(doc, 'PawPal Donation Report');
     
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
-    doc.text(`Filter: ${dateFilter === 'all' ? 'All Time' : dateFilter}`, 14, 40);
-    doc.text(`Search: ${searchTerm || 'All'}`, 14, 45);
+    // metadata grid
+    autoTable(doc, {
+      startY: startAfterHeaderY,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Filter', dateFilter === 'all' ? 'All Time' : dateFilter],
+        ['Search', searchTerm || 'All']
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [147, 51, 234] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 }
+    });
     
     doc.setFontSize(14);
     doc.setTextColor(0);
-    doc.text('Summary', 14, 55);
+    const summaryTitleY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 8 : startAfterHeaderY + 8;
+    doc.text('Summary', 14, summaryTitleY);
     
     doc.setFontSize(10);
     const summaryData = [
@@ -220,7 +275,7 @@ const DonationManager = () => {
     ];
     
     autoTable(doc, {
-      startY: 60,
+      startY: summaryTitleY + 5,
       head: [['Metric', 'Value']],
       body: summaryData,
       theme: 'grid',

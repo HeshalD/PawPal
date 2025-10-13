@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, Edit, Trash2, Eye, Calendar, Award } from "lucide-react";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from "../Components/Nav/logo.jpg";
 
 function DisplayPet() {
   const [pets, setPets] = useState([]);
@@ -61,21 +62,65 @@ function DisplayPet() {
     navigate(`/pet-profile/${petId}`);
   };
 
+  // helper to load image as data URL
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  // Add standardized PDF header
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.width;
+    const date = new Date();
+    const dateStr = date.toLocaleDateString();
+    const timeStr = date.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 14, 14);
+    doc.text(`Date: ${dateStr}`, pageWidth - 14, 14, { align: 'right' });
+
+    // Centered logo
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 28; // mm
+      const imgH = 28;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 16, imgW, imgH);
+      // Title under logo
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 16 + imgH + 8, { align: 'center' });
+      // Divider line
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 16 + imgH + 12, pageWidth - 14, 16 + imgH + 12);
+      return 16 + imgH + 18; // startY after header
+    } catch {
+      // Fallback without logo
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 24, { align: 'center' });
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 30, pageWidth - 14, 30);
+      return 36;
+    }
+  };
+
   // Download PDF report of all pets
-  const downloadReport = () => {
+  const downloadReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
 
-    // Title
-    doc.setFontSize(20);
-    doc.setTextColor(147, 51, 234);
-    doc.text('PawPal Pets Report', pageWidth / 2, 20, { align: 'center' });
-
-    // Meta
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
-    doc.text(`Total Pets: ${pets.length}`, 14, 40);
+    const startAfterHeaderY = await addPdfHeader(doc, 'PawPal Pets Report');
 
     // Summary small table
     const healthyCount = pets.filter(p => (p.healthStatus || p.health) === 'Excellent').length;
@@ -83,7 +128,7 @@ function DisplayPet() {
     const unknownCount = pets.length - healthyCount - goodCount;
 
     autoTable(doc, {
-      startY: 45,
+      startY: startAfterHeaderY,
       head: [['Metric', 'Value']],
       body: [
         ['Total Pets', String(pets.length)],
@@ -96,7 +141,7 @@ function DisplayPet() {
       margin: { left: 14, right: 14 }
     });
 
-    const startY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 10 : 60;
+    const startY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 10 : startAfterHeaderY + 10;
 
     // Main pets table
     const rows = pets.map(p => [

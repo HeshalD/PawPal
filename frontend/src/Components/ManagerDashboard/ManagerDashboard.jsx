@@ -3,6 +3,7 @@ import { SponsorsAPI, toImageUrl } from '../../services/api';
 import Nav from '../Nav/NavAdmin';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from '../Nav/logo.jpg';
 
 export default function ManagerDashboard() {
   const [collapsed, setCollapsed] = useState(false);
@@ -180,26 +181,79 @@ export default function ManagerDashboard() {
 
   const summary = calculateSummary();
 
-  const downloadReport = () => {
+  // PDF helpers
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.width;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 14, 14);
+    doc.text(`Date: ${dateStr}`, pageWidth - 14, 14, { align: 'right' });
+
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 28; const imgH = 28;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 16, imgW, imgH);
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 16 + imgH + 8, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 16 + imgH + 12, pageWidth - 14, 16 + imgH + 12);
+      return 16 + imgH + 18;
+    } catch {
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 24, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 30, pageWidth - 14, 30);
+      return 36;
+    }
+  };
+
+  const downloadReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     
     // Header
-    doc.setFontSize(20);
-    doc.setTextColor(147, 51, 234);
-    doc.text('PawPal Sponsor Report', pageWidth / 2, 20, { align: 'center' });
+    const startAfterHeaderY = await addPdfHeader(doc, 'PawPal Sponsor Report');
     
-    // Report metadata
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 35);
-    doc.text(`Filter: ${dateFilter === 'all' ? 'All Time' : dateFilter}`, 14, 40);
-    doc.text(`Search: ${searchTerm || 'All'}`, 14, 45);
+    // Report metadata as small table under divider
+    autoTable(doc, {
+      startY: startAfterHeaderY,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Filter', dateFilter === 'all' ? 'All Time' : dateFilter],
+        ['Search', searchTerm || 'All']
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [147, 51, 234] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 }
+    });
     
     // Summary section
     doc.setFontSize(14);
     doc.setTextColor(0);
-    doc.text('Summary', 14, 55);
+    const summaryTitleY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 8 : startAfterHeaderY + 8;
+    doc.text('Summary', 14, summaryTitleY);
     
     const summaryData = [
       ['Total Sponsors', summary.totalSponsors.toString()],
@@ -213,7 +267,7 @@ export default function ManagerDashboard() {
     ];
     
     autoTable(doc, {
-      startY: 60,
+      startY: summaryTitleY + 5,
       head: [['Metric', 'Value']],
       body: summaryData,
       theme: 'grid',

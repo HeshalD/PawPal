@@ -3,6 +3,8 @@ import axios from "axios";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Nav from "../Nav/NavAdmin";
+import logo from "../Nav/logo.jpg";
+
 import { 
   Search, 
   Edit3, 
@@ -37,24 +39,71 @@ export default function FosterDetailsDisplay() {
   const [statusFilter, setStatusFilter] = useState("all");
 
   // ✅ PDF Download Function
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
       const doc = new jsPDF();
-
       const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-    
-      // Add title
-      doc.setFontSize(20);
-      doc.setTextColor(230, 115, 143);
-      doc.text('PawPal Foster Care Management Report', pageWidth / 2, 20, { align: 'center' });
-      
-      // Add date and stats
-      doc.setFontSize(10);
-      doc.setTextColor(100);
-      doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
-      doc.text(`Total Records: ${filteredFosters.length}`, 14, 34);
-      
+
+      // helpers
+      const toDataURL = (url) => new Promise((resolve, reject) => {
+        fetch(url)
+          .then(res => res.blob())
+          .then(blob => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+          .catch(reject);
+      });
+
+      const addPdfHeader = async (doc, title) => {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+        doc.setFontSize(10);
+        doc.setTextColor(0);
+        doc.text(`Time: ${timeStr}`, 14, 14);
+        doc.text(`Date: ${dateStr}`, pageWidth - 14, 14, { align: 'right' });
+        try {
+          const imgData = await toDataURL(logo);
+          const imgW = 28, imgH = 28;
+          doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 16, imgW, imgH);
+          doc.setFontSize(16);
+          doc.setTextColor(0);
+          doc.text(title, pageWidth / 2, 16 + imgH + 8, { align: 'center' });
+          doc.setDrawColor(0,0,0);
+          doc.setLineWidth(0.5);
+          doc.line(14, 16 + imgH + 12, pageWidth - 14, 16 + imgH + 12);
+          return 16 + imgH + 18;
+        } catch {
+          doc.setFontSize(16);
+          doc.setTextColor(0);
+          doc.text(title, pageWidth / 2, 24, { align: 'center' });
+          doc.setDrawColor(0,0,0);
+          doc.setLineWidth(0.5);
+          doc.line(14, 30, pageWidth - 14, 30);
+          return 36;
+        }
+      };
+
+      const startY = await addPdfHeader(doc, 'PawPal Foster Care Management Report');
+
+      // meta table
+      autoTable(doc, {
+        startY,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Total Records", String(filteredFosters.length)]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [230, 115, 143] },
+        styles: { fontSize: 9 },
+        margin: { left: 14, right: 14 }
+      });
+
+      const tableStart = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 8 : startY + 8;
+
       // Prepare table data
       const tableData = filteredFosters.map(item => [
         item.fullName || '-',
@@ -66,10 +115,9 @@ export default function FosterDetailsDisplay() {
         (item.status || 'pending').toUpperCase(),
         item.experience || '-'
       ]);
-      
-      // Add table using autoTable function
+
       autoTable(doc, {
-        startY: 40,
+        startY: tableStart,
         head: [['Name', 'Contact', 'Email', 'Animal', 'Type', 'Period', 'Status', 'Experience']],
         body: tableData,
         theme: 'striped',
@@ -94,14 +142,12 @@ export default function FosterDetailsDisplay() {
         },
         margin: { left: 14, right: 14 }
       });
-      
-      // Save the PDF
+
       doc.save(`Foster_Details_${new Date().toISOString().split('T')[0]}.pdf`);
-      
       alert("PDF downloaded successfully!");
     } catch (error) {
       console.error("PDF Generation Error:", error);
-      alert("Failed to generate PDF. Please check console for details.");
+      alert("Failed to generate PDF. Please check console for details.")
     }
   };
 

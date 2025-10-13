@@ -6,6 +6,7 @@ import Nav from "../Nav/NavAdmin";
 import { Link } from "react-router-dom";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import logo from "../Nav/logo.jpg";
 
 const URL = "http://localhost:5000/items";
 const ORDERS_URL = "http://localhost:5000/orders";
@@ -70,7 +71,54 @@ function Items() {
     }
   };
 
-  const handleExportPdf = () => {
+  // PDF helpers
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+
+    // Left time, Right date
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 14, 18);
+    doc.text(`Date: ${dateStr}`, pageWidth - 14, 18, { align: 'right' });
+
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 60; const imgH = 60;
+      doc.addImage(imgData, 'JPEG', (pageWidth - imgW) / 2, 22, imgW, imgH);
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 22 + imgH + 16, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(1);
+      doc.line(14, 22 + imgH + 22, pageWidth - 14, 22 + imgH + 22);
+      return 22 + imgH + 30;
+    } catch {
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageWidth / 2, 30, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(1);
+      doc.line(14, 36, pageWidth - 14, 36);
+      return 46;
+    }
+  };
+
+  const handleExportPdf = async () => {
     if (!items || items.length === 0) {
       alert("No items to export!");
       return;
@@ -89,14 +137,13 @@ function Items() {
         it.Category || "-"
       ]);
 
-      doc.setFontSize(16);
-      doc.text("Inventory Report", 14, 18);
+      const startY = await addPdfHeader(doc, 'PawPal Inventory Report');
 
       // Use autoTable as a function call
       autoTable(doc, {
         head: [columns],
         body: rows,
-        startY: 22,
+        startY,
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [102, 56, 230] },
         alternateRowStyles: { fillColor: [245, 245, 245] },

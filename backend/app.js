@@ -229,6 +229,21 @@ app.post("/login", async (req, res) => {
       });
     }
     
+    // On successful auth, update login timestamps
+    try {
+      const now = new Date();
+      // Move previous loginTime to secondLoginTime
+      if (user.loginTime) {
+        user.secondLoginTime = user.loginTime;
+      }
+      // Set current loginTime to now
+      user.loginTime = now;
+      await user.save();
+    } catch (tsErr) {
+      console.error('⚠️ Failed to update login timestamps for', user.email, tsErr);
+      // Continue login even if timestamp update fails
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { 
@@ -251,7 +266,9 @@ app.post("/login", async (req, res) => {
         Fname: user.Fname,
         Lname: user.Lname,
         email: user.email,
-        age: user.age
+        age: user.age,
+        loginTime: user.loginTime,
+        secondLoginTime: user.secondLoginTime
       }
     });
   } catch (err) {

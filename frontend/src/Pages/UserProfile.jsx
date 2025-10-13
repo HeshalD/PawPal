@@ -10,8 +10,8 @@ function UserProfile() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
-  const lastLoginAt = localStorage.getItem('lastLoginAt');
-  const currentLoginAt = localStorage.getItem('currentLoginAt');
+  const [lastLoginAt, setLastLoginAt] = useState(null);
+  const [currentLoginAt, setCurrentLoginAt] = useState(null);
   const formatDT = (iso) => {
     try { return iso ? new Date(iso).toLocaleString() : null; } catch { return iso; }
   };
@@ -33,6 +33,8 @@ function UserProfile() {
         if (userData) {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
+          setLastLoginAt(parsedUser.secondLoginTime || null);
+          setCurrentLoginAt(parsedUser.loginTime || null);
           setLoading(false);
         } else {
           // Fetch from backend if not in localStorage
@@ -45,6 +47,8 @@ function UserProfile() {
             
             if (response.data.status === "ok" && response.data.user) {
               setUser(response.data.user);
+              setLastLoginAt(response.data.user.secondLoginTime || null);
+              setCurrentLoginAt(response.data.user.loginTime || null);
               // Save to localStorage for future use
               localStorage.setItem('userData', JSON.stringify(response.data.user));
             } else {
@@ -76,20 +80,27 @@ function UserProfile() {
   }, [navigate]);
 
   // Logout handler - clears all authentication data
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      // Clear all localStorage items
+  const handleLogout = async () => {
+    if (!window.confirm("Are you sure you want to logout?")) return;
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        await axios.post('http://localhost:5000/logout', {}, {
+          headers: { Authorization: `Bearer ${authToken}` }
+        });
+      }
+    } catch (e) {
+      // non-blocking
+      console.warn('Logout timestamp save failed', e?.message || e);
+    } finally {
       localStorage.removeItem('authToken');
       localStorage.removeItem('userData');
       localStorage.removeItem('userRole');
       localStorage.removeItem('isAdmin');
-      
-      // Also clear old keys for backward compatibility
       localStorage.removeItem('currentUser');
       localStorage.removeItem('loggedInUserId');
       localStorage.removeItem('loggedInUserEmail');
       localStorage.removeItem('userToken');
-      
       alert("Logged out successfully");
       navigate("/login");
     }
@@ -329,7 +340,7 @@ function UserProfile() {
               <div className="p-6">
                 <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200">
                   <div className="text-sm text-gray-600 mb-1">Previous login date & time</div>
-                  <div className="text-lg font-bold text-indigo-700">{formatDT(lastLoginAt) || 'First login on this device'}</div>
+                  <div className="text-lg font-bold text-indigo-700">{formatDT(lastLoginAt) || 'No previous login recorded'}</div>
                 </div>
               </div>
             </div>

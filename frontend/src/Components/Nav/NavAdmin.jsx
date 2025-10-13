@@ -79,9 +79,25 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
   // Filter navigation items based on user role
   const navItems = allNavItems.filter(item => item.roles.includes(userRole));
 
-  const handleLogout = () => {
-    localStorage.clear();
-    // You might want to add additional logout logic here
+  const handleLogout = async () => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        await fetch('http://localhost:5000/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({})
+        });
+      }
+    } catch (e) {
+      // non-blocking; proceed to clear session
+      console.warn('Admin logout timestamp save failed');
+    } finally {
+      localStorage.clear();
+    }
   };
 
   return (

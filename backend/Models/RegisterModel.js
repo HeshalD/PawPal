@@ -25,6 +25,14 @@ const userSchema = new Schema({
     age:{
         type:Number,
         required:true,
+    },
+    loginTime: {
+        type: Date,
+        default: null,
+    },
+    secondLoginTime: {
+        type: Date,
+        default: null,
     }
 });
 

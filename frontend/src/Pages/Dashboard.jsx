@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, Users, DollarSign, Calendar, TrendingUp, Handshake, RefreshCw, AlertCircle } from 'lucide-react';
 import Nav from '../Components/Nav/Nav';
+import { useNavigate } from 'react-router-dom';
 
 function UserDashboard() {
 
   const [collapsed, setCollapsed] = useState(false);
+
   const [stats, setStats] = useState({
     totalPets: 0,
     adoptedPets: 0,
@@ -18,6 +20,7 @@ function UserDashboard() {
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const navigate = useNavigate();
 
   // API Base URL - change this to your backend URL
   const API_BASE_URL = 'http://localhost:5000';
@@ -327,11 +330,11 @@ function UserDashboard() {
               </div>
 
               <div className="mt-8 flex flex-wrap gap-4">
-                <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
+                <button onClick={() => navigate('/pets')} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
                   View All Pets
                 </button>
                 
-                <button className="inline-flex items-center px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
+                <button onClick={() => navigate('/adoptionViewPage')} className="inline-flex items-center px-6 py-3 bg-white border-2 border-purple-500 text-purple-600 hover:bg-purple-50 font-semibold rounded-lg shadow-md transform hover:scale-105 transition-all duration-200">
                   Adopt Now
                 </button>
               </div>

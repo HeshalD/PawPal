@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Nav from "../Components/Nav/NavAdmin";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, Edit, Trash2, Eye, Search, Filter, Download, Plus } from "lucide-react";
+import { Heart, Edit, Trash2, Eye, Search, Download, Plus } from "lucide-react";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 function DisplayPet() {
   const [pets, setPets] = useState([]);
@@ -10,7 +12,6 @@ function DisplayPet() {
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterCategory, setFilterCategory] = useState("All");
   const [sortBy, setSortBy] = useState("None");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -42,15 +43,13 @@ function DisplayPet() {
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(pet =>
-        pet.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pet.breed.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        pet.species.toLowerCase().includes(searchTerm.toLowerCase())
+        (pet.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pet.breed || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pet.species || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pet.healthStatus || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pet.adoptionStatus || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (pet._id || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    // Category filter
-    if (filterCategory !== "All") {
-      filtered = filtered.filter(pet => pet.species === filterCategory);
     }
 
     // Sort functionality
@@ -64,7 +63,7 @@ function DisplayPet() {
 
     setFilteredPets(filtered);
     setCurrentPage(1);
-  }, [searchTerm, filterCategory, sortBy, pets]);
+  }, [searchTerm, sortBy, pets]);
 
   // Delete pet
   const deleteHandler = async (id) => {
@@ -79,18 +78,65 @@ function DisplayPet() {
     }
   };
 
-  // Get unique species for filter dropdown
-  const uniqueSpecies = [...new Set(pets.map(pet => pet.species))];
+  
 
   // Pagination
   const totalPages = Math.ceil(filteredPets.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentPets = filteredPets.slice(startIndex, startIndex + itemsPerPage);
 
-  // Export to PDF (placeholder function)
+  // Export to PDF
   const exportToPDF = () => {
-    // Implementation for PDF export
-    console.log("Export to PDF functionality");
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(99, 102, 241);
+    doc.text('PawPal - Pets Report', pageWidth / 2, 18, { align: 'center' });
+
+    // Meta
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+    doc.text(`Total Records: ${filteredPets.length}`, 14, 33);
+
+    // Table
+    const rows = filteredPets.map(p => [
+      p.name || '-',
+      p.species || '-',
+      p.breed || '-',
+      (p.age ?? '-') ,
+      p.healthStatus || 'Unknown',
+      p.adoptionStatus || 'Available',
+      (p._id || '-').slice(-8)
+    ]);
+
+    autoTable(doc, {
+      startY: 38,
+      head: [['Name', 'Species', 'Breed', 'Age', 'Health', 'Status', 'ID']],
+      body: rows,
+      theme: 'striped',
+      headStyles: { fillColor: [236, 72, 153] },
+      styles: { fontSize: 9 },
+      margin: { left: 14, right: 14 }
+    });
+
+    // Footer page numbers
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Page ${i} of ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+    }
+
+    doc.save(`admin-pets-report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (loading) {
@@ -139,20 +185,7 @@ function DisplayPet() {
                 />
               </div>
 
-              {/* Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-gray-600" />
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
-                >
-                  <option value="All">All Species</option>
-                  {uniqueSpecies.map(species => (
-                    <option key={species} value={species}>{species}</option>
-                  ))}
-                </select>
-              </div>
+              
 
               {/* Sort */}
               <div className="flex items-center gap-2">

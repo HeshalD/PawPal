@@ -1,4 +1,5 @@
 const Foster = require("../Model/FosterModel");
+const { sendFosterConfirmationEmail } = require("../utils/emailService");
 
 // Get all foster requests
 const getAllFosters = async (req, res) => {
@@ -30,6 +31,12 @@ const addFoster = async (req, res) => {
     const payload = { ...req.body, status: "pending" };
     const foster = new Foster(payload);
     await foster.save();
+    
+    // Send confirmation email (non-blocking)
+    sendFosterConfirmationEmail(foster).catch(err => {
+      console.error('Failed to send confirmation email:', err);
+    });
+    
     res.status(201).json({ foster });
   } catch (err) {
     res.status(400).json({ message: "Error adding foster", error: err.message });

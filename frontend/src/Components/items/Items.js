@@ -40,6 +40,7 @@ function Items() {
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [couponForm, setCouponForm] = useState({ code: "", discountPercent: "" });
   const [coupons, setCoupons] = useState([]);
+  const [couponFilter, setCouponFilter] = useState('all'); // all | active | expired
   const navigate = useNavigate();
 
   // Fetch items on component mount
@@ -197,6 +198,18 @@ function Items() {
     }
   }, [showCouponModal]);
 
+  // Compute filtered view for coupons list
+  const filteredCoupons = useMemo(() => {
+    const f = (couponFilter || 'all').toLowerCase();
+    if (f === 'all') return coupons;
+    return (coupons || []).filter(c => {
+      const st = (c.status || '').toLowerCase();
+      // default unknown status to 'active' for local-only entries
+      const norm = st || 'active';
+      return norm === f;
+    });
+  }, [coupons, couponFilter]);
+
   const sortedItems = useMemo(() => {
     const base = [...filteredItems];
     if (sortMode === "category-asc" || sortMode === "category-desc") {
@@ -281,14 +294,14 @@ function Items() {
                       <div className="flex items-center gap-2 text-[#0f172a] font-semibold">
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-50 text-red-500">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                            <path fillRule="evenodd" d="M12 2.25a.75.75 0 01.66.393l9 16.5A.75.75 0 0121 20.25H3a.75.75 0 01-.66-1.107l9-16.5A.75.75 0 0112 2.25zm0 5.25a.75.75 0 01.75.75v5.25a.75.75 0 01-1.5 0V8.25A.75.75 0 0112 7.5zm0 9a.75.75 0 100 1.5.75.75 0 000-1.5z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M12 2.25a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.714 4.715a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.715a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/>
                           </svg>
                         </span>
                         <span>Low Stock Alerts</span>
                       </div>
                       <button onClick={() => setShowAlerts(false)} className="p-1 rounded-md hover:bg-[#F5F5F5] text-[#64748b]">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                          <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.714 4.715a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.715a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd" />
+                          <path fillRule="evenodd" d="M6.225 4.811a.75.75 0 011.06 0L12 9.525l4.715-4.714a.75.75 0 111.06 1.06L13.06 10.586l4.714 4.715a.75.75 0 11-1.06 1.06L12 11.646l-4.715 4.715a.75.75 0 11-1.06-1.06l4.714-4.715-4.714-4.715a.75.75 0 010-1.06z" clipRule="evenodd"/>
                         </svg>
                       </button>
                     </div>
@@ -427,24 +440,50 @@ function Items() {
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-[#0f172a] mb-2">Existing Coupons</div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <button onClick={()=>setCouponFilter('all')} className={`px-2 py-1 rounded-md text-sm border ${couponFilter==='all'?'bg-[#6638E6] text-white border-[#6638E6]':'bg-white text-[#333333] border-[#E6F4F3]'}`}>All</button>
+                        <button onClick={()=>setCouponFilter('active')} className={`px-2 py-1 rounded-md text-sm border ${couponFilter==='active'?'bg-green-600 text-white border-green-600':'bg-white text-[#333333] border-[#E6F4F3]'}`}>Active</button>
+                        <button onClick={()=>setCouponFilter('expired')} className={`px-2 py-1 rounded-md text-sm border ${couponFilter==='expired'?'bg-gray-600 text-white border-gray-600':'bg-white text-[#333333] border-[#E6F4F3]'}`}>Expired</button>
+                      </div>
                       <div className="max-h-48 overflow-auto border border-[#E6F4F3] rounded-md">
-                        {coupons.length>0 ? (
+                        {filteredCoupons.length>0 ? (
                           <ul className="divide-y divide-[#E6F4F3]">
-                            {coupons.map((c)=>(
+                            {filteredCoupons.map((c)=>(
                               <li key={c._id||c.code} className="px-3 py-2 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
                                   <span className="font-medium text-[#0f172a]">{c.code}</span>
                                   <span className="text-[#64748b] text-sm">{c.discountPercent}%</span>
+                                  {(() => {
+                                    const st = (c.status||'active').toLowerCase();
+                                    const isExpired = st === 'expired';
+                                    return (
+                                      <span className={`px-2 py-0.5 rounded-full text-xs ${isExpired? 'bg-gray-100 text-gray-700' : 'bg-green-100 text-green-700'}`}>
+                                        {isExpired ? 'Expired' : 'Active'}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                                <button
-                                  onClick={() => deleteCoupon(c)}
-                                  title="Remove coupon"
-                                  className="p-1.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-1 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7"/>
-                                  </svg>
-                                </button>
+                                <div className="flex items-center gap-3">
+                                  {c.expiresAt && (
+                                    <span className="text-xs text-[#64748b]" title="Expires">
+                                      {new Date(c.expiresAt).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                  {typeof c.usesRemaining === 'number' && (
+                                    <span className="text-xs text-[#64748b]" title="Uses remaining">
+                                      {c.usesRemaining}
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => deleteCoupon(c)}
+                                    title="Remove coupon"
+                                    className="p-1.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-1 0v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7"/>
+                                    </svg>
+                                  </button>
+                                </div>
                               </li>
                             ))}
                           </ul>

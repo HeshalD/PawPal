@@ -32,6 +32,7 @@ const chatbotRoutes = require('./Routes/chatbotRoutes');
 const aiChatRouter = require('./Routes/chatbot');
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
+const couponRouter = require("./Routes/couponRoutes");
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use("/sponsors", sponsorRoutes);
 app.use("/donations", donationRoutes);
 app.use("/items", inventoryRouter);
 app.use("/orders", orderRouter);
+app.use("/coupons", couponRouter);
 app.use('/health-records', healthRecordRoutes);
 app.use('/doctor-availability', doctorRoutes);
 app.use('/appointments', appointmentRoutes);

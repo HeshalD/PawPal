@@ -11,6 +11,7 @@ function AppointmentForm() {
   const [appointment, setAppointment] = useState({
     petName: '',
     ownerName: '',
+    ownerEmail: '',
     date: '',
     timeSlot: ''
   });
@@ -25,6 +26,10 @@ function AppointmentForm() {
     selected.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     return selected >= today;
+  };
+  const isValidEmail = (value) => {
+    if (!value) return false;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   };
   const isValidTimeWindow = (value) => {
     if (!value) return false;
@@ -60,17 +65,19 @@ function AppointmentForm() {
       alert('Time Slot must be between 09:00 and 18:00.');
       return;
     }
+    if (!isValidEmail(appointment.ownerEmail)) {
+      alert('Please enter a valid Email.');
+      return;
+    }
 
     setLoading(true);
 
     try {
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const ownerEmail = userData?.email || '';
       // Use axiosInstance (injects JWT) to protected endpoint
       const response = await axiosInstance.post('/api/appointments', {
         petName: appointment.petName,
         ownerName: appointment.ownerName,
-        ownerEmail: ownerEmail || '',
+        ownerEmail: appointment.ownerEmail.trim(),
         date: appointment.date,
         timeSlot: appointment.timeSlot
       });
@@ -86,6 +93,7 @@ function AppointmentForm() {
         setAppointment({
           petName: '',
           ownerName: '',
+          ownerEmail: '',
           date: '',
           timeSlot: ''
         });
@@ -176,7 +184,29 @@ function AppointmentForm() {
               </div>
             </div>
 
-            
+            {/* Owner Email Field */}
+            <div>
+              <label htmlFor="ownerEmail" className="block text-sm font-semibold text-gray-700 mb-3">
+                <span className="bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent">
+                  Email *
+                </span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <UserCircle className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  name="ownerEmail"
+                  value={appointment.ownerEmail}
+                  onChange={handleInputChange}
+                  placeholder="you@example.com"
+                  required
+                  disabled={loading}
+                  className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            </div>
 
             {/* Date Field */}
             <div>

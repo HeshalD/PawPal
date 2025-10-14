@@ -33,6 +33,8 @@ const aiChatRouter = require('./Routes/chatbot');
 const inventoryRouter = require("./Routes/inventoryRoutes");
 const orderRouter = require("./Routes/orderRoutes");
 const couponRouter = require("./Routes/couponRoutes");
+const Appointment = require("./Models/Appointment");
+const { sendEmail } = require('./utils/mailer');
 
 const app = express();
 
@@ -358,11 +360,67 @@ const startExpiryJob = () => {
   }, EXPIRY_JOB_INTERVAL_MS);
 };
 
+// Appointment reminder job: send reminder emails the day before at ~08:00
+const startAppointmentReminderJob = () => {
+  // run every 60 minutes
+  const ONE_HOUR = 60 * 60 * 1000;
+  setInterval(async () => {
+    if (mongoose.connection.readyState !== 1) return;
+    try {
+      const now = new Date();
+      const hour = now.getHours();
+      // Run only between 08:00 and 09:00 to avoid multiple sends per day
+      if (hour !== 8) return;
+
+      // Determine tomorrow's date range [00:00, 23:59:59]
+      const tomorrow = new Date(now);
+      tomorrow.setDate(now.getDate() + 1);
+      const start = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 0, 0, 0, 0);
+      const end = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59, 999);
+
+      // Find appointments not yet reminded
+      const appts = await Appointment.find({
+        date: { $gte: start, $lte: end },
+        reminderSent: { $ne: true },
+      }).limit(200);
+
+      for (const appt of appts) {
+        try {
+          const to = appt.ownerEmail;
+          const subject = 'Reminder: PawPal appointment tomorrow';
+          const dateStr = new Date(appt.date).toDateString();
+          const text = `Hi ${appt.ownerName},\n\nThis is a reminder that your appointment for ${appt.petName} is scheduled for tomorrow.\nDate: ${dateStr}\nTime: ${appt.timeSlot}\nStatus: ${appt.status}\n\nSee you soon,\nPawPal`;
+          const html = `
+            <p>Hi ${appt.ownerName},</p>
+            <p>This is a reminder that your appointment for <strong>${appt.petName}</strong> is scheduled for <strong>tomorrow</strong>.</p>
+            <ul>
+              <li><strong>Date:</strong> ${dateStr}</li>
+              <li><strong>Time:</strong> ${appt.timeSlot}</li>
+              <li><strong>Status:</strong> ${appt.status}</li>
+            </ul>
+            <p>See you soon,<br/><strong>PawPal</strong></p>
+          `;
+          const result = await sendEmail({ to, subject, text, html });
+          if (result?.ok) {
+            appt.reminderSent = true;
+            await appt.save();
+          }
+        } catch (e) {
+          // continue with others
+        }
+      }
+    } catch (e) {
+      // silent fail to avoid noisy logs
+    }
+  }, ONE_HOUR);
+};
+
 // MongoDB connection and server start
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log("✅ Connected to MongoDB");
     startExpiryJob();
+    startAppointmentReminderJob();
   })
   .then(() => {
     app.listen(PORT, () => {

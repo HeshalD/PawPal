@@ -10,7 +10,8 @@ const AppointmentSchema = new mongoose.Schema({
     type: String, 
     enum: ['pending', 'accepted', 'rejected'],
     default: 'pending' 
-  }
+  },
+  reminderSent: { type: Boolean, default: false }
 }, {
   timestamps: true // Optional: adds createdAt and updatedAt
 });

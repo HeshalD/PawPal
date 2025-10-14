@@ -4,9 +4,31 @@ const { sendEmail } = require('../utils/mailer');
 // Book new appointment
 exports.bookAppointment = async (req, res) => {
   try {
-    const appointment = new Appointment(req.body);
+    const { petName, ownerName, ownerEmail, date, timeSlot } = req.body || {};
+
+    // Basic validation
+    if (!petName || !ownerName || !ownerEmail || !date || !timeSlot) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Prevent double booking: same calendar day + same timeSlot (pending/accepted)
+    const target = new Date(date);
+    const start = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 0, 0, 0, 0);
+    const end = new Date(target.getFullYear(), target.getMonth(), target.getDate(), 23, 59, 59, 999);
+    const conflict = await Appointment.findOne({
+      date: { $gte: start, $lte: end },
+      timeSlot: timeSlot,
+      status: { $in: ['pending', 'accepted'] }
+    });
+    if (conflict) {
+      return res.status(409).json({ message: 'Doctor not available for this time. Please choose another time.' });
+    }
+
+    // Create and save
+    const appointment = new Appointment({ petName, ownerName, ownerEmail, date, timeSlot });
     await appointment.save();
-    // Send email notification to the logged-in email (ownerEmail) and report result
+
+    // Send email notification
     let emailResult = { ok: false };
     try {
       const to = appointment.ownerEmail;
@@ -27,6 +49,7 @@ exports.bookAppointment = async (req, res) => {
     } catch (e) {
       emailResult = { ok: false, error: e?.message || 'Email send failed' };
     }
+
     res.status(201).json({ appointment, email: emailResult });
   } catch (err) {
     res.status(400).json({ message: err.message });

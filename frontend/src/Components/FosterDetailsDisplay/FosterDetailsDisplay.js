@@ -213,7 +213,28 @@ export default function FosterDetailsDisplay() {
   const handleWhatsApp = (item) => {
     const phone = (item.contact || "").replace(/\D/g, "");
     const formattedPhone = phone.startsWith("0") ? "94" + phone.slice(1) : phone;
-    const message = `Hello ${item.fullName}, regarding your foster request for ${item.animalName}. 🐾`;
+   const message = 
+` *Hello ${item.fullName}!* 🌼
+
+  We’re so happy to let you know that your foster request for 🐾 *${item.animalName}*  has been *approved!* 
+
+  Thank you so much for trusting us and opening your heart and home to this lovely pet.
+  Your kindness truly makes a difference! 
+
+  Here are your foster details:
+ *Name:* ${item.fullName}
+ *Pet:* ${item.animalName}
+ *Address:* ${item.address}
+ *Contact:* ${item.contact}
+ *Email:* ${item.email}
+
+Please feel free to reach out if you have any questions or need support.
+We’re always here to help you and ${item.animalName}! 
+
+With love,  
+*The PawPal Team* `;
+
+
     const whatsappURL = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappURL, "_blank");
   };

@@ -93,20 +93,21 @@ export default function AdminAppointmentView() {
     }
   };
 
-  // Reject appointment - DELETE from database - ✅ IMPROVED
+  // Reject appointment - UPDATE status to 'rejected' via PATCH
   const rejectAppointment = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this appointment? This action cannot be undone.')) {
+    if (!window.confirm('Are you sure you want to reject this appointment? This action cannot be undone.')) {
       return;
     }
 
     try {
-      console.log('Deleting appointment:', id);
+      console.log('Rejecting appointment:', id);
       
       const response = await fetch(`http://localhost:5000/appointments/${id}`, {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({ status: 'rejected' })
       });
 
       console.log('Response status:', response.status);
@@ -119,14 +120,14 @@ export default function AdminAppointmentView() {
       const result = await response.json();
       console.log('Success:', result);
 
-      // ✅ Refresh list after successful deletion
+      // Refresh list after successful rejection
       await loadAppointments();
       
       // Clear any previous errors
       setError(null);
     } catch (e) {
-      console.error('Delete error:', e);
-      setError(`Failed to delete appointment: ${e.message}`);
+      console.error('Reject error:', e);
+      setError(`Failed to reject appointment: ${e.message}`);
     }
   };
 
@@ -256,7 +257,7 @@ export default function AdminAppointmentView() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="Search by pet name, owner, or doctor..."
+                      placeholder="Search by pet name or owner..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"

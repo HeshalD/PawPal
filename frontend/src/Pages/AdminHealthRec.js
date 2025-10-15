@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Mail, User, Syringe, Activity, FileText, LogIn } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
+const toYmdLocal = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+};
+
 export default function PetMedicalForm() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -14,7 +21,7 @@ export default function PetMedicalForm() {
     diagnosis: '',
     treatment: '',
     vaccination: '',
-    visitDate: new Date().toISOString().split('T')[0],
+    visitDate: toYmdLocal(new Date()),
     nextVaccinationDate: ''
   });
 
@@ -61,6 +68,7 @@ export default function PetMedicalForm() {
 
     if (name === 'visitDate') {
       if (!trimmed) error = 'Visit date is required.';
+      else if (new Date(trimmed) > new Date(toYmdLocal(new Date()))) error = 'Visit date must be in the past.';
     }
 
     if (name === 'nextVaccinationDate') {
@@ -399,6 +407,7 @@ export default function PetMedicalForm() {
                     name="visitDate"
                     value={formData.visitDate}
                     onChange={handleChange}
+                    max={toYmdLocal(new Date())}
                     className={`w-full pl-12 pr-4 py-4 rounded-xl bg-gray-50 border-2 ${errors.visitDate ? 'border-red-400 focus:border-red-500' : 'border-transparent focus:border-purple-400'} text-gray-800 focus:outline-none focus:bg-white transition-all`}
                     required
                   />

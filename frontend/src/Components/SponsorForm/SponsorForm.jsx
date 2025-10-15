@@ -379,7 +379,7 @@ export default function SponsorForm() {
                             <p className="text-sm font-medium text-gray-900">
                               {formik.values.adImage ? formik.values.adImage.name : 'Click to upload ad image'}
                             </p>
-                            <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                            <p className="text-xs text-gray-500">PNG, JPG,up to 10MB (1200w * 400h)</p>
                           </div>
                         </label>
                       </div>

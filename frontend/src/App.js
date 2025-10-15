@@ -48,6 +48,7 @@ import VetPetView from "./Pages/VetpetView";
 import UserPetProfile from "./Pages/UserPetProfile";
 import AdminPetProfile from "./Pages/AdminPetProfile";
 import AdminAllAppointments from "./Pages/AdminAllAppointments";
+import Analyzer from "./Pages/Analyzer";
 import AppointmentUpdate from "./Pages/AppoinmentUpdate";
 
 //Vilani's Routes
@@ -118,6 +119,7 @@ function App() {
         <Route path="/donationsomething" element={<DonationForm />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/orderconfirm" element={<OrderConfirmationModal />} />
+        <Route path="/analyzer" element={<Analyzer />} />
 
         {/*Vilani's pages */}
         <Route path="/appointmentBooking" element={<AppointmentBooking/>}/>

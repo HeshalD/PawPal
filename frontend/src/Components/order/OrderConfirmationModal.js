@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import jsPDF from "jspdf";
+import autoTable from 'jspdf-autotable';
+import logo from "../Nav/logo.jpg";
 
 function OrderConfirmationModal({ order, isOpen, onClose }) {
   const [copySuccess, setCopySuccess] = useState(false);
@@ -25,22 +27,58 @@ function OrderConfirmationModal({ order, isOpen, onClose }) {
     }
   };
 
-  const downloadOrderPDF = () => {
+  // helpers used to align with other PDFs
+  const toDataURL = (url) => new Promise((resolve, reject) => {
+    fetch(url)
+      .then(res => res.blob())
+      .then(blob => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      })
+      .catch(reject);
+  });
+
+  const addPdfHeader = async (doc, title) => {
+    const pageW = doc.internal.pageSize.getWidth();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text(`Time: ${timeStr}`, 40, 28);
+    doc.text(`Date: ${dateStr}`, pageW - 40, 28, { align: 'right' });
+    try {
+      const imgData = await toDataURL(logo);
+      const imgW = 60, imgH = 60;
+      doc.addImage(imgData, 'JPEG', (pageW - imgW) / 2, 34, imgW, imgH);
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageW / 2, 34 + imgH + 18, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.8);
+      doc.line(40, 34 + imgH + 26, pageW - 40, 34 + imgH + 26);
+      return 34 + imgH + 36;
+    } catch {
+      doc.setFontSize(16);
+      doc.setTextColor(0);
+      doc.text(title, pageW / 2, 46, { align: 'center' });
+      doc.setDrawColor(0,0,0);
+      doc.setLineWidth(0.8);
+      doc.line(40, 56, pageW - 40, 56);
+      return 66;
+    }
+  };
+
+  const downloadOrderPDF = async () => {
     try {
       const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
       const pageW = doc.internal.pageSize.getWidth();
       const pageH = doc.internal.pageSize.getHeight();
-      const M = 40; // margin
-      let y = M;
-
-      // Title
-      doc.setFontSize(18);
-      doc.text('PawPal - Order Summary', M, y);
-      y += 10;
-      doc.setLineWidth(0.5);
-      doc.line(M, y, pageW - M, y);
-      y += 16;
+      const M = 40;
+      let y = await addPdfHeader(doc, 'PawPal - Order Summary');
 
       // Order meta
       doc.setFontSize(12);
@@ -64,51 +102,35 @@ function OrderConfirmationModal({ order, isOpen, onClose }) {
       doc.text(addrLines, M + 60, y);
       y += (addrLines.length * 12) + 16;
 
-      // Items Table (simple)
-      doc.setFontSize(13);
-      doc.text('Items', M, y); y += 8;
-      doc.line(M, y, pageW - M, y); y += 12;
-
-      // Table header
-      const colX = { name: M, qty: pageW - M - 220, unit: pageW - M - 140, total: pageW - M - 60 };
-      doc.setFontSize(12);
-      doc.text('Item', colX.name, y);
-      doc.text('Qty', colX.qty, y, { align: 'right' });
-      doc.text('Unit', colX.unit, y, { align: 'right' });
-      doc.text('Total', colX.total, y, { align: 'right' });
-      y += 8; doc.line(M, y, pageW - M, y); y += 12;
-
-      // Rows
       const items = Array.isArray(order.items)
         ? order.items
         : [{ itemName: order.itemName, itemPrice: order.itemPrice, quantity: order.quantity, itemTotal: order.totalAmount }];
 
-      const ensureSpace = (rowHeight = 18) => {
-        if (y + rowHeight > pageH - M - 120) { // leave space for summary/footer
-          doc.addPage();
-          y = M;
-        }
-      };
+      doc.setFontSize(13);
+      doc.text('Items', M, y); y += 8;
+      doc.line(M, y, pageW - M, y);
 
-      items.forEach((it) => {
-        ensureSpace();
-        const name = (it.itemName || '-').toString();
-        const qty = parseInt(it.quantity || 0, 10) || 0;
-        const unit = Number.parseFloat(it.itemPrice) || 0;
-        const lineTotal = Number.parseFloat(it.itemTotal) || (unit * qty);
-        const nameLines = doc.splitTextToSize(name, colX.qty - colX.name - 10);
-        // Draw first line
-        doc.text(nameLines, colX.name, y);
-        doc.text(String(qty), colX.qty, y, { align: 'right' });
-        doc.text(`Rs. ${unit.toFixed(2)}`, colX.unit, y, { align: 'right' });
-        doc.text(`Rs. ${lineTotal.toFixed(2)}`, colX.total, y, { align: 'right' });
-        // Advance by lines
-        y += (nameLines.length * 12) + 6;
-        doc.setDrawColor(220);
-        doc.line(M, y, pageW - M, y);
-        doc.setDrawColor(0);
-        y += 6;
+      autoTable(doc, {
+        startY: y + 8,
+        head: [[ 'Item', 'Qty', 'Unit', 'Total' ]],
+        body: items.map(it => {
+          const qty = parseInt(it.quantity || 0, 10) || 0;
+          const unit = Number.parseFloat(it.itemPrice) || 0;
+          const lineTotal = Number.parseFloat(it.itemTotal) || (unit * qty);
+          return [
+            (it.itemName || '-').toString(),
+            String(qty),
+            `Rs. ${unit.toFixed(2)}`,
+            `Rs. ${lineTotal.toFixed(2)}`
+          ];
+        }),
+        theme: 'striped',
+        headStyles: { fillColor: [102,56,230], textColor: 255, fontStyle: 'bold' },
+        styles: { fontSize: 10, cellPadding: 4 },
+        margin: { left: M, right: M }
       });
+
+      y = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 10 : y + 40;
 
       // Summary (right aligned)
       const subtotal = items.reduce((t, it) => t + ((Number.parseFloat(it.itemPrice) || 0) * (parseInt(it.quantity || 0, 10) || 0)), 0);

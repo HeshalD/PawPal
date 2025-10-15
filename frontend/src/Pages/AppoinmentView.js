@@ -9,6 +9,33 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../Components/Nav/logo.jpg';
 
+// Build a local Date from item.date and item.timeSlot (HH:MM) for accurate comparisons
+const buildDateTime = (item) => {
+  try {
+    const d = new Date(item.date);
+    if (!item?.timeSlot) return d;
+    const [hh, mm] = String(item.timeSlot).split(':');
+    d.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+    return d;
+  } catch {
+    return new Date(item.date);
+  }
+};
+
+// Format HH:MM to 12-hour with AM/PM (e.g., 15:00 -> 03:00 PM)
+const formatTime12 = (hhmm) => {
+  if (!hhmm) return '-';
+  const [hStr, mStr] = String(hhmm).split(':');
+  let h = Number(hStr);
+  const m = Number(mStr || 0);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  const hh = String(h).padStart(2, '0');
+  const mm = String(m).padStart(2, '0');
+  return `${hh}:${mm} ${ampm}`;
+};
+
 export default function AppointmentDashboard() {
   const [collapsed, setCollapsed] = useState(false);
   const [appointments, setAppointments] = useState([]);
@@ -18,6 +45,13 @@ export default function AppointmentDashboard() {
   const [dateFilter, setDateFilter] = useState('all');
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const navigate = useNavigate();
+  // Ticking clock so UI auto-updates Upcoming/Past without manual refresh
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000); // 30s
+    return () => clearInterval(id);
+  }, []);
 
   const loadAppointments = async () => {
 
@@ -52,46 +86,36 @@ export default function AppointmentDashboard() {
   useEffect(() => {
     let filtered = appointments;
     
-    // Apply search filter
+    // Apply search filter (pet name only)
     if (searchTerm) {
-      filtered = filtered.filter(item => 
-        item.petName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.ownerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.doctorName?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => item.petName?.toLowerCase().includes(term));
     }
     
     // Apply date filter
     if (dateFilter !== 'all') {
-      const now = new Date();
       const filterDate = new Date();
       
       switch (dateFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
           filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date);
+            const itemDate = buildDateTime(item);
             itemDate.setHours(0, 0, 0, 0);
             return itemDate.getTime() === filterDate.getTime();
           });
           break;
         case 'upcoming':
-          filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate >= now;
-          });
+          filtered = filtered.filter(item => buildDateTime(item) >= now);
           break;
         case 'past':
-          filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate < now;
-          });
+          filtered = filtered.filter(item => buildDateTime(item) < now);
           break;
         case 'week':
           filterDate.setDate(now.getDate() + 7);
           filtered = filtered.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate >= now && itemDate <= filterDate;
+            const dt = buildDateTime(item);
+            return dt >= now && dt <= filterDate;
           });
           break;
         default:
@@ -100,7 +124,7 @@ export default function AppointmentDashboard() {
     }
     
     setFilteredAppointments(filtered);
-  }, [appointments, searchTerm, dateFilter]);
+  }, [appointments, searchTerm, dateFilter, now]);
 
   // Cancel appointment
   const cancelAppointment = async (id) => {
@@ -190,15 +214,16 @@ export default function AppointmentDashboard() {
       doc.setFontSize(11);
       doc.text(`Total: ${stats.total} | Upcoming: ${stats.upcoming} | Today: ${stats.today} | Past: ${stats.past}`, margin, startY);
 
-      // Table data (removed Doctor column)
+      // Table data (removed Doctor column) using combined date+time for status
+      const nowForReport = new Date();
       const rows = filteredAppointments.map((apt) => {
-        const appointmentDate = new Date(apt.date);
-        const status = appointmentDate >= new Date() ? 'Upcoming' : 'Past';
+        const dt = buildDateTime(apt);
+        const status = dt >= nowForReport ? 'Upcoming' : 'Past';
         return [
           apt.petName || '-',
           apt.ownerName || '-',
-          appointmentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-          apt.timeSlot || '-',
+          new Date(apt.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+          formatTime12(apt.timeSlot),
           status,
         ];
       });
@@ -233,19 +258,22 @@ export default function AppointmentDashboard() {
     csv += `Total Appointments: ${filteredAppointments.length}\n\n`;
     
     csv += 'Pet Name,Owner Name,Doctor Name,Date,Time Slot,Status\n';
+    const nowCsv = new Date();
     filteredAppointments.forEach(apt => {
-      const status = new Date(apt.date) >= new Date() ? 'Upcoming' : 'Past';
-      csv += `"${apt.petName}","${apt.ownerName}","${apt.doctorName}","${new Date(apt.date).toLocaleDateString()}","${apt.timeSlot}","${status}"\n`;
+      const dt = buildDateTime(apt);
+      const status = dt >= nowCsv ? 'Upcoming' : 'Past';
+      csv += `"${apt.petName}","${apt.ownerName}","${apt.doctorName}","${new Date(apt.date).toLocaleDateString()}","${formatTime12(apt.timeSlot)}","${status}"\n`;
     });
     
     return csv;
   };
 
   // Calculate statistics
+  const nowStats = now;
   const stats = {
     total: appointments.length,
-    upcoming: appointments.filter(a => new Date(a.date) >= new Date()).length,
-    past: appointments.filter(a => new Date(a.date) < new Date()).length,
+    upcoming: appointments.filter(a => buildDateTime(a) >= nowStats).length,
+    past: appointments.filter(a => buildDateTime(a) < nowStats).length,
     today: appointments.filter(a => {
       const aptDate = new Date(a.date);
       const today = new Date();
@@ -362,7 +390,7 @@ export default function AppointmentDashboard() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                       type="text"
-                      placeholder="Search by pet name, owner, or doctor..."
+                      placeholder="Search by pet name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
@@ -397,7 +425,8 @@ export default function AppointmentDashboard() {
               ) : (
                 filteredAppointments.map((appointment) => {
                   const appointmentDate = new Date(appointment.date);
-                  const isUpcoming = appointmentDate >= new Date();
+                  const dt = buildDateTime(appointment);
+                  const isUpcoming = dt >= now;
 
                   return (
                     <div key={appointment._id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">

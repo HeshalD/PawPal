@@ -4,6 +4,24 @@ import { Link } from 'react-router-dom';
 import axiosInstance from '../config/axiosConfig';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
 
+// Local date helpers to avoid UTC offset issues
+const toYmdLocal = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${da}`;
+};
+const todayLocalMidnight = () => {
+  const t = new Date();
+  t.setHours(0, 0, 0, 0);
+  return t;
+};
+const tomorrowYmdLocal = () => {
+  const t = todayLocalMidnight();
+  t.setDate(t.getDate() + 1);
+  return toYmdLocal(t);
+};
+
 function AppointmentForm() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
@@ -15,17 +33,17 @@ function AppointmentForm() {
     date: '',
     timeSlot: ''
   });
+  const [errors, setErrors] = useState({ petName: '', ownerName: '' });
 
   // Validation helpers
-  const isNonEmptyName = (value) => /^[A-Za-z ]{2,}$/.test(value.trim());
-  const isValidDateNotPast = (value) => {
+  const isNonEmptyName = (value) => /^[A-Za-z ]{2,}$/.test((value || '').trim());
+  const isValidDateFuture = (value) => {
     if (!value) return false;
     const selected = new Date(value);
-    const today = new Date();
-    // Zero out time for date-only comparison
+    const today = todayLocalMidnight();
     selected.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    return selected >= today;
+    // Must be today or in the future (allow today)
+    return selected.getTime() >= today.getTime();
   };
   const isValidEmail = (value) => {
     if (!value) return false;
@@ -34,16 +52,47 @@ function AppointmentForm() {
   const isValidTimeWindow = (value) => {
     if (!value) return false;
     const [hoursStr, minutesStr] = value.split(':');
-    const totalMinutes = Number(hoursStr) * 60 + Number(minutesStr || 0);
-    const minMinutes = 9 * 60;    // 09:00
-    const maxMinutes = 18 * 60;   // 18:00
-    return totalMinutes >= minMinutes && totalMinutes <= maxMinutes;
+    const mins = Number(minutesStr || 0);
+    // enforce :00 or :30
+    if (!(mins === 0 || mins === 30)) return false;
+    const totalMinutes = Number(hoursStr) * 60 + mins;
+    const minMinutes = 9 * 60;        // 09:00 inclusive
+    const maxStart = 17 * 60 + 30;    // last start 17:30 (< 18:00)
+    return totalMinutes >= minMinutes && totalMinutes <= maxStart;
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setAppointment((prev) => ({ ...prev, [name]: value }));
+    if (name === 'petName' || name === 'ownerName') {
+      const ok = isNonEmptyName(value);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: ok ? '' : 'Use letters, spaces and at least two characters'
+      }));
+    }
   };
+
+  // Compute dynamic min time if booking for today (rounded to next half-hour)
+  const dynamicMinTime = (() => {
+    const todayYmd = toYmdLocal(new Date());
+    if (appointment.date !== todayYmd) return '09:00';
+    const now = new Date();
+    let h = now.getHours();
+    let m = now.getMinutes();
+    // round up to next half-hour strictly in future
+    if (m < 30) {
+      m = 30;
+    } else {
+      h += 1; m = 0;
+    }
+    if (h < 9) { h = 9; m = 0; }
+    // cap at 17:30
+    if (h > 17 || (h === 17 && m > 30)) { h = 17; m = 30; }
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    return `${hh}:${mm}`;
+  })();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,12 +106,31 @@ function AppointmentForm() {
       alert('Please enter a valid Owner Name (letters and spaces, min 2 characters).');
       return;
     }
-    if (!isValidDateNotPast(appointment.date)) {
-      alert('Appointment Date cannot be in the past.');
+    if (!isValidDateFuture(appointment.date)) {
+      alert('Appointment Date must be today or in the future.');
       return;
     }
+    // If booking for today, timeSlot must be a future time and before 18:00
+    {
+      const todayYmd = toYmdLocal(new Date());
+      if (appointment.date === todayYmd) {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const [hStr, mStr] = (appointment.timeSlot || '').split(':');
+        const selMinutes = Number(hStr) * 60 + Number(mStr || 0);
+        if (!(selMinutes > nowMinutes && selMinutes < 18 * 60)) {
+          alert('Select a future time slot today before 6:00 PM.');
+          return;
+        }
+        // enforce :00 or :30 today as well
+        if (!(['00','30'].includes(String(mStr || '00')))) {
+          alert('Please select a 30-minute slot (e.g., 03:00 PM or 03:30 PM).');
+          return;
+        }
+      }
+    }
     if (!isValidTimeWindow(appointment.timeSlot)) {
-      alert('Time Slot must be between 09:00 and 18:00.');
+      alert('Time Slot must be between 09:00 and 17:30 in 30-minute steps.');
       return;
     }
     if (!isValidEmail(appointment.ownerEmail)) {
@@ -115,7 +183,6 @@ function AppointmentForm() {
   };
 
   return (
-    
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
@@ -155,6 +222,9 @@ function AppointmentForm() {
                   disabled={loading}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {errors.petName && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.petName}</p>
+                )}
               </div>
             </div>
 
@@ -181,6 +251,9 @@ function AppointmentForm() {
                   disabled={loading}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
+                {errors.ownerName && (
+                  <p className="text-red-500 text-xs mt-1 ml-1">{errors.ownerName}</p>
+                )}
               </div>
             </div>
 
@@ -224,7 +297,7 @@ function AppointmentForm() {
                   name="date"
                   value={appointment.date}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={toYmdLocal(new Date())}
                   required
                   disabled={loading}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -248,8 +321,9 @@ function AppointmentForm() {
                   name="timeSlot"
                   value={appointment.timeSlot}
                   onChange={handleInputChange}
-                  min="09:00"
-                  max="18:00"
+                  min={dynamicMinTime}
+                  max="17:30"
+                  step={1800}
                   required
                   disabled={loading}
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"

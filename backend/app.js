@@ -158,7 +158,7 @@ app.post("/register", async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
     
-    console.log('✅ New user registered:', newUser.email);
+    console.log('New user registered:', newUser.email);
     
     res.json({ 
       status: "ok",
@@ -220,7 +220,7 @@ app.post("/login", async (req, res) => {
         user.password = hashedPassword;
         user.confirmpassword = hashedPassword;
         await user.save();
-        console.log('✅ Password migrated for:', user.email);
+        console.log('Password migrated for:', user.email);
       }
     }
     
@@ -257,7 +257,7 @@ app.post("/login", async (req, res) => {
       { expiresIn: JWT_EXPIRES_IN }
     );
     
-    console.log('✅ Login successful for:', user.email);
+    console.log('Login successful for:', user.email);
     
     res.json({ 
       status: "ok",
@@ -274,7 +274,7 @@ app.post("/login", async (req, res) => {
       }
     });
   } catch (err) {
-    console.error("❌ Login error:", err);
+    console.error("Login error:", err);
     res.status(500).json({ 
       status: "error",
       message: "Server error" 
@@ -341,7 +341,7 @@ const startExpiryJob = () => {
         { status: "past", updatedAt: Date.now() }
       );
       if (result?.modifiedCount) {
-        console.log(`✅ Expired sponsorships: ${result.modifiedCount}`);
+        console.log(`Expired sponsorships: ${result.modifiedCount}`);
       }
     } catch (e) {
       // Reduce noisy DNS/connection logs
@@ -354,7 +354,7 @@ const startExpiryJob = () => {
       ) {
         console.warn('⚠️ Skipping expiry job due to temporary DB connectivity issue');
       } else {
-        console.error('❌ Expiry job error:', msg);
+        console.error('Expiry job error:', msg);
       }
     }
   }, EXPIRY_JOB_INTERVAL_MS);
@@ -418,18 +418,18 @@ const startAppointmentReminderJob = () => {
 // MongoDB connection and server start
 mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log("✅ Connected to MongoDB");
+    console.log("Connected to MongoDB");
     startExpiryJob();
     startAppointmentReminderJob();
   })
   .then(() => {
     app.listen(PORT, () => {
-      console.log(` Server running on port ${PORT}`);
-      console.log(` JWT Authentication enabled`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`JWT Authentication enabled`);
     });
   })
   .catch((err) => {
-    console.error(" MongoDB connection error:", err);
+    console.error("MongoDB connection error:", err);
     process.exit(1);
   });
 

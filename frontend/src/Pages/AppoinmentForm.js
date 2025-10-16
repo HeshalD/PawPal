@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import axiosInstance from '../config/axiosConfig';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
+import Nav from '../Components/Nav/Nav';
 
 // Local date helpers to avoid UTC offset issues
 const toYmdLocal = (d) => {
@@ -238,7 +239,10 @@ function AppointmentForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
+    <div className="min-h-[calc(100vh-3rem)] bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
         <div className="text-center">
@@ -451,20 +455,11 @@ function AppointmentForm() {
             </button>
           </form>
 
-          {/* Footer Links */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Need help?{' '}
-              <a 
-                href="/contact" 
-                className="font-semibold bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent hover:from-[#5530CC] hover:to-[#E69AAE] transition duration-200"
-              >
-                Contact support
-              </a>
-            </p>
-          </div>
+        
         </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

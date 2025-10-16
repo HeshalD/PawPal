@@ -147,7 +147,59 @@ exports.updateAppointmentStatus = async (req, res) => {
       return res.status(404).json({ message: "Appointment not found" });
     }
 
-    res.json({ message: "Status updated", appointment });
+    // Send confirmation email to user about status change
+    let emailResult = { ok: false };
+    try {
+      const to = appointment.ownerEmail;
+      const dateStr = new Date(appointment.date).toDateString();
+      const isAccepted = status === 'accepted';
+      const subject = isAccepted
+        ? 'Your PawPal appointment is approved'
+        : (status === 'rejected' ? 'Your PawPal appointment was declined' : 'Your PawPal appointment status updated');
+      const text = isAccepted
+        ? `Hi ${appointment.ownerName},\n\nYour appointment for ${appointment.petName} is approved.\nDate: ${dateStr}\nTime: ${appointment.timeSlot}\nStatus: ${appointment.status}\n\nSee you soon,\nPawPal`
+        : (status === 'rejected'
+          ? `Hi ${appointment.ownerName},\n\nWe’re sorry, your appointment for ${appointment.petName} was declined.\nDate: ${dateStr}\nTime: ${appointment.timeSlot}\nStatus: ${appointment.status}\n\nPlease book another time.\nPawPal`
+          : `Hi ${appointment.ownerName},\n\nYour appointment status was updated.\nDate: ${dateStr}\nTime: ${appointment.timeSlot}\nStatus: ${appointment.status}\n\nPawPal`);
+      const html = isAccepted
+        ? `
+          <p>Hi ${appointment.ownerName},</p>
+          <p>Your appointment for <strong>${appointment.petName}</strong> is <strong>approved</strong>.</p>
+          <ul>
+            <li><strong>Date:</strong> ${dateStr}</li>
+            <li><strong>Time:</strong> ${appointment.timeSlot}</li>
+            <li><strong>Status:</strong> ${appointment.status}</li>
+          </ul>
+          <p>See you soon,<br/><strong>PawPal</strong></p>
+        `
+        : (status === 'rejected'
+          ? `
+            <p>Hi ${appointment.ownerName},</p>
+            <p>We’re sorry, your appointment for <strong>${appointment.petName}</strong> was <strong>declined</strong>.</p>
+            <ul>
+              <li><strong>Date:</strong> ${dateStr}</li>
+              <li><strong>Time:</strong> ${appointment.timeSlot}</li>
+              <li><strong>Status:</strong> ${appointment.status}</li>
+            </ul>
+            <p>Please book another time.<br/><strong>PawPal</strong></p>
+          `
+          : `
+            <p>Hi ${appointment.ownerName},</p>
+            <p>Your appointment status was updated.</p>
+            <ul>
+              <li><strong>Date:</strong> ${dateStr}</li>
+              <li><strong>Time:</strong> ${appointment.timeSlot}</li>
+              <li><strong>Status:</strong> ${appointment.status}</li>
+            </ul>
+            <p><strong>PawPal</strong></p>
+          `);
+
+      emailResult = await sendEmail({ to, subject, text, html });
+    } catch (e) {
+      emailResult = { ok: false, error: e?.message || 'Email send failed' };
+    }
+
+    res.json({ message: "Status updated", appointment, email: emailResult });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

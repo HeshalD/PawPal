@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { DonationsAPI } from '../../services/api';
 import Nav from "../Nav/Nav";
 
-// Chatbot Component (unchanged)
+// Enhanced Chatbot Component
 const Chatbot = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
     {
@@ -15,6 +15,16 @@ const Chatbot = ({ isOpen, onClose }) => {
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [apiKey] = useState('AIzaSyBrQWyDCJJevByN18FGtY_OPpfqiHOrgyg');
+  const messagesEndRef = useRef(null);
+  const [conversationHistory, setConversationHistory] = useState([]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   const quickReplies = [
     "How much should I donate?",
@@ -26,6 +36,16 @@ const Chatbot = ({ isOpen, onClose }) => {
 
   const getBotResponse = async (userMessage) => {
     try {
+      // Build conversation context
+      const conversationContext = conversationHistory
+        .slice(-6) // Last 3 exchanges (6 messages)
+        .map(msg => `${msg.isBot ? 'Assistant' : 'User'}: ${msg.text}`)
+        .join('\n');
+
+      const contextPrompt = conversationContext 
+        ? `Previous conversation:\n${conversationContext}\n\nCurrent question: ${userMessage}`
+        : userMessage;
+
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -34,24 +54,57 @@ const Chatbot = ({ isOpen, onClose }) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are PawPal Assistant, a helpful chatbot for a pet care management system. The user is on our donation page and asked: "${userMessage}". 
+              text: `You are PawPal Assistant, a knowledgeable and friendly chatbot for a pet care donation platform. 
 
-              Provide helpful, friendly responses about:
-              - Donation amounts (Rs. 1,000 feeds a pet for a week, Rs. 5,000 covers medical checkup, Rs. 10,000 for emergency treatment)
-              - Payment methods (Bank Transfer, Credit Card, Mobile Payment, Cash)
-              - Tax benefits (donations are tax deductible)
-              - How donations are used (directly for pet care, medical treatment, food, shelter)
-              - Donation frequency options (one-time, monthly, weekly, yearly)
-              
-              Keep responses warm, encouraging, and under 100 words. Use pet emojis appropriately.`
+CONTEXT: The user is on our donation page and may have questions about making donations.
+
+KEY INFORMATION:
+- Donation Impact:
+  * Rs. 1,000 feeds a pet for 1 week
+  * Rs. 5,000 covers a medical checkup
+  * Rs. 10,000 helps with emergency treatment
+  * Any amount above Rs. 500 is accepted
+  
+- Payment Methods: Bank Transfer, Credit Card, Mobile Payment, Cash
+- Tax Benefits: All donations are tax deductible with proper receipts
+- Fund Usage: Direct pet care (70%), medical treatment (20%), shelter maintenance (10%)
+- Donation Types: Medical Care, Food & Supplies, Shelter, Emergency Fund, General Support
+- Frequency Options: One-time, Weekly, Monthly, Yearly
+
+PERSONALITY:
+- Be warm, empathetic, and encouraging
+- Show genuine care for both pets and donors
+- Use relevant emojis naturally (🐾 💝 🏥 🍖 🏠)
+- Keep responses conversational and natural
+- Answer questions directly and concisely
+- If asked about previous conversation, use context provided
+
+RESPONSE STYLE:
+- Keep answers under 100 words
+- Be specific with numbers and facts
+- Encourage donations while being respectful
+- Offer to help with related questions
+- Remember and reference previous messages when relevant
+
+${contextPrompt}`
             }]
           }],
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.8,
             topK: 40,
             topP: 0.95,
             maxOutputTokens: 1024,
-          }
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
         })
       });
 
@@ -60,37 +113,53 @@ const Chatbot = ({ isOpen, onClose }) => {
       }
 
       const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
+      
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+        return data.candidates[0].content.parts[0].text;
+      } else {
+        throw new Error('Invalid API response format');
+      }
     } catch (error) {
       console.error('Gemini API Error:', error);
       
-      const fallbackResponses = {
-        'donation amount': "Great question! Even Rs. 1,000 can feed a pet for a week. Rs. 5,000 covers a medical checkup, and Rs. 10,000 can help with emergency treatment. Every amount helps! 💝",
-        'payment': "We accept Bank Transfer, Credit Card, Mobile Payment, and Cash donations. All methods are secure and reliable! 💳",
-        'tax': "Yes! Your donations to PawPal are eligible for tax deductions. We'll provide you with proper receipts for tax purposes. 📄",
-        'use': "Your donations go directly to pet care - medical treatment, food, shelter maintenance, and emergency care. We maintain full transparency about fund usage! 🏥",
-        'recurring': "Absolutely! You can set up monthly, weekly, or yearly recurring donations. It's a great way to provide ongoing support! 🔄",
-        'help': "I can help you with donation amounts, payment methods, tax information, and answer any questions about the donation process! 😊",
-        'default': "Sorry, I'm having trouble connecting right now. Please try again or contact our support team for assistance! 🐾"
-      };
-
+      // Enhanced fallback with context awareness
       const lowerMessage = userMessage.toLowerCase();
       
-      if (lowerMessage.includes('amount') || lowerMessage.includes('much')) {
-        return fallbackResponses['donation amount'];
-      } else if (lowerMessage.includes('payment') || lowerMessage.includes('pay')) {
-        return fallbackResponses['payment'];
-      } else if (lowerMessage.includes('tax')) {
-        return fallbackResponses['tax'];
-      } else if (lowerMessage.includes('use') || lowerMessage.includes('money')) {
-        return fallbackResponses['use'];
-      } else if (lowerMessage.includes('recurring') || lowerMessage.includes('monthly')) {
-        return fallbackResponses['recurring'];
-      } else if (lowerMessage.includes('help')) {
-        return fallbackResponses['help'];
-      } else {
-        return fallbackResponses['default'];
+      const fallbackResponses = {
+        'amount|much|cost|price': "Great question! Our donation tiers are:\n\n🍖 Rs. 1,000 - Feeds a pet for 1 week\n🏥 Rs. 5,000 - Covers a medical checkup\n🚑 Rs. 10,000 - Emergency treatment\n\nEvery amount above Rs. 500 makes a real difference! 💝",
+        
+        'payment|pay|method|how to': "We accept multiple payment methods:\n\n💳 Credit Card - Instant & secure\n🏦 Bank Transfer - Direct deposit\n📱 Mobile Payment - Quick & easy\n💵 Cash - At our office\n\nAll methods are safe and reliable!",
+        
+        'tax|deduct|receipt': "Yes! Your donations are 100% tax deductible! 📄\n\nWe'll provide you with an official receipt for tax purposes. This helps you save on taxes while helping our furry friends! It's a win-win! 🐾",
+        
+        'use|spend|money|funds': "Your donation directly helps pets! 💝\n\n🏥 70% - Direct pet care & medical treatment\n🍖 20% - Food and nutrition\n🏠 10% - Shelter maintenance\n\nWe maintain full transparency about every rupee spent!",
+        
+        'recurring|monthly|regular|subscription': "Absolutely! We offer flexible donation schedules:\n\n📅 Weekly - Continuous support\n🗓️ Monthly - Most popular choice\n📆 Yearly - Annual commitment\n\nRecurring donations help us plan better care! 🔄",
+        
+        'types|categories|contribute': "You can contribute to:\n\n🏥 Medical Care - Treatments & checkups\n🍖 Food & Supplies - Daily nutrition\n🏠 Shelter - Safe housing\n🚑 Emergency Fund - Urgent cases\n💝 General Support - Where needed most",
+        
+        'safe|secure|trust': "Your donation is 100% secure! 🔒\n\nWe use encrypted payment processing and never store sensitive card information. Plus, we're a registered charity with full transparency reports available!",
+        
+        'thank|thanks': "You're so welcome! 💝 Your kindness means the world to our furry friends. Is there anything else you'd like to know about making a donation?",
+        
+        'hello|hi|hey': "Hello there! 👋 I'm here to help you make a difference in pets' lives. Feel free to ask me anything about donations, or I can guide you through the donation process!",
+        
+        'help|assist': "I'm here to help! 😊 I can answer questions about:\n\n💰 Donation amounts & impact\n💳 Payment methods\n📄 Tax benefits\n🐾 How funds are used\n🔄 Recurring donations\n\nWhat would you like to know?",
+        
+        'default': "I'm having a bit of trouble right now 😅 But I'm here to help! Could you rephrase your question? Or try asking about:\n\n• Donation amounts\n• Payment methods\n• Tax benefits\n• How we use donations"
+      };
+
+      // Smart pattern matching
+      for (const [pattern, response] of Object.entries(fallbackResponses)) {
+        if (pattern !== 'default') {
+          const patterns = pattern.split('|');
+          if (patterns.some(p => lowerMessage.includes(p))) {
+            return response;
+          }
+        }
       }
+      
+      return fallbackResponses['default'];
     }
   };
 
@@ -98,88 +167,145 @@ const Chatbot = ({ isOpen, onClose }) => {
     if (!inputMessage.trim()) return;
 
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: inputMessage,
       isBot: false,
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setConversationHistory(prev => [...prev, userMessage]);
+    const currentInput = inputMessage;
     setInputMessage('');
     setIsTyping(true);
 
-    setTimeout(async () => {
-      const botResponse = await getBotResponse(inputMessage);
+    try {
+      // Realistic typing delay based on message length
+      const typingDelay = Math.min(Math.max(currentInput.length * 30, 800), 2500);
+      
+      const botResponse = await getBotResponse(currentInput);
+      
+      // Wait for typing animation
+      await new Promise(resolve => setTimeout(resolve, typingDelay));
+      
       const botMessage = {
-        id: messages.length + 2,
+        id: Date.now() + 1,
         text: botResponse,
         isBot: true,
         timestamp: new Date()
       };
       
       setMessages(prev => [...prev, botMessage]);
+      setConversationHistory(prev => [...prev, botMessage]);
       setIsTyping(false);
-    }, 1500);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: "I apologize, but I'm having trouble responding right now. Please try again or contact our support team! 🐾",
+        isBot: true,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setIsTyping(false);
+    }
   };
 
   const handleQuickReply = (reply) => {
     setInputMessage(reply);
+    // Auto-send after short delay
+    setTimeout(() => {
+      const syntheticEvent = { target: { value: reply } };
+      sendMessage();
+    }, 100);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-24 right-6 w-80 h-96 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50">
+    <div className="fixed bottom-24 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50 animate-slideUp">
+      {/* Header */}
       <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-t-2xl flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-            <span className="text-purple-500 text-sm">🐾</span>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md">
+            <span className="text-2xl">🐾</span>
           </div>
           <div>
-            <h3 className="font-semibold">PawPal Assistant</h3>
-            <p className="text-xs opacity-90">Online now</p>
+            <h3 className="font-semibold text-lg">PawPal Assistant</h3>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <p className="text-xs opacity-90">Online now</p>
+            </div>
           </div>
         </div>
-        <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1">
+        <button 
+          onClick={onClose} 
+          className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all duration-200"
+          aria-label="Close chat"
+        >
           ✕
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}>
-            <div className={`max-w-xs px-4 py-2 rounded-2xl ${
+          <div 
+            key={message.id} 
+            className={`flex ${message.isBot ? 'justify-start' : 'justify-end'} animate-fadeIn`}
+          >
+            {message.isBot && (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-2 flex-shrink-0">
+                <span className="text-white text-sm">🐾</span>
+              </div>
+            )}
+            <div className={`max-w-[75%] px-4 py-3 rounded-2xl shadow-sm ${
               message.isBot 
-                ? 'bg-gray-100 text-gray-800' 
-                : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                ? 'bg-white text-gray-800 rounded-tl-none' 
+                : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-tr-none'
             }`}>
-              <p className="text-sm">{message.text}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-line">{message.text}</p>
+              <p className={`text-xs mt-1 ${message.isBot ? 'text-gray-400' : 'text-purple-100'}`}>
+                {message.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
           </div>
         ))}
         
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-800 max-w-xs px-4 py-2 rounded-2xl">
+          <div className="flex justify-start animate-fadeIn">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-2">
+              <span className="text-white text-sm">🐾</span>
+            </div>
+            <div className="bg-white text-gray-800 max-w-xs px-4 py-3 rounded-2xl rounded-tl-none shadow-sm">
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.15s'}}></div>
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.3s'}}></div>
               </div>
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
 
-      {messages.length === 1 && (
-        <div className="px-4 pb-2">
-          <p className="text-xs text-gray-500 mb-2">Quick questions:</p>
+      {/* Quick Replies - Only show initially */}
+      {messages.length <= 2 && (
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+          <p className="text-xs text-gray-500 mb-2 font-medium">💡 Quick questions:</p>
           <div className="flex flex-wrap gap-2">
             {quickReplies.slice(0, 3).map((reply, index) => (
               <button
                 key={index}
                 onClick={() => handleQuickReply(reply)}
-                className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-full transition-colors"
+                className="text-xs bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 border border-gray-200 hover:border-purple-300 text-gray-700 px-3 py-2 rounded-full transition-all duration-200 shadow-sm hover:shadow"
               >
                 {reply}
               </button>
@@ -188,31 +314,64 @@ const Chatbot = ({ isOpen, onClose }) => {
         </div>
       )}
 
-      <div className="p-4 border-t border-gray-200">
+      {/* Input Area */}
+      <div className="p-4 border-t border-gray-200 bg-white rounded-b-2xl">
         <div className="flex space-x-2">
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+            className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm transition-all duration-200"
+            disabled={isTyping}
           />
           <button
             onClick={sendMessage}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-2 rounded-full hover:from-purple-600 hover:to-pink-600 transition-colors"
+            disabled={isTyping || !inputMessage.trim()}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-3 rounded-full hover:from-purple-600 hover:to-pink-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none"
+            aria-label="Send message"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(5px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };
 
-// Main DonorForm Component with Validation
+// Main DonorForm Component (unchanged - keeping all validation logic)
 const DonorForm = () => {
   const [formData, setFormData] = useState({
     fullname: '',
@@ -237,7 +396,6 @@ const DonorForm = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
-  // Validation helper
   const validateNIC = (nic) => {
     if (!nic) return '';
     const nicUpper = nic.toUpperCase();
@@ -250,7 +408,6 @@ const DonorForm = () => {
     return 'Use old format (9 digits + V/X) or new format (12 digits)';
   };
 
-  // Handle full name - only letters, spaces, hyphens, apostrophes
   const handleFullNameChange = (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^a-zA-Z\s'-]/g, '');
@@ -269,7 +426,6 @@ const DonorForm = () => {
     }
   };
 
-  // Handle phone - only numbers, +, spaces, hyphens
   const handlePhoneChange = (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^0-9+\s-]/g, '');
@@ -289,7 +445,6 @@ const DonorForm = () => {
     }
   };
 
-  // Handle NIC - only numbers, V, X
   const handleNICChange = (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^0-9VXvx]/g, '').toUpperCase();
@@ -309,7 +464,6 @@ const DonorForm = () => {
     }
   };
 
-  // Handle age - only numbers
   const handleAgeChange = (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^0-9]/g, '');
@@ -329,7 +483,6 @@ const DonorForm = () => {
     }
   };
 
-  // Handle amount - only numbers and decimal
   const handleAmountChange = (e) => {
     const value = e.target.value;
     const filtered = value.replace(/[^0-9.]/g, '');
@@ -351,7 +504,6 @@ const DonorForm = () => {
     }
   };
 
-  // Handle other inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({

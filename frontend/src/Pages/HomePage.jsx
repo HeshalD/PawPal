@@ -7,6 +7,26 @@ function HomePage() {
   const [ads, setAds] = React.useState([]);
   const [currentAd, setCurrentAd] = React.useState(0);
   const [loadingAds, setLoadingAds] = React.useState(false);
+  const aboutRef = React.useRef(null);
+  const servicesRef = React.useRef(null);
+  const contactRef = React.useRef(null);
+
+  const handleNavClick = (target) => (e) => {
+    e.preventDefault();
+    if (target === 'home') {
+      window.location.reload();
+      return;
+    }
+    const map = {
+      about: aboutRef,
+      services: servicesRef,
+      contact: contactRef,
+    };
+    const ref = map[target];
+    if (ref && ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -46,10 +66,10 @@ function HomePage() {
               <span className="text-2xl font-bold text-gray-800">Pawpal</span>
             </div>
             <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Home</a>
-              <a href="#" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">About</a>
-              <a href="#" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Services</a>
-              <a href="#" className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Contact</a>
+              <a href="#home" onClick={handleNavClick('home')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Home</a>
+              <a href="#about" onClick={handleNavClick('about')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">About</a>
+              <a href="#services" onClick={handleNavClick('services')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Services</a>
+              <a href="#contact" onClick={handleNavClick('contact')} className="text-gray-600 hover:text-purple-600 font-medium transition-colors">Contact</a>
             </nav>
           </div>
         </div>
@@ -62,6 +82,12 @@ function HomePage() {
           <div className="absolute top-10 left-10 w-20 h-20 bg-pink-200 rounded-full opacity-20 animate-bounce"></div>
           <div className="absolute top-32 right-20 w-16 h-16 bg-purple-200 rounded-full opacity-30 animate-pulse"></div>
           <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-pink-100 rounded-full opacity-25 animate-bounce"></div>
+          <div className="pointer-events-none select-none absolute bottom-0 left-0 w-40 sm:w-56 md:w-72 lg:w-80 xl:w-96">
+            <img src="/hero/left-dog.png" alt="Left banner pet" className="w-full h-auto drop-shadow-2xl" />
+          </div>
+          <div className="pointer-events-none select-none absolute -bottom-4 -right-2 sm:-right-3 md:-right-12 w-44 sm:w-60 md:w-80 lg:w-[22rem] xl:w-[26rem]">
+            <img src="/hero/right-dog.png" alt="Right banner pet" className="w-full h-auto drop-shadow-2xl opacity-90" />
+          </div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Logo */}
@@ -146,7 +172,7 @@ function HomePage() {
               {/* Left Content */}
               <div className="space-y-8">
                 <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-8 rounded-2xl border border-pink-100 hover:shadow-lg transition-shadow">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4">🏥 Advanced Healthcare Management</h3>
+                  <h3 ref={aboutRef} className="text-2xl font-bold text-gray-800 mb-4">🏥 Advanced Healthcare Management</h3>
                   <p className="text-gray-700 leading-relaxed">
                     Our state-of-the-art healthcare management system ensures your pets receive timely medical attention, vaccination tracking, health monitoring, and preventive care. We maintain comprehensive medical records, schedule regular check-ups, and provide emergency care coordination with certified veterinarians.
                   </p>
@@ -217,7 +243,7 @@ function HomePage() {
         </section>
 
         {/* Services Cards Section */}
-        <section className="py-20 bg-gradient-to-br from-pink-50 to-purple-50">
+        <section ref={servicesRef} className="py-20 bg-gradient-to-br from-pink-50 to-purple-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-4xl font-bold text-gray-800 mb-6">Our Core Services</h2>
@@ -270,7 +296,7 @@ function HomePage() {
       </main>
 
       {/* Footer (Locked) */}
-      <footer className="bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white py-12 shadow-inner">
+      <footer ref={contactRef} className="bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white py-12 shadow-inner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">

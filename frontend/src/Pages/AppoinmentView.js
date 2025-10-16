@@ -204,6 +204,7 @@ export default function AppointmentDashboard() {
   const downloadReport = async () => {
     try {
       const doc = new jsPDF('p', 'pt');
+      //const doc = new jsPDF('p','pt','a4')
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
 
@@ -240,7 +241,7 @@ export default function AppointmentDashboard() {
           1: { cellWidth: 150 },
           2: { cellWidth: 100 },
           3: { cellWidth: 65 },
-          4: { cellWidth: 50 },
+          4: { cellWidth: 60 },
         },
         margin: { left: margin, right: margin },
       });

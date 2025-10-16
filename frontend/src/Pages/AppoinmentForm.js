@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import axiosInstance from '../config/axiosConfig';
 import { Calendar, Clock, User, Heart, UserCircle } from 'lucide-react';
+import Nav from '../Components/Nav/Nav';
 
 // Local date helpers to avoid UTC offset issues
 const toYmdLocal = (d) => {
@@ -26,6 +27,9 @@ function AppointmentForm() {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [availabilityMsg, setAvailabilityMsg] = useState('');
+  const [showAvailability, setShowAvailability] = useState(false);
   const [appointment, setAppointment] = useState({
     petName: '',
     ownerName: '',
@@ -71,7 +75,59 @@ function AppointmentForm() {
         [name]: ok ? '' : 'Use letters, spaces and at least two characters'
       }));
     }
+    if (name === 'date') {
+      fetchSlotsForDate(value).catch(() => {});
+      setAppointment((prev) => ({ ...prev, timeSlot: '' }));
+    }
   };
+
+  // Fetch available slots for selected date from backend doctor availability API
+  const fetchSlotsForDate = async (ymd) => {
+    try {
+      setAvailabilityMsg('');
+      if (!ymd) {
+        setAvailableSlots([]);
+        return;
+      }
+      const res = await axiosInstance.get(`/doctor-availability/slots?date=${encodeURIComponent(ymd)}`);
+      const data = res?.data || {};
+      const slots = Array.isArray(data.slots) ? data.slots : [];
+      setAvailableSlots(slots);
+
+      if (slots.length === 0) {
+        setAvailabilityMsg('No available time slots for this date. Please choose another date.');
+      }
+
+      // Weekend message example for Dr. Sunethra
+      const picked = new Date(ymd);
+      const day = picked.getDay();
+      const hasSunethraWeekendBlock = Array.isArray(data.unavailable) && data.unavailable.some(u => {
+        return String(u?.doctorName || '').toLowerCase().includes('sunethra') && (day === 0 || day === 6);
+      });
+      if (hasSunethraWeekendBlock) {
+        setAvailabilityMsg(prev => (prev ? prev + ' ' : '') + 'Dr. Sunethra is not available on weekends.');
+      }
+    } catch (err) {
+      setAvailableSlots([]);
+      setAvailabilityMsg('Could not load availability right now. Please try again or pick another date.');
+    }
+  };
+
+  // Auto-fetch slots if date pre-filled
+  useEffect(() => {
+    if (appointment.date) fetchSlotsForDate(appointment.date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const openAvailability = () => {
+    if (!appointment.date) {
+      alert('Please select a date first to view doctor availability.');
+      return;
+    }
+    fetchSlotsForDate(appointment.date).catch(() => {});
+    setShowAvailability(true);
+  };
+  const closeAvailability = () => setShowAvailability(false);
 
   // Compute dynamic min time if booking for today (rounded to next half-hour)
   const dynamicMinTime = (() => {
@@ -183,7 +239,10 @@ function AppointmentForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+      <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}>
+    <div className="min-h-[calc(100vh-3rem)] bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
         <div className="text-center">
@@ -303,6 +362,11 @@ function AppointmentForm() {
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
+              {appointment.date && availableSlots.length === 0 && (
+                <div className="mt-2 ml-1 text-xs text-red-600">
+                  {availabilityMsg || 'No doctor availability for this date. Please choose another date.'}
+                </div>
+              )}
             </div>
 
             {/* Time Slot Field */}
@@ -329,7 +393,47 @@ function AppointmentForm() {
                   className="block w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#E69AAE] focus:border-[#E69AAE] transition duration-300 placeholder-gray-400 text-gray-900 bg-gray-50 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-gray-600">Check doctor availability for your selected date.</p>
+                <button
+                  type="button"
+                  onClick={openAvailability}
+                  className="text-xs px-3 py-1 rounded-md text-white bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#5530CC] hover:to-[#E69AAE]"
+                >
+                  Doctor Availability
+                </button>
+              </div>
             </div>
+
+            {showAvailability && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold">Available times for {appointment.date || ''}</h4>
+                    <button onClick={closeAvailability} className="text-gray-500 hover:text-gray-700 text-sm">Close</button>
+                  </div>
+                  {availabilityMsg && (
+                    <p className="text-xs text-red-600 mb-2">{availabilityMsg}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2 max-h-64 overflow-auto">
+                    {availableSlots.length > 0 ? (
+                      availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          onClick={() => { setAppointment(prev => ({ ...prev, timeSlot: slot })); closeAvailability(); }}
+                          className={`px-3 py-1 rounded-md text-xs border ${appointment.timeSlot === slot ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-indigo-700 border-indigo-200 hover:bg-indigo-50'}`}
+                        >
+                          {slot}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-500">No slots available</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Submit Button - ✅ REMOVED Link wrapper */}
             <button
@@ -351,20 +455,11 @@ function AppointmentForm() {
             </button>
           </form>
 
-          {/* Footer Links */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Need help?{' '}
-              <a 
-                href="/contact" 
-                className="font-semibold bg-gradient-to-r from-[#6638E6] to-[#E6738F] bg-clip-text text-transparent hover:from-[#5530CC] hover:to-[#E69AAE] transition duration-200"
-              >
-                Contact support
-              </a>
-            </p>
-          </div>
+        
         </div>
       </div>
+    </div>
+    </div>
     </div>
   );
 }

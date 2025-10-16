@@ -13,6 +13,12 @@ export default function AdminAppointmentView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [filteredAppointments, setFilteredAppointments] = useState([]);
+  const [notice, setNotice] = useState(null); // { type: 'success'|'warning'|'error', text: string }
+  // Doctor availability admin management state
+  const [entries, setEntries] = useState([]);
+  const [entryLoading, setEntryLoading] = useState(false);
+  const [entryForm, setEntryForm] = useState({ doctorName: '', date: '', time_slot: '', status: 'available' });
+  const [editingId, setEditingId] = useState(null);
 
   const loadAppointments = async () => {
     setLoading(true);
@@ -40,6 +46,96 @@ export default function AdminAppointmentView() {
   useEffect(() => { 
     loadAppointments(); 
   }, []);
+
+  // Load doctor availability entries
+  const loadEntries = async () => {
+    try {
+      setEntryLoading(true);
+      const res = await fetch('http://localhost:5000/doctor-availability/entries');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setEntries(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.warn('Load availability entries failed:', e);
+    } finally {
+      setEntryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  const resetEntryForm = () => {
+    setEditingId(null);
+    setEntryForm({ doctorName: '', date: '', time_slot: '', status: 'available' });
+  };
+
+  const saveEntry = async (e) => {
+    e.preventDefault();
+    try {
+      // Client-side validations
+      const nameOk = /^[A-Za-z .]{2,}$/.test(String(entryForm.doctorName || '').trim());
+      if (!nameOk) {
+        alert('Invalid Doctor Name. Use letters and spaces (min 2 characters).');
+        return;
+      }
+      const todayYmd = new Date();
+      const pad = (n) => String(n).padStart(2,'0');
+      const minYmd = `${todayYmd.getFullYear()}-${pad(todayYmd.getMonth()+1)}-${pad(todayYmd.getDate())}`;
+      if (!entryForm.date || entryForm.date < minYmd) {
+        alert('Date must be today or a future date.');
+        return;
+      }
+      const raw = String(entryForm.time_slot || '').trim();
+      const isAll = raw.toUpperCase() === 'ALL';
+      const flexible = /^(\d{1,2})(?::?(\d{2}))?(\s*(am|pm))?(\s*(to|-){1}\s*(\d{1,2})(?::?(\d{2}))?(\s*(am|pm))?)?$/i.test(raw);
+      if (!(isAll || flexible)) {
+        alert('Invalid Time Slot. Use ALL, HH:MM, HH:MM-HH:MM, or formats like 10am to 6pm.');
+        return;
+      }
+      if (!['available','unavailable'].includes(entryForm.status)) {
+        alert('Invalid status.');
+        return;
+      }
+      const method = editingId ? 'PUT' : 'POST';
+      const url = editingId
+        ? `http://localhost:5000/doctor-availability/entries/${editingId}`
+        : 'http://localhost:5000/doctor-availability/entries';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entryForm)
+      });
+      if (res.status === 409) {
+        alert('An entry already exists for this doctor/date/time slot.');
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadEntries();
+      resetEntryForm();
+    } catch (e2) {
+      alert('Failed to save availability.');
+    }
+  };
+
+  const editEntry = (it) => {
+    setEditingId(it._id);
+    const d = new Date(it.date);
+    const ymd = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    setEntryForm({ doctorName: it.doctorName, date: ymd, time_slot: it.time_slot, status: it.status });
+  };
+
+  const deleteEntry = async (id) => {
+    if (!window.confirm('Delete this availability entry?')) return;
+    try {
+      const res = await fetch(`http://localhost:5000/doctor-availability/entries/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await loadEntries();
+    } catch (e) {
+      alert('Failed to delete entry.');
+    }
+  };
 
   // Filter appointments
   useEffect(() => {
@@ -87,9 +183,20 @@ export default function AdminAppointmentView() {
       
       // Clear any previous errors
       setError(null);
+
+      // Show email notification result
+      const emailOk = result?.email?.ok;
+      if (emailOk) {
+        setNotice({ type: 'success', text: 'Approved. Confirmation email sent to user.' });
+      } else {
+        setNotice({ type: 'warning', text: 'Approved. Email could not be sent (check SMTP settings).' });
+      }
+      setTimeout(() => setNotice(null), 4000);
     } catch (e) {
       console.error('Accept error:', e);
       setError(`Failed to accept: ${e.message}`);
+      setNotice({ type: 'error', text: 'Failed to approve appointment.' });
+      setTimeout(() => setNotice(null), 4000);
     }
   };
 
@@ -125,9 +232,20 @@ export default function AdminAppointmentView() {
       
       // Clear any previous errors
       setError(null);
+
+      // Show email notification result
+      const emailOk = result?.email?.ok;
+      if (emailOk) {
+        setNotice({ type: 'success', text: 'Declined. Notification email sent to user.' });
+      } else {
+        setNotice({ type: 'warning', text: 'Declined. Email could not be sent (check SMTP settings).' });
+      }
+      setTimeout(() => setNotice(null), 4000);
     } catch (e) {
       console.error('Reject error:', e);
       setError(`Failed to reject appointment: ${e.message}`);
+      setNotice({ type: 'error', text: 'Failed to decline appointment.' });
+      setTimeout(() => setNotice(null), 4000);
     }
   };
 
@@ -194,6 +312,130 @@ export default function AdminAppointmentView() {
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {notice && (
+              <div className={`mb-6 rounded-lg p-4 border ${
+                notice.type === 'success' ? 'bg-green-50 border-green-200 text-green-800' :
+                notice.type === 'warning' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
+                'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div className="text-sm">{notice.text}</div>
+                  <button onClick={() => setNotice(null)} className="text-xs opacity-70 hover:opacity-100">Close</button>
+                </div>
+              </div>
+            )}
+            {/* Doctor Availability Management (Admin) */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Doctor Availability</h3>
+              </div>
+
+              <form onSubmit={saveEntry} className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Doctor Name</label>
+                  <input
+                    type="text"
+                    value={entryForm.doctorName}
+                    onChange={(e)=>setEntryForm(f=>({...f, doctorName: e.target.value }))}
+                    placeholder="e.g., Dr. Sunethra"
+                    required
+                    pattern="^[A-Za-z .]{2,}$"
+                    title="Use letters, spaces, and periods (e.g., Dr. Sunethra), at least 2 characters"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={entryForm.date}
+                    onChange={(e)=>setEntryForm(f=>({...f, date: e.target.value }))}
+                    min={(new Date()).toISOString().slice(0,10)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Time Slot</label>
+                  <input
+                    type="text"
+                    value={entryForm.time_slot}
+                    onChange={(e)=>setEntryForm(f=>({...f, time_slot: e.target.value }))}
+                    placeholder="HH:MM, HH:MM-HH:MM or ALL"
+                    title="Use ALL, HH:MM, HH:MM-HH:MM, or formats like 10am to 6pm"
+                    required
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    value={entryForm.status}
+                    onChange={(e)=>setEntryForm(f=>({...f, status: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+                  >
+                    <option value="available">available</option>
+                    <option value="unavailable">unavailable</option>
+                  </select>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-white rounded-lg bg-gradient-to-r from-[#6638E6] to-[#E6738F] hover:from-[#5530CC] hover:to-[#E69AAE]"
+                    //className="px-4 py-2 text-white rounded-lg bg-gradient-to-r from-[#6638E6] to-[#6638E6] hover:from-[#6638E6] hover:to-[#6638E6]"
+                  >
+                    {editingId ? 'Update' : 'Add'}
+                  </button>
+                  {editingId && (
+                    <button type="button" onClick={resetEntryForm} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg">Cancel</button>
+                  )}
+                </div>
+              </form>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Slot</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {entryLoading ? (
+                      <tr><td colSpan="5" className="px-6 py-4 text-sm text-gray-500">Loading...</td></tr>
+                    ) : entries.length === 0 ? (
+                      <tr><td colSpan="5" className="px-6 py-4 text-sm text-gray-500">No entries</td></tr>
+                    ) : (
+                      entries.map((it) => {
+                        const d = new Date(it.date);
+                        const ymd = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        return (
+                          <tr key={it._id}>
+                            <td className="px-4 py-2 text-sm text-gray-900">{it.doctorName}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{ymd}</td>
+                            <td className="px-4 py-2 text-sm text-gray-900">{it.time_slot}</td>
+                            <td className="px-4 py-2">
+                              <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${it.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {it.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              <div className="flex space-x-2">
+                                <button onClick={() => editEntry(it)} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg">Edit</button>
+                                <button onClick={() => deleteEntry(it._id)} className="px-3 py-1 bg-red-50 text-red-700 rounded-lg">Delete</button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                 <div className="flex">

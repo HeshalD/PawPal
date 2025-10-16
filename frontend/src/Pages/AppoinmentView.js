@@ -204,6 +204,7 @@ export default function AppointmentDashboard() {
   const downloadReport = async () => {
     try {
       const doc = new jsPDF('p', 'pt');
+      //const doc = new jsPDF('p','pt','a4')
       const pageWidth = doc.internal.pageSize.getWidth();
       const margin = 40;
 

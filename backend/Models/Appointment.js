@@ -6,6 +6,7 @@ const AppointmentSchema = new mongoose.Schema({
   ownerEmail: { type: String, required: true, lowercase: true, trim: true },
   date: { type: Date, required: true },
   timeSlot: { type: String, required: true },
+  //enum:['',''],default:'pending'
   status: { 
     type: String, 
     enum: ['pending', 'accepted', 'rejected'],

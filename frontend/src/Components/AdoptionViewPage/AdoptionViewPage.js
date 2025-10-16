@@ -4,11 +4,42 @@ import Nav from '../Nav/Nav';
 
 export default function PawPalApp() {
   const [collapsed, setCollapsed] = useState(false);
+  // Quiz state
+  const [showQuiz, setShowQuiz] = useState(false);
+  const questions = [
+    { q: "Do you have at least 1–2 hours daily for pet care?", weight: 20 },
+    { q: "Do you have a stable income for pet food/medical bills?", weight: 20 },
+    { q: "Do you live in a pet-friendly home?", weight: 20 },
+    { q: "Do you travel often (leaving pets alone)?", weight: 20, negative: true },
+    { q: "Are you willing to commit long-term (10+ years)?", weight: 20 }
+  ];
+  const totalPossible = questions.reduce((sum, q) => sum + q.weight, 0);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [score, setScore] = useState(0);
+  const [finished, setFinished] = useState(false);
+
+  const resetQuiz = () => {
+    setCurrentIdx(0);
+    setScore(0);
+    setFinished(false);
+  };
+
+  const handleAnswer = (answerYes) => {
+    const current = questions[currentIdx];
+    // Scoring: positive questions -> Yes = +weight, No = 0; negative questions -> Yes = 0, No = +weight
+    const add = current.negative ? (answerYes ? 0 : current.weight) : (answerYes ? current.weight : 0);
+    setScore((prev) => prev + add);
+    if (currentIdx + 1 < questions.length) {
+      setCurrentIdx((i) => i + 1);
+    } else {
+      setFinished(true);
+    }
+  };
+
+  const percent = Math.round((score / totalPossible) * 100);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Sidebar Navigation */}
-      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+    <div className="flex">
       
       {/* Main Content - Adjusts based on sidebar state */}
       <div className={`font-sans text-gray-800 overflow-x-hidden transition-all duration-300 ${
@@ -47,21 +78,131 @@ export default function PawPalApp() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-5 justify-center mt-10">
-              <a
-                href="adoption"
+              <button
+                type="button"
+                onClick={() => { setShowQuiz(true); resetQuiz(); }}
                 className="bg-gradient-to-r from-[#E6738F] to-[#6638E6] text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               >
-                <Link to="/adoptionDetails">To Adopt 🏠</Link>
-              </a>
+                To Adopt
+                <br />
+                Start Readiness Quiz 🏠
+              </button>
               <a
                 href="#info"
                 className="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               >
                 Learn More 📋
+                <br />
               </a>
             </div>
           </div>
         </section>
+
+        {/* Quiz Modal */}
+        {showQuiz && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+            <div className="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 text-white">
+                <h3 className="text-xl font-bold">Adoption Readiness Quiz</h3>
+                <p className="text-indigo-100 text-sm">Answer a few quick questions to check your readiness</p>
+              </div>
+
+              {!finished ? (
+                <div className="p-6 space-y-6">
+                  <div className="text-sm text-gray-500">Question {currentIdx + 1} of {questions.length}</div>
+                  <div className="text-lg font-semibold text-gray-800">{questions[currentIdx].q}</div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleAnswer(true)}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => handleAnswer(false)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold transition"
+                    >
+                      No
+                    </button>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm text-gray-600">
+                      <span>Progress</span>
+                      <span>{Math.round(((currentIdx) / questions.length) * 100)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="bg-indigo-600 h-3 rounded-full transition-all"
+                        style={{ width: `${Math.min(100, Math.round(((currentIdx) / questions.length) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between text-sm text-gray-400">
+                    <button
+                      className="underline"
+                      onClick={() => { setShowQuiz(false); }}
+                    >
+                      Close
+                    </button>
+                    <div>Total Score: {score} / {totalPossible}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 space-y-5">
+                  <div className="text-center">
+                    <div className="text-3xl font-extrabold text-gray-800">{percent}% Ready</div>
+                    <div className="text-sm text-gray-500 mt-1">Your adoption readiness score</div>
+                  </div>
+
+                  {/* Result Progress */}
+                  <div>
+                    <div className="flex justify-between mb-1 text-sm text-gray-600">
+                      <span>Readiness</span>
+                      <span>{percent}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className={`${percent >= 80 ? 'bg-green-600' : percent >= 50 ? 'bg-yellow-500' : 'bg-red-500'} h-3 rounded-full transition-all`}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl border" style={{ borderColor: percent >= 80 ? '#16a34a' : percent >= 50 ? '#eab308' : '#ef4444' }}>
+                    {percent >= 80 && (
+                      <p className="text-green-700">Ready to adopt 🎉 You seem well-prepared to welcome a pet!</p>
+                    )}
+                    {percent >= 50 && percent < 80 && (
+                      <p className="text-yellow-700">Almost ready 🐾 Consider a bit more preparation before adopting.</p>
+                    )}
+                    {percent < 50 && (
+                      <p className="text-red-700">Not quite ready ❤️ Please think carefully and prepare more before adopting.</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3 justify-between">
+  <button
+    onClick={() => { setShowQuiz(false); }}
+    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 rounded-lg font-semibold transition"
+  >
+    Close
+  </button>
+
+  <Link
+    to="/adoption"
+    className="flex-1 text-center bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition"
+  >
+    Proceed to Adoption Form
+  </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Adoption Info Section */}
         <section id="info" className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">

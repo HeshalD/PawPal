@@ -10,6 +10,8 @@ function UserProfile() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
+  const [myPets, setMyPets] = useState([]);
+  const [petsLoading, setPetsLoading] = useState(false);
   const [lastLoginAt, setLastLoginAt] = useState(null);
   const [currentLoginAt, setCurrentLoginAt] = useState(null);
   const formatDT = (iso) => {
@@ -78,6 +80,23 @@ function UserProfile() {
 
     fetchUserData();
   }, [navigate]);
+
+  // Load user's pets by email
+  useEffect(() => {
+    const loadPets = async () => {
+      if (!user?.email) return;
+      setPetsLoading(true);
+      try {
+        const res = await axios.get('http://localhost:5000/pets', { params: { ownerEmail: user.email } });
+        setMyPets(res.data?.pets || []);
+      } catch (e) {
+        console.warn('Failed to load user pets');
+      } finally {
+        setPetsLoading(false);
+      }
+    };
+    loadPets();
+  }, [user]);
 
   // Logout handler - clears all authentication data
   const handleLogout = async () => {
@@ -298,6 +317,42 @@ function UserProfile() {
                     {user.age ? `${user.age} years old` : "Not specified"}
                   </p>
                 </div>
+              </div>
+
+              {/* My Pets */}
+              <div className="mt-2">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center mr-3">
+                    <User className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900">My Pets</h3>
+                  <span className="ml-3 text-sm text-gray-600">{petsLoading ? 'Loading...' : `${myPets.length} pets`}</span>
+                </div>
+                {petsLoading ? (
+                  <div className="p-6 text-gray-500">Loading your pets...</div>
+                ) : myPets.length === 0 ? (
+                  <div className="p-6 bg-gray-50 rounded-xl border border-gray-200 text-gray-600">
+                    You have not added any pets yet. <Link to="/addpet" className="text-purple-600 font-semibold">Add a pet</Link> to get started.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {myPets.map((p) => (
+                      <div key={p._id} className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-bold text-gray-900">{p.name}</h4>
+                          <span className="text-xs px-2 py-1 rounded-full text-white ${
+                            (p.healthStatus || p.health) === 'Healthy' ? 'bg-green-500' :
+                            (p.healthStatus || p.health) === 'Normal' ? 'bg-blue-500' :
+                            'bg-red-500'
+                          }">{p.healthStatus || p.health || 'Unknown'}</span>
+                        </div>
+                        <div className="text-sm text-gray-700">Breed: {p.breed}</div>
+                        <div className="text-sm text-gray-700">Age: {p.age}</div>
+                        <Link to={`/UserPetProfile/${p._id}`} className="inline-block mt-3 text-purple-600 font-semibold">View</Link>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

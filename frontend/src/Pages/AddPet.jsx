@@ -1,5 +1,5 @@
 import axios from "axios";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { PawPrint, ArrowLeft, Plus } from "lucide-react";
@@ -11,6 +11,7 @@ function AddPet() {
     age: "",
     breed: "",
   });
+  const [ownerEmail, setOwnerEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -19,6 +20,16 @@ function AddPet() {
       [e.target.name]: e.target.value
     }));
   };
+
+  useEffect(() => {
+    try {
+      const userData = localStorage.getItem('userData');
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setOwnerEmail(parsed?.email || "");
+      }
+    } catch {}
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,13 +40,15 @@ function AddPet() {
         name: inputs.name,
         age: Number(inputs.age),
         breed: inputs.breed,
+        ownerEmail: ownerEmail || undefined,
       });
       console.log("Pet added:", res.data);
       alert("Pet registered successfully!");
       navigate("/pets"); // redirect to pet login page
     } catch (err) {
       console.error("Error adding pet:", err);
-      alert("Failed to register pet. Try again.");
+      const msg = err?.response?.data?.message || "Failed to register pet. Try again.";
+      alert(msg);
     } finally {
       setIsLoading(false);
     }
@@ -131,6 +144,22 @@ function AddPet() {
                     required 
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
                   />
+                </div>
+
+                {/* Owner Email (read-only) */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Owner Email
+                  </label>
+                  <input
+                    type="email"
+                    name="ownerEmail"
+                    value={ownerEmail}
+                    readOnly
+                    placeholder="Login required"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-700"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Linked to your account. Not editable.</p>
                 </div>
 
                 {/* Submit Button */}

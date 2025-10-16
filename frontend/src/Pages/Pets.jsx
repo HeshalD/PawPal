@@ -123,18 +123,21 @@ function DisplayPet() {
     const startAfterHeaderY = await addPdfHeader(doc, 'PawPal Pets Report');
 
     // Summary small table
-    const healthyCount = pets.filter(p => (p.healthStatus || p.health) === 'Excellent').length;
-    const goodCount = pets.filter(p => (p.healthStatus || p.health) === 'Good' || (p.healthStatus || p.health) === 'Very Good').length;
-    const unknownCount = pets.length - healthyCount - goodCount;
+    const summaryCounts = {
+      total: pets.length,
+      healthy: healthyPets.length,
+      normal: normalPets.length,
+      weak: weakPets.length,
+    };
 
     autoTable(doc, {
       startY: startAfterHeaderY,
       head: [['Metric', 'Value']],
       body: [
-        ['Total Pets', String(pets.length)],
-        ['Healthy (Excellent)', String(healthyCount)],
-        ['Good/Very Good', String(goodCount)],
-        ['Unknown/Other', String(unknownCount)],
+        ['Total Pets', String(summaryCounts.total)],
+        ['Healthy', String(summaryCounts.healthy)],
+        ['Normal', String(summaryCounts.normal)],
+        ['Weak', String(summaryCounts.weak)],
       ],
       theme: 'grid',
       headStyles: { fillColor: [147, 51, 234] },
@@ -239,10 +242,18 @@ function DisplayPet() {
               </div>
               <div className="h-12 w-px bg-gray-300 hidden sm:block"></div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-pink-600">
-                  {pets.filter(pet => pet.healthStatus === 'Excellent' || pet.health === 'Excellent').length}
-                </p>
-                <p className="text-sm text-gray-600">Healthy Pets</p>
+                <p className="text-3xl font-bold text-green-600">{healthyPets.length}</p>
+                <p className="text-sm text-gray-600">Healthy</p>
+              </div>
+              <div className="h-12 w-px bg-gray-300 hidden sm:block"></div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-600">{normalPets.length}</p>
+                <p className="text-sm text-gray-600">Normal</p>
+              </div>
+              <div className="h-12 w-px bg-gray-300 hidden sm:block"></div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-red-600">{weakPets.length}</p>
+                <p className="text-sm text-gray-600">Weak</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

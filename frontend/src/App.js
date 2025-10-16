@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
+import DigitalClock from "./Components/Common/DigitalClock";
 
 // Pages imports
 import Dashboard from "./Pages/Dashboard";
@@ -65,6 +66,9 @@ function App() {
 
   return (
     <div className="flex-1 p-4 transition-all duration-300">
+      <div className="fixed top-2 right-2 z-[100]">
+        <DigitalClock />
+      </div>
       <CartProvider>
       <Routes>
         {/* Main routes */}

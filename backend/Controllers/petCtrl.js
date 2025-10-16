@@ -4,7 +4,9 @@ const Pet = require("../Models/petModel");
 const getAllPets = async (req, res, next) => {
     let pets;
     try {
-        pets = await Pet.find();
+        const { ownerEmail } = req.query || {};
+        const filter = ownerEmail ? { ownerEmail } : {};
+        pets = await Pet.find(filter);
     } catch (err) {
         console.log(err);
     }
@@ -16,13 +18,21 @@ const getAllPets = async (req, res, next) => {
 
 //Create pet profile
 const addPet = async (req, res, next) => {
-    const { name, age, breed, healthStatus } = req.body;
+    const { name, age, breed, healthStatus, ownerEmail } = req.body;
 
     let pet;
     try {
+        // If a user email is provided, enforce max 5 pets per user
+        if (ownerEmail) {
+            const count = await Pet.countDocuments({ ownerEmail });
+            if (count >= 5) {
+                return res.status(400).json({ message: "You have reached the maximum number of pets (5)." });
+            }
+        }
+
         // Auto-generate unique Pet ID
         const petId = "PET-" + Math.floor(Math.random() * 1000000);
-        pet = new Pet({ name, age, breed, petId, healthStatus });
+        pet = new Pet({ name, age, breed, petId, healthStatus, ownerEmail });
         await pet.save();
     } catch (err) {
         console.log(err);

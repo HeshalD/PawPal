@@ -62,6 +62,12 @@ function HomePage() {
           <div className="absolute top-10 left-10 w-20 h-20 bg-pink-200 rounded-full opacity-20 animate-bounce"></div>
           <div className="absolute top-32 right-20 w-16 h-16 bg-purple-200 rounded-full opacity-30 animate-pulse"></div>
           <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-pink-100 rounded-full opacity-25 animate-bounce"></div>
+          <div className="pointer-events-none select-none absolute bottom-0 left-0 w-40 sm:w-56 md:w-72 lg:w-80 xl:w-96">
+            <img src="/hero/left-dog.png" alt="Left banner pet" className="w-full h-auto drop-shadow-2xl" />
+          </div>
+          <div className="pointer-events-none select-none absolute -bottom-4 -right-2 sm:-right-3 md:-right-12 w-44 sm:w-60 md:w-80 lg:w-[22rem] xl:w-[26rem]">
+            <img src="/hero/right-dog.png" alt="Right banner pet" className="w-full h-auto drop-shadow-2xl opacity-90" />
+          </div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             {/* Logo */}

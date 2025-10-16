@@ -10,11 +10,12 @@ const HealthcareChatbot = ({ role = 'user', context = '' }) => {
   const [typing, setTyping] = useState(false);
 
   const suggestions = [
-    'What vaccinations does my dog need and when?',
-    'Which doctors are available this week?',
     'How do I book an appointment?',
-    "Show my pet's latest health record.",
-    'When is the next vaccination due?'
+    'Can I reschedule or cancel my appointment?',
+    'Which doctors are available this week?',
+    'What if no doctors are available?',
+    'How can I see my upcoming appointments?',
+    'How do I check if my appointment is approved or pending?'
   ];
 
   const intentFallback = (msg) => {
@@ -25,9 +26,29 @@ const HealthcareChatbot = ({ role = 'user', context = '' }) => {
     if (/vaccin|shot|booster/.test(m)) {
       return 'For vaccinations: tell me your pet type and age, and I can outline a typical schedule. In emergencies, contact a vet immediately.';
     }
-    if (/appointment|book|schedule/.test(m)) {
-      return 'To book an appointment: go to the Appointments page and click Book Appointment, then pick a date, time, and doctor.';
+    // Appointment FAQs (local guidance if API fails)
+    if (/(how\s+to\s+book|\b(book|schedule|make)\b.*\b(appointment|visit|consult|check\s*up)\b)/.test(m)) {
+      return 'You can book from the Appointments page. Click “Book Appointment”, choose the doctor, date, and an available time, then submit.';
     }
+    if (/((re\s?schedul|change|move|shift|modify|edit).*(appointment|time|slot|booking))/.test(m)) {
+      return 'To reschedule, open Appointments and click “Edit” next to your booking, pick a new time, and save.';
+    }
+    if (/(\b(cancel|call\s*off|drop)\b.*(appointment|booking))/.test(m)) {
+      return 'To cancel, go to Appointments and click “Cancel” on the booking you no longer need.';
+    }
+    if (/(who.*free|who.*available|which\s+doctor.*available|doctor.*availability|available\s+slots?)/.test(m)) {
+      return 'To check doctor availability, open Appointments and filter by doctor and date to see open slots.';
+    }
+    if (/(no\s+doctor.*available|fully\s*booked|no\s+slots|nothing\s+available)/.test(m)) {
+      return 'If no doctors are available, try another date or doctor, or check again later.';
+    }
+    if (/(upcoming|my\s+appointments|next\s+appointment|view\s+appointments)/.test(m)) {
+      return 'See upcoming bookings on the Appointments page under “My Appointments”.';
+    }
+    if (/(approved|pending|confirm|status).*(appointment|booking)|is\s+my\s+appointment\s+(approved|confirmed|pending)/.test(m)) {
+      return 'Check the Status column on the Appointments page to see if it’s Approved or Pending.';
+    }
+    // Other topics
     if (/doctor|availability|available/.test(m)) {
       return 'Doctor availability: ask for a specific day or week, and I will guide you to check available slots.';
     }

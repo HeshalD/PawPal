@@ -1,5 +1,6 @@
 const User = require("../Models/RegisterModel");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 // ✅ Get all users
 const getallUsers = async (req, res) => {
@@ -60,7 +61,7 @@ const getById = async (req, res) => {
 
 // ✅ Update user
 const updateUser = async (req, res) => {
-  const { Fname, Lname, email, password, confirmpassword, age } = req.body;
+  const { Fname, Lname, email, age, currentPassword, newPassword, confirmNewPassword } = req.body;
 
   try {
     const { id } = req.params;
@@ -70,13 +71,43 @@ const updateUser = async (req, res) => {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase())) {
       return res.status(400).json({ message: "Invalid email" });
     }
-    if ((password || confirmpassword) && String(password) !== String(confirmpassword)) {
-      return res.status(400).json({ message: "password and confirmpassword must match" });
+    // Build update data without password fields by default
+    const updateData = { Fname, Lname, email, age };
+
+    // Handle password change only if currentPassword + newPassword are provided
+    if (currentPassword != null || newPassword != null || confirmNewPassword != null) {
+      if (!currentPassword || !newPassword || !confirmNewPassword) {
+        return res.status(400).json({ message: "To change password, provide currentPassword, newPassword and confirmNewPassword" });
+      }
+      if (String(newPassword) !== String(confirmNewPassword)) {
+        return res.status(400).json({ message: "New passwords do not match" });
+      }
+      // Load user to verify current password
+      const existing = await User.findById(id);
+      if (!existing) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const stored = existing.password || "";
+      let isValid = false;
+      if (stored.startsWith("$2a$") || stored.startsWith("$2b$")) {
+        isValid = await bcrypt.compare(String(currentPassword), stored);
+      } else {
+        isValid = (String(currentPassword) === String(stored));
+      }
+      if (!isValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+      // Hash and set new password
+      const salt = await bcrypt.genSalt(10);
+      const hashed = await bcrypt.hash(String(newPassword), salt);
+      updateData.password = hashed;
+      updateData.confirmpassword = hashed;
     }
+
     const user = await User.findByIdAndUpdate(
       id,
-      { Fname, Lname, email, password, confirmpassword, age },
-      { new: true } // return updated user
+      updateData,
+      { new: true }
     );
 
     if (!user) {

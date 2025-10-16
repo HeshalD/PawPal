@@ -111,7 +111,7 @@ function HomePage() {
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-4 justify-center mb-16">
               <button className="px-10 py-4 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                Get Started Today
+                <Link to="/">Get Started</Link>
               </button>
               <button className="px-10 py-4 border-2 border-purple-400 hover:bg-purple-50 text-purple-600 font-bold rounded-xl transition-all duration-300 hover:border-purple-600">
                 <Link to="/login">Login</Link>

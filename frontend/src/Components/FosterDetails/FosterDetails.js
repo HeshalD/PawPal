@@ -25,6 +25,13 @@ export default function FosterDetails() {
   const [isLoading, setIsLoading] = useState(false);
   const [submission, setSubmission] = useState(null);
   const [isEditingSubmission, setIsEditingSubmission] = useState(false);
+  const ymd = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${da}`;
+  };
+  const todayYmd = ymd(new Date());
 
   // Letters-only for fullName, numbers-only for contact
   const handleChange = (e) => {
@@ -37,13 +44,45 @@ export default function FosterDetails() {
     if (name === 'fullName') {
       if (value && !/^[a-zA-Z\s]*$/.test(value)) return; // letters-only
     }
-
+    if (name === 'fosterFrom') {
+      const v = value || '';
+      const valid = v && v >= todayYmd ? v : '';
+      const next = { ...formData, fosterFrom: valid };
+      if (next.fosterTo && next.fosterTo <= valid) next.fosterTo = '';
+      setFormData(next);
+      return;
+    }
+    if (name === 'fosterTo') {
+      const v = value || '';
+      const minTo = formData.fosterFrom || todayYmd;
+      const valid = v && v > minTo ? v : '';
+      setFormData({ ...formData, fosterTo: valid });
+      return;
+    }
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
+    const from = formData.fosterFrom;
+    const to = formData.fosterTo;
+    if (!from || from < todayYmd) {
+      alert('From date must be today or a future date.');
+      setIsLoading(false);
+      return;
+    }
+    if (!to || to <= todayYmd) {
+      alert('To date must be after today.');
+      setIsLoading(false);
+      return;
+    }
+    if (to <= from) {
+      alert('To date must be after the From date.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const res = await axios.post(URL, formData);
@@ -287,8 +326,8 @@ export default function FosterDetails() {
                   <h3 className="text-xl font-semibold text-gray-800">Foster Duration</h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input type="date" name="fosterFrom" value={formData.fosterFrom} onChange={handleChange} className="form-input w-full p-4 rounded-xl text-gray-800" required />
-                  <input type="date" name="fosterTo" value={formData.fosterTo} onChange={handleChange} className="form-input w-full p-4 rounded-xl text-gray-800" required />
+                  <input type="date" name="fosterFrom" value={formData.fosterFrom} onChange={handleChange} min={todayYmd} className="form-input w-full p-4 rounded-xl text-gray-800" required />
+                  <input type="date" name="fosterTo" value={formData.fosterTo} onChange={handleChange} min={formData.fosterFrom || todayYmd} className="form-input w-full p-4 rounded-xl text-gray-800" required />
                 </div>
               </div>
 

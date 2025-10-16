@@ -39,6 +39,12 @@ export default function PawPalApp() {
   const percent = Math.round((score / totalPossible) * 100);
 
   return (
+    <div className="min-h-screen bg-white">
+      {/* Sidebar */}
+      <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
+
+      {/* Main Content - Adjusts based on sidebar state */}
+      <div className={`transition-all duration-300 ${collapsed ? 'ml-16' : 'ml-64'} p-6`}></div>
     <div className="flex">
       
       {/* Main Content - Adjusts based on sidebar state */}
@@ -89,7 +95,7 @@ export default function PawPalApp() {
               </button>
               <a
                 href="#info"
-                className="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105"
+                className="bg-white/20 text-white backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105"
               >
                 Learn More 📋
                 <br />
@@ -192,7 +198,7 @@ export default function PawPalApp() {
   </button>
 
   <Link
-    to="/adoption"
+    to="/adoptionDetails"
     className="flex-1 text-center bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-semibold transition"
   >
     Proceed to Adoption Form
@@ -416,7 +422,7 @@ export default function PawPalApp() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="bg-white/15 backdrop-blur p-6 rounded-2xl text-center border border-white/20 hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300"
+                  className="bg-white/15 backdrop-blur p-6 rounded-2xl text-center hover:bg-white/25 hover:transform hover:-translate-y-2 transition-all duration-300"
                 >
                   <div className="w-16 h-16 bg-gradient-to-r from-[#E6738F] to-[#E69AAE] text-white rounded-full flex items-center justify-center text-2xl mx-auto mb-4">
                     {item.icon}
@@ -443,7 +449,7 @@ export default function PawPalApp() {
             <div className="text-center">
               <a
                 href="tel:+0705924724"
-                className="bg-white/20 text-white border-2 border-white/30 backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 inline-block mb-4"
+                className="bg-white/20 text-white backdrop-blur px-8 py-4 rounded-full font-bold text-lg hover:bg-white/30 transform transition-all duration-300 hover:-translate-y-1 hover:scale-105 inline-block mb-4"
               >
                 Call Us Now 📞
               </a>
@@ -457,5 +463,7 @@ export default function PawPalApp() {
         </footer>
       </div>
     </div>
+    </div>
+
   );
 }

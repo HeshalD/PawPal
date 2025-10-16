@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { SponsorsAPI, toImageUrl } from '../../services/api';
+
 import Nav from '../Nav/NavAdmin';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../Nav/logo.jpg';
+import { Bell } from 'lucide-react';
 
 export default function ManagerDashboard() {
   const [collapsed, setCollapsed] = useState(false);
@@ -16,6 +18,7 @@ export default function ManagerDashboard() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
+
   const [filteredData, setFilteredData] = useState({
     pending: [],
     active: [],
@@ -25,6 +28,20 @@ export default function ManagerDashboard() {
   });
   const [reasonModal, setReasonModal] = useState({ open: false, action: null, id: null, reason: '' });
   const [imagePreview, setImagePreview] = useState({ open: false, url: null });
+
+  // Notification state for new pending sponsors
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [newPending, setNewPending] = useState([]);
+  const LAST_SEEN_KEY = 'sponsor_last_seen_at';
+  const getLastSeen = () => {
+    const v = localStorage.getItem(LAST_SEEN_KEY);
+    return v ? new Date(v) : new Date(0);
+  };
+  const markAllSeen = () => {
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+    setNewPending([]);
+    setNotifOpen(false);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -37,12 +54,17 @@ export default function ManagerDashboard() {
         SponsorsAPI.byStatus('rejected'),
         SponsorsAPI.byStatus('deleted'),
       ]);
-      
+
       setPending(p.data.sponsors || []);
       setActive(a.data.sponsors || []);
       setPast(pa.data.sponsors || []);
       setRejected(rj.data.sponsors || []);
       setDeleted(dl.data.sponsors || []);
+
+      // Update notification list with pending sponsors after last seen
+      const lastSeen = getLastSeen();
+      const pendingSinceLast = (p.data.sponsors || []).filter(s => s.status === 'pending' && new Date(s.createdAt) > lastSeen);
+      setNewPending(pendingSinceLast);
     } catch (e) {
       console.error('Manager load error:', e);
       setError(`Failed to load: ${e?.response?.data?.message || e.message || 'Unknown error'}`);
@@ -58,7 +80,7 @@ export default function ManagerDashboard() {
   useEffect(() => {
     const filterData = (data) => {
       let filtered = data;
-      
+
       if (searchTerm) {
         filtered = filtered.filter(item => 
           item.sponsorName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,11 +88,11 @@ export default function ManagerDashboard() {
           item.email?.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
-      
+
       if (dateFilter !== 'all') {
         const now = new Date();
         const filterDate = new Date();
-        
+
         switch (dateFilter) {
           case 'daily':
             filterDate.setDate(now.getDate() - 1);
@@ -87,16 +109,16 @@ export default function ManagerDashboard() {
           default:
             break;
         }
-        
+
         filtered = filtered.filter(item => {
           const itemDate = new Date(item.createdAt || item.updatedAt);
           return itemDate >= filterDate;
         });
       }
-      
+
       return filtered;
     };
-    
+
     setFilteredData({
       pending: filterData(pending),
       active: filterData(active),
@@ -151,22 +173,22 @@ export default function ManagerDashboard() {
 
   const calculateSummary = () => {
     const allSponsors = [...pending, ...active, ...past, ...rejected];
-    
+
     const totalAmount = allSponsors.reduce((sum, sponsor) => {
       const amount = Number(sponsor.sponsorAmount) || 0;
       return sum + amount;
     }, 0);
-    
+
     const activeAmount = active.reduce((sum, sponsor) => {
       const amount = Number(sponsor.sponsorAmount) || 0;
       return sum + amount;
     }, 0);
-    
+
     const pendingAmount = pending.reduce((sum, sponsor) => {
       const amount = Number(sponsor.sponsorAmount) || 0;
       return sum + amount;
     }, 0);
-    
+
     return {
       totalSponsors: allSponsors.length,
       totalAmount,
@@ -231,10 +253,10 @@ export default function ManagerDashboard() {
   const downloadReport = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
-    
+
     // Header
     const startAfterHeaderY = await addPdfHeader(doc, 'PawPal Sponsor Report');
-    
+
     // Report metadata as small table under divider
     autoTable(doc, {
       startY: startAfterHeaderY,
@@ -248,13 +270,13 @@ export default function ManagerDashboard() {
       styles: { fontSize: 9 },
       margin: { left: 14, right: 14 }
     });
-    
+
     // Summary section
     doc.setFontSize(14);
     doc.setTextColor(0);
     const summaryTitleY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 8 : startAfterHeaderY + 8;
     doc.text('Summary', 14, summaryTitleY);
-    
+
     const summaryData = [
       ['Total Sponsors', summary.totalSponsors.toString()],
       ['Total Amount', `Rs. ${summary.totalAmount.toLocaleString()}`],
@@ -265,7 +287,7 @@ export default function ManagerDashboard() {
       ['Past Count', summary.pastCount.toString()],
       ['Rejected Count', summary.rejectedCount.toString()]
     ];
-    
+
     autoTable(doc, {
       startY: summaryTitleY + 5,
       head: [['Metric', 'Value']],
@@ -274,14 +296,14 @@ export default function ManagerDashboard() {
       headStyles: { fillColor: [147, 51, 234] },
       margin: { left: 14, right: 14 }
     });
-    
+
     let currentY = doc.lastAutoTable.finalY + 10;
-    
+
     // Pending Sponsors
     if (filteredData.pending.length > 0) {
       doc.setFontSize(12);
       doc.text('Pending Sponsors', 14, currentY);
-      
+
       const pendingData = filteredData.pending.map(sponsor => [
         sponsor.sponsorName,
         sponsor.companyName || '-',
@@ -290,7 +312,7 @@ export default function ManagerDashboard() {
         sponsor.durationMonths === 0.001 ? '1 min' : `${sponsor.durationMonths} months`,
         new Date(sponsor.createdAt).toLocaleDateString()
       ]);
-      
+
       autoTable(doc, {
         startY: currentY + 5,
         head: [['Name', 'Company', 'Email', 'Amount', 'Duration', 'Created']],
@@ -300,20 +322,20 @@ export default function ManagerDashboard() {
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
-      
+
       currentY = doc.lastAutoTable.finalY + 10;
     }
-    
+
     // Active Sponsors
     if (filteredData.active.length > 0) {
       if (currentY > 250) {
         doc.addPage();
         currentY = 20;
       }
-      
+
       doc.setFontSize(12);
       doc.text('Active Sponsors', 14, currentY);
-      
+
       const activeData = filteredData.active.map(sponsor => [
         sponsor.sponsorName,
         sponsor.companyName || '-',
@@ -322,7 +344,7 @@ export default function ManagerDashboard() {
         sponsor.startDate ? new Date(sponsor.startDate).toLocaleDateString() : '-',
         sponsor.endDate ? new Date(sponsor.endDate).toLocaleDateString() : '-'
       ]);
-      
+
       autoTable(doc, {
         startY: currentY + 5,
         head: [['Name', 'Company', 'Amount', 'Duration', 'Start Date', 'End Date']],
@@ -332,20 +354,20 @@ export default function ManagerDashboard() {
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
-      
+
       currentY = doc.lastAutoTable.finalY + 10;
     }
-    
+
     // Past Sponsors
     if (filteredData.past.length > 0) {
       if (currentY > 250) {
         doc.addPage();
         currentY = 20;
       }
-      
+
       doc.setFontSize(12);
       doc.text('Past Sponsors', 14, currentY);
-      
+
       const pastData = filteredData.past.map(sponsor => [
         sponsor.sponsorName,
         sponsor.companyName || '-',
@@ -354,7 +376,7 @@ export default function ManagerDashboard() {
         sponsor.startDate ? new Date(sponsor.startDate).toLocaleDateString() : '-',
         sponsor.endDate ? new Date(sponsor.endDate).toLocaleDateString() : '-'
       ]);
-      
+
       autoTable(doc, {
         startY: currentY + 5,
         head: [['Name', 'Company', 'Amount', 'Duration', 'Start Date', 'End Date']],
@@ -364,20 +386,20 @@ export default function ManagerDashboard() {
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
-      
+
       currentY = doc.lastAutoTable.finalY + 10;
     }
-    
+
     // Rejected Sponsors
     if (filteredData.rejected.length > 0) {
       if (currentY > 250) {
         doc.addPage();
         currentY = 20;
       }
-      
+
       doc.setFontSize(12);
       doc.text('Rejected Sponsors', 14, currentY);
-      
+
       const rejectedData = filteredData.rejected.map(sponsor => [
         sponsor.sponsorName,
         sponsor.companyName || '-',
@@ -385,7 +407,7 @@ export default function ManagerDashboard() {
         sponsor.rejectReason || '-',
         new Date(sponsor.createdAt).toLocaleDateString()
       ]);
-      
+
       autoTable(doc, {
         startY: currentY + 5,
         head: [['Name', 'Company', 'Amount', 'Reason', 'Created']],
@@ -395,20 +417,20 @@ export default function ManagerDashboard() {
         styles: { fontSize: 8 },
         margin: { left: 14, right: 14 }
       });
-      
+
       currentY = doc.lastAutoTable.finalY + 10;
     }
-    
+
     // Deleted Sponsors
     if (filteredData.deleted.length > 0) {
       if (currentY > 250) {
         doc.addPage();
         currentY = 20;
       }
-      
+
       doc.setFontSize(12);
       doc.text('Deleted Sponsors', 14, currentY);
-      
+
       const deletedData = filteredData.deleted.map(sponsor => [
         sponsor.sponsorName,
         sponsor.companyName || '-',
@@ -416,7 +438,7 @@ export default function ManagerDashboard() {
         sponsor.deleteReason || '-',
         new Date(sponsor.createdAt).toLocaleDateString()
       ]);
-      
+
       autoTable(doc, {
         startY: currentY + 5,
         head: [['Name', 'Company', 'Amount', 'Reason', 'Created']],
@@ -427,7 +449,7 @@ export default function ManagerDashboard() {
         margin: { left: 14, right: 14 }
       });
     }
-    
+
     // Footer
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
@@ -441,7 +463,7 @@ export default function ManagerDashboard() {
         { align: 'center' }
       );
     }
-    
+
     // Save the PDF
     doc.save(`sponsor-report-${dateFilter}-${new Date().toISOString().split('T')[0]}.pdf`);
   };
@@ -467,7 +489,7 @@ export default function ManagerDashboard() {
   return (
     <div className="min-h-screen bg-white flex">
       <Nav collapsed={collapsed} setCollapsed={setCollapsed} />
-      
+
       <div className={`flex-1 transition-all duration-300 ${
         collapsed ? 'ml-16' : 'ml-64'
       } p-6`}>
@@ -481,7 +503,48 @@ export default function ManagerDashboard() {
                   </h1>
                   <p className="text-gray-600 mt-1">Pawpal Pet Care Management System</p>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex space-x-4 items-center relative">
+                  {/* Notification bell - before Download Report */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setNotifOpen(o => !o)}
+                      className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                      title="Notifications"
+                    >
+                      <div className="relative">
+                        <Bell className="w-5 h-5 text-gray-700" />
+                        {newPending.length > 0 && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                            {newPending.length}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    {notifOpen && (
+                      <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <div className="px-4 py-2 border-b flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-800">New Sponsor Requests</span>
+                          {newPending.length > 0 && (
+                            <button onClick={markAllSeen} className="text-xs text-purple-600 hover:underline">Mark all as seen</button>
+                          )}
+                        </div>
+                        <div className="max-h-64 overflow-auto">
+                          {newPending.length === 0 ? (
+                            <div className="p-4 text-sm text-gray-500">No new pending sponsors.</div>
+                          ) : (
+                            newPending.slice(0, 10).map(s => (
+                              <div key={s._id} className="p-3 border-b last:border-b-0">
+                                <div className="text-sm font-medium text-gray-900">{s.sponsorName} • Rs. {Number(s.sponsorAmount || 0).toLocaleString()}</div>
+                                <div className="text-xs text-gray-500">{new Date(s.createdAt).toLocaleString()}</div>
+                                <div className="text-xs text-yellow-700 mt-1">Pending</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     onClick={downloadReport}
                     className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"

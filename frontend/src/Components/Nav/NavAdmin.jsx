@@ -12,7 +12,8 @@ import {
   Package,
   LogOut,
   Handshake,
-  Home
+  Home,
+  BarChart3
 } from "lucide-react";
 import logo from "./logo.jpg";
 
@@ -54,6 +55,12 @@ const NavAdmin = ({ collapsed, setCollapsed }) => {
       name: "Sponsor Management", 
       path: "/manager", 
       icon: Handshake,
+      roles: ["Veterinarian", "Donation Manager"] // Only Vet and Donation Manager
+    },
+    { 
+      name: "Analyzer", 
+      path: "/analyzer", 
+      icon: BarChart3,
       roles: ["Veterinarian", "Donation Manager"] // Only Vet and Donation Manager
     },
     { 

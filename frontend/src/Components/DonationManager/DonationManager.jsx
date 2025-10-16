@@ -4,6 +4,7 @@ import Nav from '../Nav/NavAdmin';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '../Nav/logo.jpg';
+import { Bell } from 'lucide-react';
 
 const DonationManager = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -22,6 +23,20 @@ const DonationManager = () => {
   // Auto-refresh toggle
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  // Notification state for new pending donations
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [newPending, setNewPending] = useState([]);
+  const LAST_SEEN_KEY = 'donation_last_seen_at';
+  const getLastSeen = () => {
+    const v = localStorage.getItem(LAST_SEEN_KEY);
+    return v ? new Date(v) : new Date(0);
+  };
+  const markAllSeen = () => {
+    localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+    setNewPending([]);
+    setNotifOpen(false);
+  };
 
   // Auto-refresh every 10 seconds (only if enabled)
   useEffect(() => {
@@ -97,6 +112,11 @@ const DonationManager = () => {
       }
       
       setAllDonations(newDonations);
+
+      // Update notification list with pending items after last seen
+      const lastSeen = getLastSeen();
+      const pendingSinceLast = newDonations.filter(d => d.status === 'pending' && new Date(d.createdAt) > lastSeen);
+      setNewPending(pendingSinceLast);
       
       let filteredDonations = newDonations;
       if (filter === 'pending') {
@@ -360,24 +380,66 @@ const DonationManager = () => {
                   <p className="text-gray-600 mt-1">PawPal Pet Care Donation System</p>
                 </div>
                 <div className="flex space-x-4">
-                  {/* ✅ Auto-refresh toggle button */}
-                  <button
-                    onClick={() => setAutoRefresh(!autoRefresh)}
-                    className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl ${
-                      autoRefresh
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
-                        : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
-                    }`}
-                  >
-                    {autoRefresh ? '🔄 Auto-Refresh ON' : '⏸️ Auto-Refresh OFF'}
-                  </button>
-                  
-                  <button
-                    onClick={downloadReport}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                  >
-                    📊 Download Report
-                  </button>
+                  <div className="flex items-center space-x-4 relative">
+                    <div className="relative">
+                      <button
+                        onClick={() => setNotifOpen(o => !o)}
+                        className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                        title="Notifications"
+                      >
+                        <div className="relative">
+                          <Bell className="w-5 h-5 text-gray-700" />
+                          {newPending.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+                              {newPending.length}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      {notifOpen && (
+                        <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                          <div className="px-4 py-2 border-b flex items-center justify-between">
+                            <span className="text-sm font-semibold text-gray-800">New Donation Requests</span>
+                            {newPending.length > 0 && (
+                              <button onClick={markAllSeen} className="text-xs text-purple-600 hover:underline">Mark all as seen</button>
+                            )}
+                          </div>
+                          <div className="max-h-64 overflow-auto">
+                            {newPending.length === 0 ? (
+                              <div className="p-4 text-sm text-gray-500">No new pending donations.</div>
+                            ) : (
+                              newPending.slice(0, 10).map(d => (
+                                <div key={d._id} className="p-3 border-b last:border-b-0">
+                                  <div className="text-sm font-medium text-gray-900">{d.fullname} • {d.Amount} {d.Currency}</div>
+                                  <div className="text-xs text-gray-500">{new Date(d.createdAt).toLocaleString()}</div>
+                                  <div className="text-xs text-yellow-700 mt-1">Pending</div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* ✅ Auto-refresh toggle button */}
+                    <button
+                      onClick={() => setAutoRefresh(!autoRefresh)}
+                      className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl ${
+                        autoRefresh
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
+                          : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                      }`}
+                    >
+                      {autoRefresh ? '🔄 Auto-Refresh ON' : '⏸️ Auto-Refresh OFF'}
+                    </button>
+                    
+                    <button
+                      onClick={downloadReport}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                    >
+                      📊 Download Report
+                    </button>
+                  </div>
                 </div>
               </div>
               

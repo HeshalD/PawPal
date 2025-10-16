@@ -1,5 +1,6 @@
 const Foster = require("../Models/FosterModel");
 const { sendFosterConfirmationEmail } = require("../utils/emailService");
+const mongoose = require("mongoose");
 
 // Get all foster requests
 const getAllFosters = async (req, res) => {
@@ -15,6 +16,9 @@ const getAllFosters = async (req, res) => {
 const getFosterById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const foster = await Foster.findById(id);
     if (!foster) {
       return res.status(404).json({ message: "Foster request not found" });
@@ -47,6 +51,9 @@ const addFoster = async (req, res) => {
 const updateFoster = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const updated = await Foster.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
     if (!updated) {
       return res.status(404).json({ message: "Foster request not found" });
@@ -61,6 +68,9 @@ const updateFoster = async (req, res) => {
 const deleteFoster = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const deleted = await Foster.findByIdAndDelete(id);
     if (!deleted) {
       return res.status(404).json({ message: "Foster request not found" });
@@ -76,6 +86,9 @@ const updateFosterStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const allowed = ["pending", "approved", "completed"];
     const next = String(status || "").toLowerCase();
     if (!allowed.includes(next)) {

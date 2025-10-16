@@ -1,4 +1,5 @@
 const User = require("../Models/RegisterModel");
+const mongoose = require("mongoose");
 
 // ✅ Get all users
 const getallUsers = async (req, res) => {
@@ -19,6 +20,17 @@ const addUsers = async (req, res) => {
   const { Fname, Lname, email, password, confirmpassword, age } = req.body;
 
   try {
+    // basic validations
+    const required = ["Fname","Lname","email","password","confirmpassword"]; 
+    for (const k of required) {
+      if (!req.body[k]) return res.status(400).json({ message: `${k} is required` });
+    }
+    if (String(password) !== String(confirmpassword)) {
+      return res.status(400).json({ message: "password and confirmpassword must match" });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase())) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
     const user = new User({ Fname, Lname, email, password, confirmpassword, age });
     await user.save();
     return res.status(201).json({ user }); // singular
@@ -31,7 +43,11 @@ const addUsers = async (req, res) => {
 // ✅ Get user by ID
 const getById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -47,8 +63,18 @@ const updateUser = async (req, res) => {
   const { Fname, Lname, email, password, confirmpassword, age } = req.body;
 
   try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase())) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+    if ((password || confirmpassword) && String(password) !== String(confirmpassword)) {
+      return res.status(400).json({ message: "password and confirmpassword must match" });
+    }
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      id,
       { Fname, Lname, email, password, confirmpassword, age },
       { new: true } // return updated user
     );
@@ -67,7 +93,11 @@ const updateUser = async (req, res) => {
 // ✅ Delete user
 const deleteUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    const user = await User.findByIdAndDelete(id);
 
     if (!user) {
       return res.status(404).json({ message: "Unable to delete user" });

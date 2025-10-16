@@ -15,7 +15,11 @@ const getAllOrders = async (req, res) => {
 // Get order by ID
 const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
@@ -55,7 +59,7 @@ const createOrder = async (req, res) => {
 
     // Ensure quantities are positive integers
     for (const it of orderData.items) {
-      if (!it?.itemId || !Number.isFinite(it.quantity) || it.quantity <= 0) {
+      if (!it?.itemId || !Number.isFinite(Number(it.quantity)) || Number(it.quantity) <= 0) {
         return res.status(400).json({ message: "Each item must include a valid itemId and positive quantity" });
       }
     }
@@ -129,6 +133,9 @@ const createOrder = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const { status } = req.body;
     
     if (!status || !["pending", "accepted", "completed", "cancelled"].includes(status)) {
@@ -166,7 +173,11 @@ const updateOrderStatus = async (req, res) => {
 // Delete order
 const deleteOrder = async (req, res) => {
   try {
-    const order = await Order.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
+    const order = await Order.findByIdAndDelete(id);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }

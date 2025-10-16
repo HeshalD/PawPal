@@ -1,5 +1,6 @@
 const Donation = require("../Models/DonationModel");
 const { sendEmail } = require("../utils/mailer");
+const mongoose = require("mongoose");
 
 const getAllDonations = async (req, res, next) => {
   try {
@@ -32,6 +33,16 @@ const addDonations = async (req, res, next) => {
    const { fullname, age, phone, NIC, Email, Address, ContributionType, Amount, Currency, PaymentMethod, donationFrequency } = req.body;
    
    try {
+    // basic required checks
+    const required = ["fullname","age","phone","NIC","Email","Address","ContributionType","Amount","Currency","PaymentMethod"];
+    for (const k of required) {
+      if (req.body[k] === undefined || req.body[k] === null || req.body[k] === "") {
+        return res.status(400).json({ message: `${k} is required` });
+      }
+    }
+    if (isNaN(Number(Amount))) {
+      return res.status(400).json({ message: "Amount must be a number" });
+    }
     const donation = new Donation({
       fullname, 
       age,
@@ -79,6 +90,9 @@ const addDonations = async (req, res, next) => {
 const getById = async (req, res, next) => {
   try {
     const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const donation = await Donation.findById(id);
     
     if (!donation) {
@@ -96,6 +110,9 @@ const getById = async (req, res, next) => {
 const updateDonation = async (req, res, next) => {
   try {
     const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const { fullname, age, phone, NIC, Email, Address, ContributionType, Amount, Currency, PaymentMethod, donationFrequency } = req.body;
 
     const donation = await Donation.findByIdAndUpdate(
@@ -119,6 +136,9 @@ const updateDonation = async (req, res, next) => {
 const deleteDonation = async (req, res, next) => {
   try {
     const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     
     // First check if donation exists and can be deleted
     const donation = await Donation.findById(id);
@@ -155,6 +175,9 @@ const deleteDonation = async (req, res, next) => {
 const uploadSlip = async (req, res, next) => {
   try {
     const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const slipPath = req.file ? req.file.path : null;
 
     const donation = await Donation.findByIdAndUpdate(
@@ -178,6 +201,9 @@ const uploadSlip = async (req, res, next) => {
 const markAsCompleted = async (req, res, next) => {
   try {
     const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ID" });
+    }
     const donation = await Donation.findByIdAndUpdate(
       id,
       { status: 'completed', updatedAt: Date.now() },

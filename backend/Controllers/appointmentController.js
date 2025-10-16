@@ -1,5 +1,6 @@
 const Appointment = require('../Models/Appointment');
 const { sendEmail } = require('../utils/mailer');
+const mongoose = require('mongoose');
 
 // Book new appointment
 exports.bookAppointment = async (req, res) => {
@@ -86,6 +87,9 @@ exports.getAppointmentsByEmail = async (req, res) => {
 exports.getAppointmentById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     const appointment = await Appointment.findById(id);
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
@@ -100,6 +104,9 @@ exports.getAppointmentById = async (req, res) => {
 exports.updateAppointment = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     const update = req.body;
     const appointment = await Appointment.findByIdAndUpdate(id, update, { new: true, runValidators: true });
     if (!appointment) {
@@ -115,6 +122,9 @@ exports.updateAppointment = async (req, res) => {
 exports.deleteAppointment = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     const appointment = await Appointment.findByIdAndDelete(id);
 
     if (!appointment) {
@@ -132,6 +142,9 @@ exports.updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
 
     if (!['accepted', 'rejected', 'pending'].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });

@@ -1,6 +1,7 @@
 const DoctorAvailability = require('../Models/DoctorAvailability');
 const DoctorAvailabilityEntry = require('../Models/DoctorAvailabilityEntry');
 const Appointment = require('../Models/Appointment');
+const mongoose = require('mongoose');
 
 exports.addAvailability = async (req, res) => {
   try {
@@ -78,6 +79,9 @@ exports.listEntries = async (req, res) => {
 exports.updateEntry = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     let { doctorName, date, time_slot, status } = req.body || {};
     if (doctorName != null) {
       if (!/^[A-Za-z .]{2,}$/.test(String(doctorName).trim())) {
@@ -116,6 +120,9 @@ exports.updateEntry = async (req, res) => {
 exports.deleteEntry = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid ID' });
+    }
     const del = await DoctorAvailabilityEntry.findByIdAndDelete(id);
     if (!del) return res.status(404).json({ message: 'Entry not found' });
     return res.json({ ok: true });
